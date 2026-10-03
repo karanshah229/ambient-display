@@ -75,6 +75,8 @@ public struct AmbientDisplayView: View {
             }
             .opacity(theme.opacity)
         }
+        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+        .background(Color.black)
         .contentShape(Rectangle())
         .onTapGesture {
             if appState.state == .wakeUpReady {

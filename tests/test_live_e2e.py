@@ -61,6 +61,10 @@ class TestWakeMeUpLiveE2E:
 
         mac_evidence.record_network("test_02_sleep_trigger", payload, mac_status)
 
+        # Capture live monitor overlay and allow visual verification
+        mac_evidence.capture_display("test_02_dell_monitor_night", display_id=3)
+        time.sleep(3)
+
         # Verify macOS kernel assertions via pmset
         pmset = mac_evidence.dump_pmset("test_02_sleep_active")
         assert pmset["PreventUserIdleDisplaySleep"] is True, "Display sleep assertion missing!"
@@ -107,37 +111,47 @@ class TestWakeMeUpLiveE2E:
             {"target_after": target_after}
         )
         adb_device.dump_logcat("test_03_glance")
+        mac_evidence.capture_display("test_03_dell_monitor_glance", display_id=3)
 
         # CRITICAL ASSERTION: Glance must NOT reset the sleep timer!
         assert target_after == target_before, f"Glance reset target from {target_before} to {target_after}!"
 
     def test_04_fast_forward_countdown_and_morning_banner(self, mac_server, adb_device, mac_evidence):
         """
-        Flow 4: Fast-forward 4-second preview:
-        - Ticking seconds activate in final countdown (00:03 -> 00:00).
+        Flow 4: Fast-forward 5-second preview:
+        - Ticking seconds activate in final countdown (00:04 -> 00:00).
         - Reaches zero: displays transition to prominent 'WAKE ME UP' screen.
         """
-        # Trigger 4-second preview
-        payload = {"duration_seconds": 4}
+        # Trigger 5-second preview
+        payload = {"duration_seconds": 5}
         res = requests.post(f"{mac_server}/api/test", json=payload)
         assert res.status_code == 200
 
-        time.sleep(1.5)
+        time.sleep(2)
 
-        # Check seconds mode ticking
+        # Check seconds mode ticking on display
         mid_status = requests.get(f"{mac_server}/api/status").json()
         assert mid_status["state"] == "sleeping"
         assert ":" in mid_status["countdown_text"]
+        mac_evidence.capture_display("test_04_dell_monitor_ticking", display_id=3)
 
-        # Wait for countdown to elapse into morning
-        time.sleep(3.5)
+        # Wait for countdown to elapse into morning (poll until wakeUpReady)
+        deadline = time.time() + 6.0
+        ready_status = {}
+        while time.time() < deadline:
+            ready_status = requests.get(f"{mac_server}/api/status").json()
+            if ready_status.get("state") == "wakeUpReady":
+                break
+            time.sleep(0.5)
 
         # Verify wakeUpReady morning screen
-        ready_status = requests.get(f"{mac_server}/api/status").json()
         assert ready_status["state"] == "wakeUpReady"
         assert ready_status["countdown_text"] == "00:00"
 
         mac_evidence.record_network("test_04_morning_ready", payload, ready_status)
+        mac_evidence.capture_display("test_04_dell_monitor_morning", display_id=3)
+        # Give user 4 seconds to view the emerald WAKE ME UP banner live on the screens
+        time.sleep(4)
 
     def test_05_wake_up_dismissal_and_power_release(self, mac_server, adb_device, mac_evidence):
         """

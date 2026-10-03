@@ -20,12 +20,11 @@ def setup_artifacts_dir():
 @pytest.fixture(scope="session")
 def mac_server():
     """Starts the native macOS app and ensures it stays running throughout the test session."""
-    # Ensure binary exists
-    if not os.path.exists(MAC_BINARY):
-        subprocess.check_call(
-            ["swift", "build"],
-            cwd=os.path.dirname(MAC_BINARY) + "/../../"
-        )
+    # Always ensure latest binary is built
+    subprocess.check_call(
+        ["swift", "build"],
+        cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), "../macos-app"))
+    )
 
     # Check if already running or start fresh
     already_running = False
@@ -143,5 +142,14 @@ def mac_evidence():
             target_path = os.path.join(ARTIFACTS_DIR, f"{name}_network.json")
             with open(target_path, "w") as f:
                 json.dump({"request": request_data, "response": response_data}, f, indent=2)
+
+        def capture_display(self, name: str, display_id: int = 3) -> str:
+            target_path = os.path.join(ARTIFACTS_DIR, f"{name}.png")
+            try:
+                subprocess.check_call(["screencapture", "-x", f"-D{display_id}", target_path])
+                return target_path
+            except Exception as e:
+                print(f"screencapture failed: {e}")
+                return ""
 
     return MacDriver()

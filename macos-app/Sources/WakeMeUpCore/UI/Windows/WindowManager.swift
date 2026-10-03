@@ -61,16 +61,25 @@ public final class WindowManager: ObservableObject {
 
         for (index, screen) in screens.enumerated() {
             let screenName = screen.localizedName
-            print("  - Display \(index + 1): \(screenName) (\(Int(screen.frame.width))x\(Int(screen.frame.height)))")
+            print("  - Display \(index + 1): \(screenName) frame: \(screen.frame) (\(Int(screen.frame.width))x\(Int(screen.frame.height)))")
 
             let window = createOverlayWindow(for: screen)
             let hostingController = NSHostingController(
                 rootView: AmbientDisplayView(appState: appState, screenName: screenName)
             )
+            
             window.contentViewController = hostingController
+            // CRITICAL: Ensure frame is explicitly set AFTER contentViewController is assigned,
+            // otherwise AppKit collapses borderless hosting controller windows to 0x0!
+            hostingController.view.frame = NSRect(origin: .zero, size: screen.frame.size)
+            window.setFrame(screen.frame, display: true)
             window.orderFrontRegardless()
+            window.makeKey()
             displayWindows.append(window)
         }
+
+        // Activate application so overlays appear in front of all open windows
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     public func hideAllWindows() {
@@ -89,9 +98,9 @@ public final class WindowManager: ObservableObject {
             screen: screen
         )
 
-        window.setFrame(screen.frame, display: true)
-        window.level = .floating
-        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        // Float above all application windows, menu bars, and full-screen spaces
+        window.level = .screenSaver
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         window.backgroundColor = .black
         window.isOpaque = true
         window.hasShadow = false
