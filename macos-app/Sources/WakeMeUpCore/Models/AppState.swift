@@ -98,6 +98,18 @@ public final class AppState: ObservableObject {
         self.isAwayMode.toggle()
     }
 
+    public func setSimulatedState(
+        state: SessionState,
+        session: SleepSession?,
+        lastUpdated: Date = Date(),
+        isTestMode: Bool = false
+    ) {
+        self.state = state
+        self.currentSession = session
+        self.lastUpdated = lastUpdated
+        self.isTestMode = isTestMode
+    }
+
     private func handleAwayModeChanged() {
         if isAwayMode && state != .idle {
             stopSleep()

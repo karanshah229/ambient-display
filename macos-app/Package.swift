@@ -33,6 +33,11 @@ let package = Package(
             dependencies: ["WakeMeUpCore"],
             path: "Sources/WakeMeUp"
         ),
+        .executableTarget(
+            name: "RenderSnapshots",
+            dependencies: ["WakeMeUpCore"],
+            path: "Sources/RenderSnapshots"
+        ),
         .testTarget(
             name: "WakeMeUpTests",
             dependencies: ["WakeMeUpCore"],
