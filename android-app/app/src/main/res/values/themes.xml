@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Material3.DayNight.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#FF9F0A</item>
+        <item name="colorSecondary">#30D158</item>
+        <item name="android:statusBarColor">#121212</item>
+    </style>
+</resources>

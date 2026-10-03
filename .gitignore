@@ -1,0 +1,18 @@
+# macOS & Swift
+.DS_Store
+.build/
+macos-app/.build/
+macos-app/build/
+*.xcodeproj
+*.xcworkspace
+
+# Android & Gradle
+.gradle/
+build/
+android-app/build/
+android-app/app/build/
+*.apk
+*.aab
+local.properties
+.idea/
+*.iml

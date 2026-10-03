@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Wake Me Up</string>
+    <string name="accessibility_service_description">Ensures Wake Me Up sleep detection stays active through the night and is not killed by OnePlus battery optimizations.</string>
+</resources>

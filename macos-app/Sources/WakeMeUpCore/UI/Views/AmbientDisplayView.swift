@@ -1,0 +1,198 @@
+import SwiftUI
+
+@MainActor
+public struct AmbientDisplayView: View {
+    @ObservedObject var appState: AppState
+    let screenName: String
+
+    public init(appState: AppState, screenName: String = "Display") {
+        self.appState = appState
+        self.screenName = screenName
+    }
+
+    public var body: some View {
+        let theme = SolarCalculator.currentTheme(
+            session: appState.currentSession,
+            state: appState.state,
+            date: appState.lastUpdated
+        )
+
+        ZStack {
+            // Pitch black background for zero backlight bleed in dark hall
+            Color.black
+                .ignoresSafeArea()
+
+            VStack(spacing: 28) {
+                // Top ambient bar
+                HStack {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(appState.state == .wakeUpReady ? Color.green : theme.accent)
+                            .frame(width: 10, height: 10)
+                        Text(topStatusText)
+                            .font(.system(size: 18, weight: .medium, design: .monospaced))
+                            .foregroundColor(theme.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Text(currentClockTimeString)
+                        .font(.system(size: 20, weight: .semibold, design: .monospaced))
+                        .foregroundColor(theme.textSecondary)
+                }
+                .padding(.horizontal, 48)
+                .padding(.top, 36)
+
+                Spacer()
+
+                // Center Main Content
+                if appState.state == .wakeUpReady {
+                    wakeUpReadyView(theme: theme)
+                } else if let session = appState.currentSession {
+                    sleepingCountdownView(session: session, theme: theme)
+                } else {
+                    idlePlaceholderView(theme: theme)
+                }
+
+                Spacer()
+
+                // Bottom informative footer
+                HStack {
+                    if let session = appState.currentSession {
+                        Text("Fell asleep: \(session.formattedBedtime)  •  Target: \(session.formattedTargetTime) (7.5h)")
+                            .font(.system(size: 18, weight: .regular, design: .rounded))
+                            .foregroundColor(theme.textSecondary.opacity(0.8))
+                    }
+
+                    Spacer()
+
+                    Text("Press ESC or tap anywhere to dismiss")
+                        .font(.system(size: 14, weight: .light))
+                        .foregroundColor(theme.textSecondary.opacity(0.5))
+                }
+                .padding(.horizontal, 48)
+                .padding(.bottom, 36)
+            }
+            .opacity(theme.opacity)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if appState.state == .wakeUpReady {
+                appState.dismissWakeUp()
+            }
+        }
+    }
+
+    // MARK: - Subviews
+
+    @ViewBuilder
+    private func wakeUpReadyView(theme: AmbientTheme) -> some View {
+        VStack(spacing: 24) {
+            Image(systemName: "sun.max.fill")
+                .font(.system(size: 96))
+                .foregroundColor(Color(red: 1.0, green: 0.85, blue: 0.3))
+                .shadow(color: Color.yellow.opacity(0.4), radius: 25)
+
+            Text("WAKE ME UP")
+                .font(.system(size: 88, weight: .black, design: .rounded))
+                .foregroundColor(theme.textPrimary)
+                .shadow(color: theme.accent.opacity(0.5), radius: 20)
+
+            Text("7.5 hours of sleep completed. Karan is ready to wake up!")
+                .font(.system(size: 32, weight: .medium, design: .rounded))
+                .foregroundColor(theme.textSecondary)
+                .multilineTextAlignment(.center)
+
+            Button(action: {
+                appState.dismissWakeUp()
+            }) {
+                Text("Dismiss Alarm")
+                    .font(.system(size: 20, weight: .semibold))
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 14)
+                    .background(Color.green.opacity(0.25))
+                    .foregroundColor(Color.green)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.green, lineWidth: 1.5)
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+            .padding(.top, 16)
+        }
+    }
+
+    @ViewBuilder
+    private func sleepingCountdownView(session: SleepSession, theme: AmbientTheme) -> some View {
+        VStack(spacing: 16) {
+            Text("TARGET WAKE UP TIME")
+                .font(.system(size: 24, weight: .bold, design: .monospaced))
+                .tracking(3)
+                .foregroundColor(theme.textSecondary)
+
+            // Giant, unmistakable wake time readable across the entire hall
+            Text(session.formattedTargetTime)
+                .font(.system(size: 130, weight: .heavy, design: .rounded))
+                .foregroundColor(theme.textPrimary)
+                .shadow(color: theme.accent.opacity(0.35), radius: 24)
+
+            // Dynamic countdown: minute-based over the night, seconds in last 5 minutes
+            HStack(spacing: 12) {
+                if session.isFinalFiveMinutes(at: appState.lastUpdated) {
+                    Image(systemName: "timer")
+                        .font(.system(size: 32))
+                        .foregroundColor(theme.accent)
+                }
+
+                Text(session.formattedCountdown(at: appState.lastUpdated))
+                    .font(.system(
+                        size: session.isFinalFiveMinutes(at: appState.lastUpdated) ? 60 : 42,
+                        weight: .semibold,
+                        design: .monospaced
+                    ))
+                    .foregroundColor(session.isFinalFiveMinutes(at: appState.lastUpdated) ? theme.accent : theme.textSecondary)
+            }
+            .padding(.top, 12)
+
+            Text("Please do not wake before \(session.formattedTargetTime)")
+                .font(.system(size: 22, weight: .medium, design: .rounded))
+                .foregroundColor(theme.textSecondary.opacity(0.85))
+                .padding(.top, 8)
+        }
+    }
+
+    @ViewBuilder
+    private func idlePlaceholderView(theme: AmbientTheme) -> some View {
+        VStack(spacing: 16) {
+            Image(systemName: "bed.double.fill")
+                .font(.system(size: 64))
+                .foregroundColor(theme.textSecondary)
+
+            Text("Wake Me Up is Idle")
+                .font(.system(size: 36, weight: .bold, design: .rounded))
+                .foregroundColor(theme.textPrimary)
+
+            Text("Waiting for sleep trigger from Android phone...")
+                .font(.system(size: 20, weight: .regular))
+                .foregroundColor(theme.textSecondary)
+        }
+    }
+
+    private var topStatusText: String {
+        switch appState.state {
+        case .wakeUpReady:
+            return "WAKE UP TIME"
+        case .sleeping:
+            return appState.isTestMode ? "SIMULATION MODE (PREVIEW)" : "SLEEPING — DO NOT DISTURB"
+        case .idle:
+            return "STANDBY"
+        }
+    }
+
+    private var currentClockTimeString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: appState.lastUpdated)
+    }
+}
