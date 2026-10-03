@@ -16,3 +16,8 @@ android-app/app/build/
 local.properties
 .idea/
 *.iml
+
+# Test artifacts
+tests/artifacts/*.png
+tests/.pytest_cache/
+.venv/
