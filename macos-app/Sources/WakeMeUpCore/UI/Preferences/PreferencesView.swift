@@ -42,7 +42,7 @@ public struct PreferencesView: View {
                     Label("Network", systemImage: "network")
                 }
         }
-        .frame(width: 530, height: 460)
+        .frame(width: 530, height: 520)
         .padding(20)
         .onAppear {
             loadInitialValues()
@@ -116,6 +116,56 @@ public struct PreferencesView: View {
                     .foregroundColor(.secondary)
             }
 
+            Section(header: Text("Eligible Sleep Window").font(.headline)) {
+                HStack {
+                    Text("Detect Sleep Between:")
+                    Picker("Start", selection: $appState.sleepWindowStartHour) {
+                        ForEach(0..<24, id: \.self) { h in
+                            Text(formatHour(h)).tag(h)
+                        }
+                    }
+                    .frame(width: 110)
+
+                    Text("and")
+
+                    Picker("End", selection: $appState.sleepWindowEndHour) {
+                        ForEach(0..<24, id: \.self) { h in
+                            Text(formatHour(h)).tag(h)
+                        }
+                    }
+                    .frame(width: 110)
+                }
+
+                Text("Phone inactivity outside this window (e.g. at 3 PM) is completely ignored and will never trigger sleep.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section(header: Text("Auto-Push Sleep Target Window").font(.headline)) {
+                HStack {
+                    Text("Auto-Push Between:")
+                    Picker("Start", selection: $appState.autoPushWindowStartHour) {
+                        ForEach(0..<24, id: \.self) { h in
+                            Text(formatHour(h)).tag(h)
+                        }
+                    }
+                    .frame(width: 110)
+
+                    Text("and")
+
+                    Picker("End", selection: $appState.autoPushWindowEndHour) {
+                        ForEach(0..<24, id: \.self) { h in
+                            Text(formatHour(h)).tag(h)
+                        }
+                    }
+                    .frame(width: 110)
+                }
+
+                Text("During this early evening window (default 9–11 PM), using your phone automatically rolls your sleep target back. Outside this window, phone use triggers an interactive notification asking before modifying.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
             Section(header: Text("Inactivity Compensation").font(.headline)) {
                 Toggle("Auto-detect offset from phone system settings", isOn: $appState.autoDetectInactivityOffset)
 
@@ -136,6 +186,12 @@ public struct PreferencesView: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    private func formatHour(_ hour: Int) -> String {
+        let h = hour % 12 == 0 ? 12 : hour % 12
+        let ampm = hour < 12 ? "AM" : "PM"
+        return "\(h):00 \(ampm)"
     }
 
     private func commitSleepHours() {

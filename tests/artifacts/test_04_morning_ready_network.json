@@ -1,0 +1,16 @@
+{
+  "request": {
+    "duration_seconds": 5
+  },
+  "response": {
+    "is_test_mode": true,
+    "countdown_text": "00:00",
+    "power_assertion_active": true,
+    "screens_count": 4,
+    "target_wake_time": "5:04\u202fPM",
+    "state": "wakeUpReady",
+    "remaining_seconds": 0,
+    "bedtime": "9:34\u202fAM",
+    "is_away_mode": false
+  }
+}

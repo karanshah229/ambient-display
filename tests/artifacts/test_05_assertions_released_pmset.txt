@@ -1,0 +1,38 @@
+2026-10-03 17:04:14 +0530 
+Assertion status system-wide:
+   BackgroundTask                 0
+   ApplePushServiceTask           0
+   UserIsActive                   1
+   PreventUserIdleDisplaySleep    1
+   SoftwareUpdateTask             0
+   PreventSystemSleep             0
+   PreventSystemSleepSecurityIndicator 0
+   ExternalMedia                  0
+   InternalPreventDisplaySleep    1
+   PreventUserIdleSystemSleep     1
+   NetworkClientActive            0
+Listed by owning process:
+   pid 559(powerd): [0x0003d9b50001a5fd] 05:42:25 PreventUserIdleSystemSleep named: "Powerd - Prevent sleep while display is on"  
+   pid 559(powerd): [0x00029a5700099eae] 15:13:41 UserIsActive named: "com.apple.powermanagement.kernel.useractive IOHIDUserDevice:kIOHIDSystemActivityTickle nxEvent: 0x5230000"  
+   pid 559(powerd): [0x000309640009984a] 17:57:29 UserIsActive named: "com.apple.powermanagement.lidopen"  
+   pid 559(powerd): [0x0000005000098009] 77:21:11 UserIsActive named: "com.apple.powerd.ws.initialize"  
+   pid 559(powerd): [0x000429f500108566] 00:00:01 InternalPreventDisplaySleep named: "com.apple.powermanagement.delayDisplayOff"  
+	Timeout will fire in 299 secs Action=TimeoutActionTurnOff
+   pid 4927(Electron): [0x0000039a00018499] 77:07:08 NoIdleSleepAssertion named: "Electron"  
+   pid 5568(Google Chrome): [0x00041cdc0005973a] 00:55:53 NoDisplaySleepAssertion named: "Capturing"  
+   pid 39712(SidecarDisplayAgent): [0x0004025400098da0] 00:51:43 UserIsActive named: "com.apple.sidecar"  
+   pid 44067(ChatGPT): [0x0003db9f0001a6ee] 05:34:15 NoIdleSleepAssertion named: "Electron"  
+   pid 608(bluetoothd): [0x000000c7000983ad] 01:49:28 UserIsActive named: "Bluetooth LE HID Activity"  
+   pid 608(bluetoothd): [0x000067d3000998ec] 52:34:13 UserIsActive named: "Bluetooth Incoming Connection Request"  
+   pid 757(coreaudiod): [0x0004232400019b33] 00:29:06 PreventUserIdleSystemSleep named: "com.apple.audio.F465F280-AF27-4C79-91C4-8356BF7EE8BC.context.preventuseridlesleep"  
+	Created for PID: 54725. 
+	Resources: audio-in audio-out BuiltInSpeakerDevice 
+   pid 757(coreaudiod): [0x0004232400019af1] 00:29:06 PreventUserIdleSystemSleep named: "com.apple.audio.BuiltInSpeakerDevice.context.preventuseridlesleep"  
+	Created for PID: 67315. 
+	Resources: audio-out BuiltInSpeakerDevice 
+   pid 615(WindowServer): [0x00000069000981e4] 00:00:24 UserIsActive named: "com.apple.iohideventsystem.queue.tickle serviceID:100037917 service:AppleUserHIDEventService product:Toad 8 eventType:17"  
+Kernel Assertions: 0x104=USB,MAGICWAKE
+   id=562  level=255 0x100=MAGICWAKE creat=  mod= description=en0 owner=IOSkywalkNetworkBSDClient
+   id=611  level=255 0x4=USB creat= description=com.apple.usb.externaldevice.01200000 owner=USB5806 Smart Hub
+   id=614  level=255 0x4=USB creat= description=com.apple.usb.externaldevice.01100000 owner=USB2806 Smart Hub
+   id=617  level=255 0x4=USB creat= description=com.apple.usb.externaldevice.00100000 owner=USB-C dongle

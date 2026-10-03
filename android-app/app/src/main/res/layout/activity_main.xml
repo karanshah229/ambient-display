@@ -74,6 +74,69 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Sleep Schedule & Windows Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#1C1C1E"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="#2C2C2E"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sleep Windows &amp; Duration"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSleepDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Target Duration: 7.5 hours"
+                    android:textColor="#EBEBF5"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvSleepWindow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Eligible Sleep Window: 9:00 PM – 6:00 AM"
+                    android:textColor="#30D158"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvAutoPushWindow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Auto-Push Window: 9:00 PM – 11:00 PM"
+                    android:textColor="#FF9F0A"
+                    android:textSize="13sp" />
+
+                <Button
+                    android:id="@+id/btnSyncConfig"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:backgroundTint="#2C2C2E"
+                    android:text="🔄 Sync Settings with Mac"
+                    android:textColor="#FFFFFF" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Mac Server Connection Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"

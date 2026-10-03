@@ -1,0 +1,23 @@
+com.myairtelapp
+        com.teqtic.lockmeout
+        com.jio.myjio
+        com.wakemeup
+    
+    Restricted packages:
+    Stats:
+--
+    u0a409:
+      #1: Reason=pi_cancelled elapsed=-1m29s365ms rtc=2026-10-03 17:02:26.263
+        Snapshot:
+          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          policyWhenElapsed: requester=+7h19m12s71ms app_standby=-10m47s907ms device_idle=-- battery_saver=-1m37s980ms adjustment=+7h18m23s880ms
+      #2: Reason=pi_cancelled elapsed=-37m30s535ms rtc=2026-10-03 16:26:25.093
+        Snapshot:
+          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          policyWhenElapsed: requester=+6h50m37s202ms app_standby=-39m22s782ms device_idle=-- battery_saver=-37m30s565ms adjustment=+6h48m23s880ms
+      #3: Reason=alarm_cancelled elapsed=-1h16m33s219ms rtc=2026-10-03 15:47:22.409
+        Snapshot:
+          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          policyWhenElapsed: requester=+6h13m4s62ms app_standby=-1h16m55s922ms device_idle=-- battery_saver=-1h16m55s922ms adjustment=--
+    u0a436:
+      #1: Reason=alarm_cancelled elapsed=-11m14s168ms rtc=2026-10-03 16:52:41.460

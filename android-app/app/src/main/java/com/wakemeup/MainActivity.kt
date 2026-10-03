@@ -29,6 +29,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvSleepStatus: TextView
     private lateinit var tvWakeTarget: TextView
     private lateinit var tvDisplayTimeout: TextView
+    private lateinit var tvSleepDuration: TextView
+    private lateinit var tvSleepWindow: TextView
+    private lateinit var tvAutoPushWindow: TextView
     private lateinit var etMacHost: EditText
 
     private val requestNotificationPermission =
@@ -47,6 +50,7 @@ class MainActivity : AppCompatActivity() {
         initViews()
         checkNotificationPermission()
         refreshStatus()
+        syncConfigFromMac()
     }
 
     private fun checkNotificationPermission() {
@@ -69,15 +73,23 @@ class MainActivity : AppCompatActivity() {
         tvSleepStatus = findViewById(R.id.tvSleepStatus)
         tvWakeTarget = findViewById(R.id.tvWakeTarget)
         tvDisplayTimeout = findViewById(R.id.tvDisplayTimeout)
+        tvSleepDuration = findViewById(R.id.tvSleepDuration)
+        tvSleepWindow = findViewById(R.id.tvSleepWindow)
+        tvAutoPushWindow = findViewById(R.id.tvAutoPushWindow)
         etMacHost = findViewById(R.id.etMacHost)
 
         etMacHost.setText(syncClient.macHost)
+
+        findViewById<Button>(R.id.btnSyncConfig).setOnClickListener {
+            syncConfigFromMac()
+        }
 
         findViewById<Button>(R.id.btnSaveHost).setOnClickListener {
             val host = etMacHost.text.toString().trim()
             if (host.isNotEmpty()) {
                 syncClient.macHost = host
                 Toast.makeText(this, "Mac IP saved: $host", Toast.LENGTH_SHORT).show()
+                syncConfigFromMac()
             }
         }
 
@@ -90,11 +102,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnManualSleep).setOnClickListener {
+            val config = SleepDetectionService.getSleepConfig(this)
             val intent = Intent(this, SleepDetectionService::class.java).apply {
                 action = SleepDetectionService.ACTION_MANUAL_SLEEP
             }
             startService(intent)
-            Toast.makeText(this, "Manual 7.5h sleep started!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Manual ${config.defaultSleepHours}h sleep started!", Toast.LENGTH_SHORT).show()
             window.decorView.postDelayed({ refreshStatus() }, 500)
         }
 
@@ -118,7 +131,7 @@ class MainActivity : AppCompatActivity() {
             refreshStatus()
         }
 
-        // OnePlus Setup Checklist buttons
+        // Setup Checklist buttons
         findViewById<Button>(R.id.btnBatteryOpt).setOnClickListener {
             OxygenOSHelper.requestIgnoreBatteryOptimizations(this)
         }
@@ -133,6 +146,24 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnAutoLaunch).setOnClickListener {
             OxygenOSHelper.openOnePlusAutoLaunchSettings(this)
+        }
+    }
+
+    private fun formatHour(hour: Int): String {
+        val h = if (hour % 12 == 0) 12 else hour % 12
+        val ampm = if (hour < 12) "AM" else "PM"
+        return "$h:00 $ampm"
+    }
+
+    private fun syncConfigFromMac() {
+        lifecycleScope.launch {
+            val res = syncClient.fetchConfig()
+            if (res.isSuccess) {
+                val config = res.getOrThrow()
+                SleepDetectionService.saveSleepConfig(this@MainActivity, config)
+                refreshStatus()
+                Toast.makeText(this@MainActivity, "Preferences locked & synced with Mac!", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -152,11 +183,16 @@ class MainActivity : AppCompatActivity() {
         val timeoutMinutes = timeoutMs / 60_000L
         tvDisplayTimeout.text = "Live Display Sleep Timeout: $timeoutMinutes minutes"
 
+        val config = SleepDetectionService.getSleepConfig(this)
+        tvSleepDuration.text = "Target Duration: ${config.defaultSleepHours} hours"
+        tvSleepWindow.text = "Eligible Sleep Window: ${formatHour(config.sleepWindowStartHour)} – ${formatHour(config.sleepWindowEndHour)}"
+        tvAutoPushWindow.text = "Auto-Push Window: ${formatHour(config.autoPushWindowStartHour)} – ${formatHour(config.autoPushWindowEndHour)}"
+
         val targetMs = SleepDetectionService.getActiveTargetWakeMs(this)
         if (targetMs != null) {
             val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
             tvSleepStatus.text = "Status: Sleeping"
-            tvWakeTarget.text = "Target Wake Up: ${timeFormat.format(Date(targetMs))} (7.5h)"
+            tvWakeTarget.text = "Target Wake Up: ${timeFormat.format(Date(targetMs))} (${config.defaultSleepHours}h)"
         } else {
             tvSleepStatus.text = "Status: Monitoring Lock Events"
             tvWakeTarget.text = "Target: Standby"

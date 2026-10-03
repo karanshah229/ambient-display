@@ -318,4 +318,77 @@ class MacSyncClient(private val context: Context) {
             }
         }
     }
+
+    data class AppConfig(
+        val defaultSleepHours: Double = 7.5,
+        val sleepWindowStartHour: Int = 21,
+        val sleepWindowEndHour: Int = 6,
+        val autoPushWindowStartHour: Int = 21,
+        val autoPushWindowEndHour: Int = 23,
+        val inactivityOffsetMinutes: Double = 30.0,
+        val autoDetectInactivity: Boolean = true
+    )
+
+    suspend fun fetchConfig(): Result<AppConfig> = executeWithAutoDiscovery {
+        withContext(Dispatchers.IO) {
+            try {
+                val request = Request.Builder()
+                    .url("$baseUrl/api/config")
+                    .get()
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val body = response.body?.string() ?: "{}"
+                        val obj = JSONObject(body)
+                        val config = AppConfig(
+                            defaultSleepHours = obj.optDouble("default_sleep_hours", 7.5),
+                            sleepWindowStartHour = obj.optInt("sleep_window_start_hour", 21),
+                            sleepWindowEndHour = obj.optInt("sleep_window_end_hour", 6),
+                            autoPushWindowStartHour = obj.optInt("auto_push_window_start_hour", 21),
+                            autoPushWindowEndHour = obj.optInt("auto_push_window_end_hour", 23),
+                            inactivityOffsetMinutes = obj.optDouble("inactivity_offset_minutes", 30.0),
+                            autoDetectInactivity = obj.optBoolean("auto_detect_inactivity", true)
+                        )
+                        Result.success(config)
+                    } else {
+                        Result.failure(Exception("HTTP ${response.code}"))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun sendConfig(config: AppConfig): Result<String> = executeWithAutoDiscovery {
+        withContext(Dispatchers.IO) {
+            try {
+                val json = JSONObject().apply {
+                    put("default_sleep_hours", config.defaultSleepHours)
+                    put("sleep_window_start_hour", config.sleepWindowStartHour)
+                    put("sleep_window_end_hour", config.sleepWindowEndHour)
+                    put("auto_push_window_start_hour", config.autoPushWindowStartHour)
+                    put("auto_push_window_end_hour", config.autoPushWindowEndHour)
+                    put("inactivity_offset_minutes", config.inactivityOffsetMinutes)
+                    put("auto_detect_inactivity", config.autoDetectInactivity)
+                }
+                val body = json.toString().toRequestBody("application/json".toMediaType())
+                val request = Request.Builder()
+                    .url("$baseUrl/api/config")
+                    .post(body)
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        Result.success(response.body?.string() ?: "OK")
+                    } else {
+                        Result.failure(Exception("HTTP ${response.code}"))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
 }

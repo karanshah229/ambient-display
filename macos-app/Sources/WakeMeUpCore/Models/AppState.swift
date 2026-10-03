@@ -39,6 +39,26 @@ public final class AppState: ObservableObject {
             userDefaults?.set(autoDetectInactivityOffset, forKey: "WakeMeUp_autoDetectInactivityOffset")
         }
     }
+    @Published public var sleepWindowStartHour: Int = 21 { // 9 PM
+        didSet {
+            userDefaults?.set(sleepWindowStartHour, forKey: "WakeMeUp_sleepWindowStartHour")
+        }
+    }
+    @Published public var sleepWindowEndHour: Int = 6 { // 6 AM
+        didSet {
+            userDefaults?.set(sleepWindowEndHour, forKey: "WakeMeUp_sleepWindowEndHour")
+        }
+    }
+    @Published public var autoPushWindowStartHour: Int = 21 { // 9 PM
+        didSet {
+            userDefaults?.set(autoPushWindowStartHour, forKey: "WakeMeUp_autoPushWindowStartHour")
+        }
+    }
+    @Published public var autoPushWindowEndHour: Int = 23 { // 11 PM
+        didSet {
+            userDefaults?.set(autoPushWindowEndHour, forKey: "WakeMeUp_autoPushWindowEndHour")
+        }
+    }
     @Published public var ignoredDisplayIDs: Set<CGDirectDisplayID> = [] {
         didSet {
             let array = Array(ignoredDisplayIDs).map { Int($0) }
@@ -86,6 +106,16 @@ public final class AppState: ObservableObject {
         let savedOffset = userDefaults?.double(forKey: "WakeMeUp_inactivityOffsetMinutes") ?? 0
         self.inactivityOffsetMinutes = savedOffset > 0 ? savedOffset : 30.0
         self.autoDetectInactivityOffset = userDefaults?.object(forKey: "WakeMeUp_autoDetectInactivityOffset") as? Bool ?? true
+
+        let savedSleepStart = userDefaults?.object(forKey: "WakeMeUp_sleepWindowStartHour") as? Int
+        self.sleepWindowStartHour = savedSleepStart ?? 21
+        let savedSleepEnd = userDefaults?.object(forKey: "WakeMeUp_sleepWindowEndHour") as? Int
+        self.sleepWindowEndHour = savedSleepEnd ?? 6
+
+        let savedAutoPushStart = userDefaults?.object(forKey: "WakeMeUp_autoPushWindowStartHour") as? Int
+        self.autoPushWindowStartHour = savedAutoPushStart ?? 21
+        let savedAutoPushEnd = userDefaults?.object(forKey: "WakeMeUp_autoPushWindowEndHour") as? Int
+        self.autoPushWindowEndHour = savedAutoPushEnd ?? 23
 
         if let savedIgnored = userDefaults?.array(forKey: "WakeMeUp_ignoredDisplayIDs") as? [Int] {
             self.ignoredDisplayIDs = Set(savedIgnored.map { CGDirectDisplayID($0) })

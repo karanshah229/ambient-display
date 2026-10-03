@@ -32,17 +32,35 @@ class MidnightGlanceFilter(
         createNotificationChannel()
     }
 
+    fun isHourInWindow(hour: Int, startHour: Int, endHour: Int): Boolean {
+        return if (startHour <= endHour) {
+            hour in startHour until endHour
+        } else {
+            hour >= startHour || hour < endHour
+        }
+    }
+
     fun onScreenTurnedOn() {
         if (unlockTimestamp == null) {
             unlockTimestamp = System.currentTimeMillis()
         }
 
-        // Schedule prompt if user stays awake for > 5 minutes
+        val config = SleepDetectionService.getSleepConfig(context)
+        val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val isAutoPushWindow = isHourInWindow(currentHour, config.autoPushWindowStartHour, config.autoPushWindowEndHour)
+
         promptRunnable?.let { handler.removeCallbacks(it) }
-        promptRunnable = Runnable {
-            showAwakePromptNotification()
+
+        if (isAutoPushWindow) {
+            // In 9-11 PM auto-push window, automatically reset without bothering user
+            // No notification needed; when screen locks again or after 2 mins, auto push
+        } else {
+            // Outside auto-push window: Prompt after 3 minutes of continued activity
+            promptRunnable = Runnable {
+                showAwakePromptNotification()
+            }
+            handler.postDelayed(promptRunnable!!, 3 * 60 * 1000L)
         }
-        handler.postDelayed(promptRunnable!!, MIDNIGHT_THRESHOLD_MS)
     }
 
     fun onScreenUnlocked() {
@@ -51,23 +69,27 @@ class MidnightGlanceFilter(
 
     /**
      * Called when screen turns off.
-     * Returns true if this was an ignorable brief glance (< 5 min), false otherwise.
+     * Returns true if this was an ignorable brief glance, false if sleep should be pushed/reset.
      */
     fun onScreenLocked(): Boolean {
         promptRunnable?.let { handler.removeCallbacks(it) }
         promptRunnable = null
 
-        val unlockTime = unlockTimestamp ?: return true // Safe fallback: preserve active session
+        val unlockTime = unlockTimestamp ?: return true
         val durationMs = System.currentTimeMillis() - unlockTime
         unlockTimestamp = null
 
-        return if (durationMs < MIDNIGHT_THRESHOLD_MS) {
-            // Ignored brief glance - do not alter sleep session
-            true
-        } else {
-            // User was awake longer than threshold
-            false
+        val config = SleepDetectionService.getSleepConfig(context)
+        val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val isAutoPushWindow = isHourInWindow(currentHour, config.autoPushWindowStartHour, config.autoPushWindowEndHour)
+
+        if (isAutoPushWindow) {
+            // In 9-11 PM window: any interaction pushes back the sleep window automatically!
+            return false
         }
+
+        // Outside auto-push window: brief glance (< 3 min) preserves sleep schedule
+        return durationMs < (3 * 60 * 1000L)
     }
 
     private fun showAwakePromptNotification() {

@@ -1,0 +1,12 @@
+{
+  "request": {
+    "endpoint": "/api/status"
+  },
+  "response": {
+    "is_away_mode": false,
+    "screens_count": 4,
+    "state": "idle",
+    "is_test_mode": false,
+    "power_assertion_active": false
+  }
+}

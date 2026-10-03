@@ -1,0 +1,17 @@
+{
+  "request": {
+    "duration_minutes": 450.0,
+    "reason": "e2e_live_trigger"
+  },
+  "response": {
+    "bedtime": "5:03\u202fPM",
+    "screens_count": 4,
+    "remaining_seconds": 26998.99810194969,
+    "target_wake_time": "12:33\u202fAM",
+    "countdown_text": "7h 30m remaining",
+    "power_assertion_active": true,
+    "state": "sleeping",
+    "is_test_mode": false,
+    "is_away_mode": false
+  }
+}

@@ -61,3 +61,59 @@ public struct StatusResponsePayload: Codable {
         self.power_assertion_active = power_assertion_active
     }
 }
+
+public struct ConfigResponsePayload: Codable {
+    public let default_sleep_hours: Double
+    public let sleep_window_start_hour: Int
+    public let sleep_window_end_hour: Int
+    public let auto_push_window_start_hour: Int
+    public let auto_push_window_end_hour: Int
+    public let inactivity_offset_minutes: Double
+    public let auto_detect_inactivity: Bool
+
+    public init(
+        default_sleep_hours: Double,
+        sleep_window_start_hour: Int,
+        sleep_window_end_hour: Int,
+        auto_push_window_start_hour: Int,
+        auto_push_window_end_hour: Int,
+        inactivity_offset_minutes: Double,
+        auto_detect_inactivity: Bool
+    ) {
+        self.default_sleep_hours = default_sleep_hours
+        self.sleep_window_start_hour = sleep_window_start_hour
+        self.sleep_window_end_hour = sleep_window_end_hour
+        self.auto_push_window_start_hour = auto_push_window_start_hour
+        self.auto_push_window_end_hour = auto_push_window_end_hour
+        self.inactivity_offset_minutes = inactivity_offset_minutes
+        self.auto_detect_inactivity = auto_detect_inactivity
+    }
+}
+
+public struct ConfigUpdateRequestPayload: Codable {
+    public let default_sleep_hours: Double?
+    public let sleep_window_start_hour: Int?
+    public let sleep_window_end_hour: Int?
+    public let auto_push_window_start_hour: Int?
+    public let auto_push_window_end_hour: Int?
+    public let inactivity_offset_minutes: Double?
+    public let auto_detect_inactivity: Bool?
+
+    public init(
+        default_sleep_hours: Double? = nil,
+        sleep_window_start_hour: Int? = nil,
+        sleep_window_end_hour: Int? = nil,
+        auto_push_window_start_hour: Int? = nil,
+        auto_push_window_end_hour: Int? = nil,
+        inactivity_offset_minutes: Double? = nil,
+        auto_detect_inactivity: Bool? = nil
+    ) {
+        self.default_sleep_hours = default_sleep_hours
+        self.sleep_window_start_hour = sleep_window_start_hour
+        self.sleep_window_end_hour = sleep_window_end_hour
+        self.auto_push_window_start_hour = auto_push_window_start_hour
+        self.auto_push_window_end_hour = auto_push_window_end_hour
+        self.inactivity_offset_minutes = inactivity_offset_minutes
+        self.auto_detect_inactivity = auto_detect_inactivity
+    }
+}

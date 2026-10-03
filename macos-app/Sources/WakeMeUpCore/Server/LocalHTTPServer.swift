@@ -128,6 +128,12 @@ public final class LocalHTTPServer {
             let json = "{\"status\": \"success\", \"message\": \"Preferences opened\"}".data(using: .utf8)!
             return (200, "application/json", json)
 
+        case ("GET", "/api/config"):
+            return handleGetConfig()
+
+        case ("POST", "/api/config"):
+            return handlePostConfig(body: body)
+
         case ("GET", "/"):
             return handleGetIndex()
 
@@ -220,6 +226,46 @@ public final class LocalHTTPServer {
         }
 
         let json = "{\"status\": \"success\", \"message\": \"Away mode toggled\"}".data(using: .utf8)!
+        return (200, "application/json", json)
+    }
+
+    private func handleGetConfig() -> (Int, String, Data) {
+        let payload: ConfigResponsePayload = DispatchQueue.main.sync {
+            let app = AppState.shared
+            return ConfigResponsePayload(
+                default_sleep_hours: app.defaultSleepHours,
+                sleep_window_start_hour: app.sleepWindowStartHour,
+                sleep_window_end_hour: app.sleepWindowEndHour,
+                auto_push_window_start_hour: app.autoPushWindowStartHour,
+                auto_push_window_end_hour: app.autoPushWindowEndHour,
+                inactivity_offset_minutes: app.inactivityOffsetMinutes,
+                auto_detect_inactivity: app.autoDetectInactivityOffset
+            )
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        let data = (try? encoder.encode(payload)) ?? Data()
+        return (200, "application/json", data)
+    }
+
+    private func handlePostConfig(body: Data) -> (Int, String, Data) {
+        guard let req = try? JSONDecoder().decode(ConfigUpdateRequestPayload.self, from: body) else {
+            let errorJson = "{\"error\": \"Invalid JSON\"}".data(using: .utf8)!
+            return (400, "application/json", errorJson)
+        }
+
+        DispatchQueue.main.async {
+            let app = AppState.shared
+            if let hours = req.default_sleep_hours { app.defaultSleepHours = hours }
+            if let swStart = req.sleep_window_start_hour { app.sleepWindowStartHour = swStart }
+            if let swEnd = req.sleep_window_end_hour { app.sleepWindowEndHour = swEnd }
+            if let apStart = req.auto_push_window_start_hour { app.autoPushWindowStartHour = apStart }
+            if let apEnd = req.auto_push_window_end_hour { app.autoPushWindowEndHour = apEnd }
+            if let offset = req.inactivity_offset_minutes { app.inactivityOffsetMinutes = offset }
+            if let autoDetect = req.auto_detect_inactivity { app.autoDetectInactivityOffset = autoDetect }
+        }
+
+        let json = "{\"status\": \"success\", \"message\": \"Configuration updated\"}".data(using: .utf8)!
         return (200, "application/json", json)
     }
 

@@ -19,7 +19,7 @@ public final class PreferencesWindowController: NSObject, NSWindowDelegate {
         let hostingController = NSHostingController(rootView: preferencesView)
 
         let newWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 540, height: 480),
+            contentRect: NSRect(x: 0, y: 0, width: 550, height: 540),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false

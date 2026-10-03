@@ -53,6 +53,32 @@ class SleepDetectionService : Service() {
             val v = prefs.getLong("target_wake_ms", -1L)
             return if (v > 0) v else null
         }
+
+        fun getSleepConfig(context: Context): MacSyncClient.AppConfig {
+            val prefs = context.getSharedPreferences("WakeMeUpPrefs", Context.MODE_PRIVATE)
+            return MacSyncClient.AppConfig(
+                defaultSleepHours = prefs.getFloat("default_sleep_hours", 7.5f).toDouble(),
+                sleepWindowStartHour = prefs.getInt("sleep_window_start_hour", 21),
+                sleepWindowEndHour = prefs.getInt("sleep_window_end_hour", 6),
+                autoPushWindowStartHour = prefs.getInt("auto_push_window_start_hour", 21),
+                autoPushWindowEndHour = prefs.getInt("auto_push_window_end_hour", 23),
+                inactivityOffsetMinutes = prefs.getFloat("inactivity_offset_minutes", 30.0f).toDouble(),
+                autoDetectInactivity = prefs.getBoolean("auto_detect_inactivity", true)
+            )
+        }
+
+        fun saveSleepConfig(context: Context, config: MacSyncClient.AppConfig) {
+            val prefs = context.getSharedPreferences("WakeMeUpPrefs", Context.MODE_PRIVATE)
+            prefs.edit()
+                .putFloat("default_sleep_hours", config.defaultSleepHours.toFloat())
+                .putInt("sleep_window_start_hour", config.sleepWindowStartHour)
+                .putInt("sleep_window_end_hour", config.sleepWindowEndHour)
+                .putInt("auto_push_window_start_hour", config.autoPushWindowStartHour)
+                .putInt("auto_push_window_end_hour", config.autoPushWindowEndHour)
+                .putFloat("inactivity_offset_minutes", config.inactivityOffsetMinutes.toFloat())
+                .putBoolean("auto_detect_inactivity", config.autoDetectInactivity)
+                .apply()
+        }
     }
 
     private var currentBedtimeMs: Long?
@@ -81,7 +107,8 @@ class SleepDetectionService : Service() {
         super.onCreate()
         syncClient = MacSyncClient(this)
         glanceFilter = MidnightGlanceFilter(this) { newBedtimeMs ->
-            startSleepSession(newBedtimeMs, 450.0, "midnight_reset")
+            val config = getSleepConfig(this)
+            startSleepSession(newBedtimeMs, config.defaultSleepHours * 60.0, "midnight_reset")
         }
 
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -103,7 +130,8 @@ class SleepDetectionService : Service() {
             }
             ACTION_MANUAL_SLEEP -> {
                 val now = System.currentTimeMillis()
-                startSleepSession(now, 450.0, "manual_app_trigger")
+                val config = getSleepConfig(this)
+                startSleepSession(now, config.defaultSleepHours * 60.0, "manual_app_trigger")
             }
             ACTION_STOP_SLEEP -> {
                 stopSleepSession()
@@ -114,7 +142,8 @@ class SleepDetectionService : Service() {
             MidnightGlanceFilter.ACTION_RESET_BEDTIME -> {
                 glanceFilter.dismissPrompt()
                 val now = System.currentTimeMillis()
-                startSleepSession(now, 450.0, "midnight_prompt_reset")
+                val config = getSleepConfig(this)
+                startSleepSession(now, config.defaultSleepHours * 60.0, "midnight_prompt_reset")
             }
         }
 
@@ -154,23 +183,57 @@ class SleepDetectionService : Service() {
         registerReceiver(screenReceiver, filter)
     }
 
+    private fun isHourInWindow(hour: Int, startHour: Int, endHour: Int): Boolean {
+        return if (startHour <= endHour) {
+            hour in startHour until endHour
+        } else {
+            hour >= startHour || hour < endHour
+        }
+    }
+
     private fun handleScreenOff() {
-        // If an active sleep session exists: check if this was a <5 min glance
+        val config = getSleepConfig(this)
+        val calendar = java.util.Calendar.getInstance()
+        val currentHour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+
+        // 1. If an active sleep session exists: check if this was an ignorable glance or push target
         if (currentBedtimeMs != null) {
             val isBriefGlance = glanceFilter.onScreenLocked()
             if (isBriefGlance) {
                 // Ignore: keeps original sleep schedule intact
                 return
             }
+            // User had prolonged activity or was in auto-push window:
+            // Recalculate and push sleep target forward
+            val now = System.currentTimeMillis()
+            val reason = if (isHourInWindow(currentHour, config.autoPushWindowStartHour, config.autoPushWindowEndHour)) {
+                "auto_push_window_update"
+            } else {
+                "night_active_pushed"
+            }
+            startSleepSession(
+                bedtimeMs = now,
+                durationMinutes = config.defaultSleepHours * 60.0,
+                reason = reason
+            )
+            return
         }
 
-        // New sleep detection or verified session
+        // 2. Check Eligible Sleep Window (default: 9 PM – 6 AM)
+        val isEligible = isHourInWindow(currentHour, config.sleepWindowStartHour, config.sleepWindowEndHour)
+        if (!isEligible) {
+            // Outside eligible sleep window (e.g. 3:00 PM on a workday):
+            // Phone inactivity is ignored! Do NOT trigger sleep.
+            return
+        }
+
+        // 3. Inactivity compensation & Sleep trigger within window
         val screenOffTime = System.currentTimeMillis()
         val calc = InactivityCompensator.calculateBedtime(this, screenOffTime)
 
         startSleepSession(
             bedtimeMs = calc.bedtimeEpochMs,
-            durationMinutes = 450.0,
+            durationMinutes = config.defaultSleepHours * 60.0,
             reason = calc.reason
         )
     }
