@@ -23,7 +23,7 @@ class MacSyncClient(private val context: Context) {
         .build()
 
     var macHost: String
-        get() = prefs.getString("mac_host", "192.168.1.100") ?: "192.168.1.100"
+        get() = prefs.getString("mac_host", "192.168.1.3") ?: "192.168.1.3"
         set(value) = prefs.edit().putString("mac_host", value).apply()
 
     var macPort: Int

@@ -32,8 +32,10 @@ class MidnightGlanceFilter(
         createNotificationChannel()
     }
 
-    fun onScreenUnlocked() {
-        unlockTimestamp = System.currentTimeMillis()
+    fun onScreenTurnedOn() {
+        if (unlockTimestamp == null) {
+            unlockTimestamp = System.currentTimeMillis()
+        }
 
         // Schedule prompt if user stays awake for > 5 minutes
         promptRunnable?.let { handler.removeCallbacks(it) }
@@ -41,6 +43,10 @@ class MidnightGlanceFilter(
             showAwakePromptNotification()
         }
         handler.postDelayed(promptRunnable!!, MIDNIGHT_THRESHOLD_MS)
+    }
+
+    fun onScreenUnlocked() {
+        onScreenTurnedOn()
     }
 
     /**
@@ -51,7 +57,7 @@ class MidnightGlanceFilter(
         promptRunnable?.let { handler.removeCallbacks(it) }
         promptRunnable = null
 
-        val unlockTime = unlockTimestamp ?: return false
+        val unlockTime = unlockTimestamp ?: return true // Safe fallback: preserve active session
         val durationMs = System.currentTimeMillis() - unlockTime
         unlockTimestamp = null
 

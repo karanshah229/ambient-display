@@ -41,11 +41,35 @@ class SleepDetectionService : Service() {
 
         var isServiceRunning = false
             private set
-        var currentBedtimeMs: Long? = null
-            private set
-        var currentTargetWakeMs: Long? = null
-            private set
+
+        fun getActiveBedtimeMs(context: Context): Long? {
+            val prefs = context.getSharedPreferences("WakeMeUpState", Context.MODE_PRIVATE)
+            val v = prefs.getLong("bedtime_ms", -1L)
+            return if (v > 0) v else null
+        }
+
+        fun getActiveTargetWakeMs(context: Context): Long? {
+            val prefs = context.getSharedPreferences("WakeMeUpState", Context.MODE_PRIVATE)
+            val v = prefs.getLong("target_wake_ms", -1L)
+            return if (v > 0) v else null
+        }
     }
+
+    private var currentBedtimeMs: Long?
+        get() = getActiveBedtimeMs(this)
+        set(value) {
+            val prefs = getSharedPreferences("WakeMeUpState", Context.MODE_PRIVATE)
+            if (value != null) prefs.edit().putLong("bedtime_ms", value).apply()
+            else prefs.edit().remove("bedtime_ms").apply()
+        }
+
+    private var currentTargetWakeMs: Long?
+        get() = getActiveTargetWakeMs(this)
+        set(value) {
+            val prefs = getSharedPreferences("WakeMeUpState", Context.MODE_PRIVATE)
+            if (value != null) prefs.edit().putLong("target_wake_ms", value).apply()
+            else prefs.edit().remove("target_wake_ms").apply()
+        }
 
     private val serviceScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private lateinit var syncClient: MacSyncClient
@@ -103,6 +127,11 @@ class SleepDetectionService : Service() {
         screenReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 when (intent.action) {
+                    Intent.ACTION_SCREEN_ON -> {
+                        if (currentBedtimeMs != null) {
+                            glanceFilter.onScreenTurnedOn()
+                        }
+                    }
                     Intent.ACTION_USER_PRESENT -> {
                         // User unlocked phone
                         if (currentBedtimeMs != null) {

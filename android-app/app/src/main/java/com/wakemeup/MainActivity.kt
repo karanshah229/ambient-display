@@ -18,6 +18,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.content.pm.PackageManager
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var syncClient: MacSyncClient
@@ -26,6 +31,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvDisplayTimeout: TextView
     private lateinit var etMacHost: EditText
 
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                startSleepService()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -33,8 +45,19 @@ class MainActivity : AppCompatActivity() {
         syncClient = MacSyncClient(this)
 
         initViews()
-        startSleepService()
+        checkNotificationPermission()
         refreshStatus()
+    }
+
+    private fun checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                return
+            }
+        }
+        startSleepService()
     }
 
     override fun onResume() {
@@ -68,7 +91,7 @@ class MainActivity : AppCompatActivity() {
             }
             startService(intent)
             Toast.makeText(this, "Manual 7.5h sleep started!", Toast.LENGTH_SHORT).show()
-            refreshStatus()
+            window.decorView.postDelayed({ refreshStatus() }, 500)
         }
 
         findViewById<Button>(R.id.btnTestMode).setOnClickListener {
@@ -125,7 +148,7 @@ class MainActivity : AppCompatActivity() {
         val timeoutMinutes = timeoutMs / 60_000L
         tvDisplayTimeout.text = "Live Display Sleep Timeout: $timeoutMinutes minutes"
 
-        val targetMs = SleepDetectionService.currentTargetWakeMs
+        val targetMs = SleepDetectionService.getActiveTargetWakeMs(this)
         if (targetMs != null) {
             val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
             tvSleepStatus.text = "Status: Sleeping"
