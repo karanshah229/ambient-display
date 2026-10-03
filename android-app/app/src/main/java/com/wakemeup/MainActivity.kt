@@ -85,6 +85,10 @@ class MainActivity : AppCompatActivity() {
             testMacConnection()
         }
 
+        findViewById<Button>(R.id.btnAutoDiscover).setOnClickListener {
+            discoverMac()
+        }
+
         findViewById<Button>(R.id.btnManualSleep).setOnClickListener {
             val intent = Intent(this, SleepDetectionService::class.java).apply {
                 action = SleepDetectionService.ACTION_MANUAL_SLEEP
@@ -167,6 +171,20 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this@MainActivity, "Connected to Mac successfully!", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this@MainActivity, "Failed: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun discoverMac() {
+        lifecycleScope.launch {
+            Toast.makeText(this@MainActivity, "Searching for Mac via Bonjour & Subnet scan...", Toast.LENGTH_SHORT).show()
+            val result = syncClient.autoDiscoverMac(timeoutMs = 4000)
+            if (result.isSuccess) {
+                val ip = result.getOrNull()
+                etMacHost.setText(ip)
+                Toast.makeText(this@MainActivity, "Discovered Mac at $ip!", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this@MainActivity, "Discovery failed: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
             }
         }
     }

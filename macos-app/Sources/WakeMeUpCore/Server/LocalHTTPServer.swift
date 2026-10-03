@@ -20,6 +20,9 @@ public final class LocalHTTPServer {
             let parameters = NWParameters.tcp
             parameters.allowLocalEndpointReuse = true
             let listener = try NWListener(using: parameters, on: NWEndpoint.Port(rawValue: port)!)
+            
+            // Advertise on local network via Bonjour / DNS-SD
+            listener.service = NWListener.Service(name: "WakeMeUpMac", type: "_wakemeup._tcp")
             self.listener = listener
 
             listener.stateUpdateHandler = { state in

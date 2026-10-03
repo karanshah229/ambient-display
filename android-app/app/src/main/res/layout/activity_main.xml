@@ -143,6 +143,15 @@
                         android:textColor="#000000" />
                 </LinearLayout>
 
+                <Button
+                    android:id="@+id/btnAutoDiscover"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:backgroundTint="#0A84FF"
+                    android:text="🔍 Auto-Discover Mac (mDNS / Scan)"
+                    android:textColor="#FFFFFF" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
