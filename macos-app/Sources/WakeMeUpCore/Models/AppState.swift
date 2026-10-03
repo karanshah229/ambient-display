@@ -1,5 +1,7 @@
 import Foundation
 import Combine
+import CoreGraphics
+import AppKit
 
 public enum SessionState: String, Codable {
     case idle
@@ -19,9 +21,43 @@ public final class AppState: ObservableObject {
             handleAwayModeChanged()
         }
     }
-    @Published public var defaultSleepMinutes: Double = 450.0 {
+    @Published public var defaultSleepHours: Double = 7.5 {
         didSet {
-            userDefaults?.set(defaultSleepMinutes, forKey: "WakeMeUp_defaultSleepMinutes")
+            userDefaults?.set(defaultSleepHours, forKey: "WakeMeUp_defaultSleepHours")
+        }
+    }
+    public var defaultSleepMinutes: Double {
+        defaultSleepHours * 60.0
+    }
+    @Published public var inactivityOffsetMinutes: Double = 30.0 {
+        didSet {
+            userDefaults?.set(inactivityOffsetMinutes, forKey: "WakeMeUp_inactivityOffsetMinutes")
+        }
+    }
+    @Published public var autoDetectInactivityOffset: Bool = true {
+        didSet {
+            userDefaults?.set(autoDetectInactivityOffset, forKey: "WakeMeUp_autoDetectInactivityOffset")
+        }
+    }
+    @Published public var ignoredDisplayIDs: Set<CGDirectDisplayID> = [] {
+        didSet {
+            let array = Array(ignoredDisplayIDs).map { Int($0) }
+            userDefaults?.set(array, forKey: "WakeMeUp_ignoredDisplayIDs")
+        }
+    }
+    @Published public var ambientNightColorHex: String = "#D95926" {
+        didSet {
+            userDefaults?.set(ambientNightColorHex, forKey: "WakeMeUp_ambientNightColorHex")
+        }
+    }
+    @Published public var ambientDawnColorHex: String = "#FFBF66" {
+        didSet {
+            userDefaults?.set(ambientDawnColorHex, forKey: "WakeMeUp_ambientDawnColorHex")
+        }
+    }
+    @Published public var ambientWakeColorHex: String = "#40E68C" {
+        didSet {
+            userDefaults?.set(ambientWakeColorHex, forKey: "WakeMeUp_ambientWakeColorHex")
         }
     }
     @Published public var showCountdownInMenuBar: Bool = true {
@@ -38,9 +74,43 @@ public final class AppState: ObservableObject {
     public init(userDefaults: UserDefaults? = UserDefaults.standard) {
         self.userDefaults = userDefaults
         self.isAwayMode = userDefaults?.bool(forKey: "WakeMeUp_isAwayMode") ?? false
-        let savedMinutes = userDefaults?.double(forKey: "WakeMeUp_defaultSleepMinutes") ?? 0
-        self.defaultSleepMinutes = savedMinutes > 0 ? savedMinutes : 450.0
+
+        let savedHours = userDefaults?.double(forKey: "WakeMeUp_defaultSleepHours") ?? 0
+        if savedHours > 0 {
+            self.defaultSleepHours = savedHours
+        } else {
+            let legacyMins = userDefaults?.double(forKey: "WakeMeUp_defaultSleepMinutes") ?? 0
+            self.defaultSleepHours = legacyMins > 0 ? (legacyMins / 60.0) : 7.5
+        }
+
+        let savedOffset = userDefaults?.double(forKey: "WakeMeUp_inactivityOffsetMinutes") ?? 0
+        self.inactivityOffsetMinutes = savedOffset > 0 ? savedOffset : 30.0
+        self.autoDetectInactivityOffset = userDefaults?.object(forKey: "WakeMeUp_autoDetectInactivityOffset") as? Bool ?? true
+
+        if let savedIgnored = userDefaults?.array(forKey: "WakeMeUp_ignoredDisplayIDs") as? [Int] {
+            self.ignoredDisplayIDs = Set(savedIgnored.map { CGDirectDisplayID($0) })
+        } else {
+            self.ignoredDisplayIDs = []
+        }
+
+        self.ambientNightColorHex = userDefaults?.string(forKey: "WakeMeUp_ambientNightColorHex") ?? "#D95926"
+        self.ambientDawnColorHex = userDefaults?.string(forKey: "WakeMeUp_ambientDawnColorHex") ?? "#FFBF66"
+        self.ambientWakeColorHex = userDefaults?.string(forKey: "WakeMeUp_ambientWakeColorHex") ?? "#40E68C"
         self.showCountdownInMenuBar = userDefaults?.object(forKey: "WakeMeUp_showCountdownInMenuBar") as? Bool ?? true
+    }
+
+    public func toggleDisplayIgnored(id: CGDirectDisplayID) {
+        if ignoredDisplayIDs.contains(id) {
+            ignoredDisplayIDs.remove(id)
+        } else {
+            ignoredDisplayIDs.insert(id)
+        }
+    }
+
+    public func resetAmbientDefaults() {
+        ambientNightColorHex = "#D95926"
+        ambientDawnColorHex = "#FFBF66"
+        ambientWakeColorHex = "#40E68C"
     }
 
     private func saveAwayMode(_ value: Bool) {

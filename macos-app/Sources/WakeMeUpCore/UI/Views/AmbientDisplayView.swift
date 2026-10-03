@@ -14,7 +14,8 @@ public struct AmbientDisplayView: View {
         let theme = SolarCalculator.currentTheme(
             session: appState.currentSession,
             state: appState.state,
-            date: appState.lastUpdated
+            date: appState.lastUpdated,
+            appState: appState
         )
 
         ZStack {
@@ -59,7 +60,9 @@ public struct AmbientDisplayView: View {
                 // Bottom informative footer
                 HStack {
                     if let session = appState.currentSession {
-                        Text("Fell asleep: \(session.formattedBedtime)  •  Target: \(session.formattedTargetTime) (7.5h)")
+                        let durHours = session.durationMinutes / 60.0
+                        let durString = String(format: durHours.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", durHours)
+                        Text("Fell asleep: \(session.formattedBedtime)  •  Target: \(session.formattedTargetTime) (\(durString)h)")
                             .font(.system(size: 18, weight: .regular, design: .rounded))
                             .foregroundColor(theme.textSecondary.opacity(0.8))
                     }
@@ -100,7 +103,9 @@ public struct AmbientDisplayView: View {
                 .foregroundColor(theme.textPrimary)
                 .shadow(color: theme.accent.opacity(0.5), radius: 20)
 
-            Text("7.5 hours of sleep completed. Karan is ready to wake up!")
+            let durationHours = (appState.currentSession?.durationMinutes ?? (appState.defaultSleepHours * 60.0)) / 60.0
+            let durationString = String(format: durationHours.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", durationHours)
+            Text("\(durationString) hours of sleep completed. Karan is ready to wake up!")
                 .font(.system(size: 32, weight: .medium, design: .rounded))
                 .foregroundColor(theme.textSecondary)
                 .multilineTextAlignment(.center)

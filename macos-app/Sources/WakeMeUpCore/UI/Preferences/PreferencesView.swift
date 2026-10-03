@@ -6,6 +6,13 @@ public struct PreferencesView: View {
     @ObservedObject var appState = AppState.shared
     @ObservedObject var launchAtLogin = LaunchAtLoginManager.shared
 
+    @State private var sleepHoursText: String = ""
+    @State private var inactivityOffsetText: String = ""
+    @State private var nightColor: Color = .orange
+    @State private var dawnColor: Color = .yellow
+    @State private var wakeColor: Color = .green
+    @State private var wifiIPAddress: String = "Detecting..."
+
     public init() {}
 
     public var body: some View {
@@ -25,13 +32,33 @@ public struct PreferencesView: View {
                     Label("Displays", systemImage: "display.2")
                 }
 
+            ambientTab
+                .tabItem {
+                    Label("Ambient", systemImage: "paintpalette")
+                }
+
             networkTab
                 .tabItem {
                     Label("Network", systemImage: "network")
                 }
         }
-        .frame(width: 500, height: 420)
+        .frame(width: 530, height: 460)
         .padding(20)
+        .onAppear {
+            loadInitialValues()
+        }
+    }
+
+    private func loadInitialValues() {
+        let hours = appState.defaultSleepHours
+        sleepHoursText = String(format: hours.truncatingRemainder(dividingBy: 1) == 0 ? "%.1f" : "%.2g", hours)
+        inactivityOffsetText = String(format: "%.0f", appState.inactivityOffsetMinutes)
+
+        nightColor = Color(hex: appState.ambientNightColorHex, defaultFallback: AmbientTheme.defaultNightColor)
+        dawnColor = Color(hex: appState.ambientDawnColorHex, defaultFallback: AmbientTheme.defaultDawnColor)
+        wakeColor = Color(hex: appState.ambientWakeColorHex, defaultFallback: AmbientTheme.defaultWakeColor)
+
+        wifiIPAddress = fetchLocalWiFiIP() ?? "Unavailable (Not connected to Wi-Fi)"
     }
 
     // MARK: - General Tab
@@ -67,27 +94,43 @@ public struct PreferencesView: View {
     // MARK: - Sleep Tab
     private var sleepTab: some View {
         Form {
-            Section(header: Text("Default Target Duration").font(.headline)) {
-                Picker("Sleep Duration", selection: $appState.defaultSleepMinutes) {
-                    Text("6.0 Hours (4 Sleep Cycles)").tag(360.0)
-                    Text("7.5 Hours (5 Cycles — Recommended)").tag(450.0)
-                    Text("9.0 Hours (6 Sleep Cycles)").tag(540.0)
+            Section(header: Text("Target Sleep Duration").font(.headline)) {
+                HStack(spacing: 10) {
+                    Text("Duration:")
+                    TextField("", text: $sleepHoursText)
+                        .frame(width: 60)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { commitSleepHours() }
+                    Text("hours")
+                    Spacer()
+                    Button("Reset to 7.5h") {
+                        appState.defaultSleepHours = 7.5
+                        sleepHoursText = "7.5"
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.accentColor)
                 }
-                .pickerStyle(.radioGroup)
 
-                Text("Human sleep consists of ~90-minute ultradian cycles. 7.5 hours corresponds to 5 complete cycles for optimal alertness.")
+                Text("Default is 7.5 hours (5 × 90-minute ultradian sleep cycles). Custom duration can be any value between 1 and 16 hours.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
-            Section(header: Text("OnePlus Inactivity Buffer").font(.headline)) {
-                HStack {
-                    Image(systemName: "timer")
-                        .foregroundColor(.orange)
-                    Text("Automatic 30-Minute Offset")
-                        .fontWeight(.medium)
+            Section(header: Text("Inactivity Compensation").font(.headline)) {
+                Toggle("Auto-detect offset from phone system settings", isOn: $appState.autoDetectInactivityOffset)
+
+                if !appState.autoDetectInactivityOffset {
+                    HStack {
+                        Text("Custom Inactivity Offset:")
+                        TextField("Minutes", text: $inactivityOffsetText)
+                            .frame(width: 80)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { commitOffsetMinutes() }
+                        Text("minutes")
+                    }
                 }
-                Text("When the companion app detects display sleep, it automatically subtracts the phone display timeout (30 min) to compensate for falling asleep mid-movie.")
+
+                Text("Compensates for falling asleep mid-movie or while reading before the device display times out. Supported across any Android phone.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -95,19 +138,39 @@ public struct PreferencesView: View {
         .formStyle(.grouped)
     }
 
+    private func commitSleepHours() {
+        if let val = Double(sleepHoursText.trimmingCharacters(in: .whitespaces)), val >= 1.0, val <= 16.0 {
+            appState.defaultSleepHours = val
+        } else {
+            sleepHoursText = String(format: "%.1f", appState.defaultSleepHours)
+        }
+    }
+
+    private func commitOffsetMinutes() {
+        if let val = Double(inactivityOffsetText.trimmingCharacters(in: .whitespaces)), val >= 0, val <= 120 {
+            appState.inactivityOffsetMinutes = val
+        } else {
+            inactivityOffsetText = String(format: "%.0f", appState.inactivityOffsetMinutes)
+        }
+    }
+
     // MARK: - Displays Tab
     private var displaysTab: some View {
         Form {
             Section(header: Text("Detected Displays (\(NSScreen.screens.count))").font(.headline)) {
                 ForEach(Array(NSScreen.screens.enumerated()), id: \.offset) { index, screen in
-                    HStack {
-                        Image(systemName: "display")
+                    let screenId = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
+                    let isIgnored = appState.ignoredDisplayIDs.contains(screenId)
+
+                    HStack(spacing: 12) {
+                        Image(systemName: isIgnored ? "display.trianglebadge.exclamationmark" : "display")
                             .font(.system(size: 20))
-                            .foregroundColor(.blue)
+                            .foregroundColor(isIgnored ? .secondary : .blue)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(screen.localizedName)
                                 .fontWeight(.semibold)
+                                .foregroundColor(isIgnored ? .secondary : .primary)
                             Text("\(Int(screen.frame.width)) × \(Int(screen.frame.height)) pt")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -115,33 +178,69 @@ public struct PreferencesView: View {
 
                         Spacer()
 
-                        Text(index == 0 ? "Main Monitor" : "Mirrored Display")
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(Color.secondary.opacity(0.15))
-                            .cornerRadius(6)
+                        Button(action: {
+                            appState.toggleDisplayIgnored(id: screenId)
+                        }) {
+                            Text(isIgnored ? "Enable" : "Ignore Display")
+                                .font(.caption)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(isIgnored ? .accentColor : .red)
                     }
                     .padding(.vertical, 4)
                 }
+
+                Text("Ignored displays will remain completely unaffected when ambient night or wake-up screens activate.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    // MARK: - Ambient Tab
+    private var ambientTab: some View {
+        Form {
+            Section(header: Text("Ambient Theme Presentation").font(.headline)) {
+                ColorPicker("Deep Night Glow", selection: $nightColor)
+                    .onChange(of: nightColor) { newColor in
+                        if let hex = newColor.toHex() {
+                            appState.ambientNightColorHex = hex
+                        }
+                    }
+
+                ColorPicker("Dawn Warm Glow", selection: $dawnColor)
+                    .onChange(of: dawnColor) { newColor in
+                        if let hex = newColor.toHex() {
+                            appState.ambientDawnColorHex = hex
+                        }
+                    }
+
+                ColorPicker("Morning Wake-Up Glow", selection: $wakeColor)
+                    .onChange(of: wakeColor) { newColor in
+                        if let hex = newColor.toHex() {
+                            appState.ambientWakeColorHex = hex
+                        }
+                    }
+
+                HStack {
+                    Spacer()
+                    Button("Reset to Defaults") {
+                        appState.resetAmbientDefaults()
+                        nightColor = Color(hex: appState.ambientNightColorHex, defaultFallback: AmbientTheme.defaultNightColor)
+                        dawnColor = Color(hex: appState.ambientDawnColorHex, defaultFallback: AmbientTheme.defaultDawnColor)
+                        wakeColor = Color(hex: appState.ambientWakeColorHex, defaultFallback: AmbientTheme.defaultWakeColor)
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
 
-            Section(header: Text("Ambient Presentation").font(.headline)) {
-                HStack {
-                    Circle().fill(Color.black).frame(width: 14, height: 14).overlay(Circle().stroke(Color.gray, lineWidth: 1))
-                    Text("Zero Backlight Bleed (Pitch Black #000000)")
-                        .font(.caption)
-                }
-                HStack {
-                    Circle().fill(Color.orange).frame(width: 14, height: 14)
-                    Text("Deep Night Amber (Ultra-low luminescence overnight)")
-                        .font(.caption)
-                }
-                HStack {
-                    Circle().fill(Color.green).frame(width: 14, height: 14)
-                    Text("Emerald Wake-Up Banner (High contrast at morning)")
-                        .font(.caption)
-                }
+            Section(header: Text("Preview Notes").font(.headline)) {
+                Text("All themes render over pitch black (#000000) for zero backlight bleed in dark environments.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -150,26 +249,51 @@ public struct PreferencesView: View {
     // MARK: - Network Tab
     private var networkTab: some View {
         Form {
-            Section(header: Text("Local Server Configuration").font(.headline)) {
-                LabeledContent("HTTP Port", value: "8321")
-                LabeledContent("Bonjour mDNS Service", value: "_wakemeup._tcp (WakeMeUpMac)")
-
-                Text("Listens on all local interfaces (0.0.0.0:8321) for Android sleep events.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-
             Section(header: Text("Companion App Connection").font(.headline)) {
-                Text("Your Android phone automatically discovers this Mac via Bonjour DNS-SD. If using manual setup, use your Mac's Wi-Fi IP address.")
+                LabeledContent("Wi-Fi IP Address", value: wifiIPAddress)
+                LabeledContent("HTTP Port", value: "8321")
+                LabeledContent("Bonjour mDNS", value: "_wakemeup._tcp (WakeMeUpMac)")
+
+                Text("Your Android companion app connects to this Mac over your local Wi-Fi network. If DHCP assigns a new IP, Bonjour automatically updates.")
                     .font(.caption)
                     .foregroundColor(.secondary)
-
-                Button("Trigger 10s Display Preview") {
-                    AppState.shared.startTestMode(durationSeconds: 10)
-                }
-                .padding(.top, 4)
             }
         }
         .formStyle(.grouped)
+    }
+
+    // MARK: - Helper Methods
+    private func fetchLocalWiFiIP() -> String? {
+        var address: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr else { return nil }
+        defer { freeifaddrs(ifaddr) }
+
+        for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
+            let interface = ptr.pointee
+            let addrFamily = interface.ifa_addr.pointee.sa_family
+            if addrFamily == UInt8(AF_INET) {
+                let name = String(cString: interface.ifa_name)
+                if name == "en0" || name == "en1" {
+                    var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                    getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                                &hostname, socklen_t(hostname.count),
+                                nil, socklen_t(0), NI_NUMERICHOST)
+                    address = String(cString: hostname)
+                    break
+                }
+            }
+        }
+        return address
+    }
+}
+
+private extension Color {
+    func toHex() -> String? {
+        guard let components = NSColor(self).usingColorSpace(.sRGB) else { return nil }
+        let r = Float(components.redComponent)
+        let g = Float(components.greenComponent)
+        let b = Float(components.blueComponent)
+        return String(format: "#%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255))
     }
 }

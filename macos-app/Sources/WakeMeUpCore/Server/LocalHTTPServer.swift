@@ -171,7 +171,9 @@ public final class LocalHTTPServer {
             bedtime = Date(timeIntervalSince1970: epochMs / 1000.0)
         }
 
-        let durationMinutes = req?.duration_minutes ?? 450.0 // 7.5 hours
+        let durationMinutes: Double = DispatchQueue.main.sync {
+            req?.duration_minutes ?? AppState.shared.defaultSleepMinutes
+        }
         let reason = req?.reason ?? "remote_trigger"
 
         DispatchQueue.main.async {

@@ -72,15 +72,15 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         let statusTitle: String
         switch appState.state {
         case .wakeUpReady:
-            statusTitle = "Status: WAKE ME UP (Alarm Ready)"
+            statusTitle = "Status: Wake Up Ready!"
         case .sleeping:
             if let session = appState.currentSession {
-                statusTitle = "Status: Sleeping (Wake at \(session.formattedTargetTime))"
+                statusTitle = "Status: Sleeping (Wake: \(session.formattedTargetTime))"
             } else {
                 statusTitle = "Status: Sleeping"
             }
         case .idle:
-            statusTitle = appState.isAwayMode ? "Status: Away Mode (Displays Disabled)" : "Status: Idle (Listening on port 8321)"
+            statusTitle = appState.isAwayMode ? "Status: Away Mode (Disabled)" : "Status: Idle (Port 8321)"
         }
 
         let statusItem = NSMenuItem(title: statusTitle, action: nil, keyEquivalent: "")
@@ -91,29 +91,25 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
 
         // 2. Sleep Actions
         if appState.state == .idle {
-            let startItem = NSMenuItem(title: "Start Sleep Now (7.5h Target)", action: #selector(startSleepAction), keyEquivalent: "s")
+            let durHours = appState.defaultSleepHours
+            let durStr = String(format: durHours.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", durHours)
+            let startItem = NSMenuItem(title: "Start Sleep (\(durStr)h Target)", action: #selector(startSleepAction), keyEquivalent: "s")
             startItem.target = self
             menu.addItem(startItem)
         } else {
-            let stopItem = NSMenuItem(title: "Stop / I'm Awake", action: #selector(stopSleepAction), keyEquivalent: "w")
+            let stopItem = NSMenuItem(title: "Stop Sleep", action: #selector(stopSleepAction), keyEquivalent: "w")
             stopItem.target = self
             menu.addItem(stopItem)
         }
 
         // 3. Test Preview
-        let testItem = NSMenuItem(title: "Test Monitor Display (10s Preview)", action: #selector(testAction), keyEquivalent: "t")
+        let testItem = NSMenuItem(title: "Test Ambient (10s)", action: #selector(testAction), keyEquivalent: "t")
         testItem.target = self
         menu.addItem(testItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        // 4. Away Mode Toggle
-        let awayItem = NSMenuItem(title: "Away Mode (Disable Displays)", action: #selector(toggleAwayAction), keyEquivalent: "a")
-        awayItem.target = self
-        awayItem.state = appState.isAwayMode ? .on : .off
-        menu.addItem(awayItem)
-
-        // 5. Start at Login Toggle
+        // 4. Start at Login Toggle
         let loginManager = LaunchAtLoginManager.shared
         loginManager.refresh()
         let loginItem = NSMenuItem(title: "Start at Login", action: #selector(toggleLaunchAtLoginAction), keyEquivalent: "")
@@ -121,23 +117,14 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         loginItem.state = loginManager.isEnabled ? .on : .off
         menu.addItem(loginItem)
 
-        menu.addItem(NSMenuItem.separator())
-
-        // 6. Preferences
+        // 5. Preferences
         let prefsItem = NSMenuItem(title: "Preferences…", action: #selector(openPreferencesAction), keyEquivalent: ",")
         prefsItem.target = self
         menu.addItem(prefsItem)
 
-        // 7. Detected Screens info
-        let screens = NSScreen.screens
-        let screensInfo = "Connected Displays: \(screens.count) (\(screens.map { $0.localizedName }.joined(separator: ", ")))"
-        let screensItem = NSMenuItem(title: screensInfo, action: nil, keyEquivalent: "")
-        screensItem.isEnabled = false
-        menu.addItem(screensItem)
-
         menu.addItem(NSMenuItem.separator())
 
-        // 8. Quit
+        // 6. Quit
         let quitItem = NSMenuItem(title: "Quit Wake Me Up", action: #selector(quitAction), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)

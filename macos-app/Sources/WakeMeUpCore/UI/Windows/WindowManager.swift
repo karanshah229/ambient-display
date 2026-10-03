@@ -61,6 +61,12 @@ public final class WindowManager: ObservableObject {
 
         for (index, screen) in screens.enumerated() {
             let screenName = screen.localizedName
+            let screenId = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
+            if appState.ignoredDisplayIDs.contains(screenId) {
+                print("  - Display \(index + 1): \(screenName) [IGNORED by user preference]")
+                continue
+            }
+
             print("  - Display \(index + 1): \(screenName) frame: \(screen.frame) (\(Int(screen.frame.width))x\(Int(screen.frame.height)))")
 
             let window = createOverlayWindow(for: screen)
