@@ -67,10 +67,9 @@ public final class WindowManager: ObservableObject {
             let hostingController = NSHostingController(
                 rootView: AmbientDisplayView(appState: appState, screenName: screenName)
             )
-            
+            // Disable automatic NSHostingController window resizing to prevent shrinking to intrinsic size
+            hostingController.sizingOptions = []
             window.contentViewController = hostingController
-            // CRITICAL: Ensure frame is explicitly set AFTER contentViewController is assigned,
-            // otherwise AppKit collapses borderless hosting controller windows to 0x0!
             hostingController.view.frame = NSRect(origin: .zero, size: screen.frame.size)
             window.setFrame(screen.frame, display: true)
             window.orderFrontRegardless()
@@ -90,30 +89,39 @@ public final class WindowManager: ObservableObject {
     }
 
     private func createOverlayWindow(for screen: NSScreen) -> NSWindow {
-        let window = KeyCatchingWindow(
-            contentRect: screen.frame,
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false,
-            screen: screen
-        )
-
-        // Float above all application windows, menu bars, and full-screen spaces
-        window.level = .screenSaver
-        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-        window.backgroundColor = .black
-        window.isOpaque = true
-        window.hasShadow = false
-        window.ignoresMouseEvents = false
-
-        return window
+        KeyCatchingWindow(screen: screen)
     }
 }
 
-/// Borderless NSWindow subclass that captures Escape key to dismiss/wake up
+/// Borderless NSWindow subclass that covers the target monitor and captures Escape to dismiss
 private final class KeyCatchingWindow: NSWindow {
+    let targetScreen: NSScreen
+
+    init(screen: NSScreen) {
+        self.targetScreen = screen
+        super.init(
+            contentRect: screen.frame,
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        // Float above all application windows, menu bars, and full-screen spaces
+        self.level = .screenSaver
+        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+        self.backgroundColor = .black
+        self.isOpaque = true
+        self.hasShadow = false
+        self.ignoresMouseEvents = false
+        super.setFrame(screen.frame, display: true)
+    }
+
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
+
+    override func setFrame(_ frameRect: NSRect, display flag: Bool) {
+        // Enforce always filling the physical screen frame regardless of auto-layout passes
+        super.setFrame(targetScreen.frame, display: flag)
+    }
 
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 53 { // ESC key
