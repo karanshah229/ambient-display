@@ -33,8 +33,7 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
     }
 
     private func setupBindings() {
-        appState.$state
-            .combineLatest(appState.$isAwayMode, appState.$currentSession)
+        Publishers.CombineLatest4(appState.$state, appState.$isAwayMode, appState.$currentSession, appState.$showCountdownInMenuBar)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshStatusItemAppearance()
@@ -48,13 +47,13 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         switch appState.state {
         case .wakeUpReady:
             button.image = NSImage(systemSymbolName: "sun.max.fill", accessibilityDescription: "Wake Up Ready")
-            button.title = " Wake Up!"
+            button.title = appState.showCountdownInMenuBar ? " Wake Up!" : ""
         case .sleeping:
             button.image = NSImage(systemSymbolName: "moon.stars.fill", accessibilityDescription: "Sleeping")
-            if let session = appState.currentSession {
+            if appState.showCountdownInMenuBar, let session = appState.currentSession {
                 button.title = " \(session.formattedTargetTime)"
             } else {
-                button.title = " Sleeping"
+                button.title = ""
             }
         case .idle:
             button.image = NSImage(systemSymbolName: "bed.double.fill", accessibilityDescription: "Wake Me Up")
@@ -114,7 +113,22 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         awayItem.state = appState.isAwayMode ? .on : .off
         menu.addItem(awayItem)
 
-        // 5. Detected Screens info
+        // 5. Start at Login Toggle
+        let loginManager = LaunchAtLoginManager.shared
+        loginManager.refresh()
+        let loginItem = NSMenuItem(title: "Start at Login", action: #selector(toggleLaunchAtLoginAction), keyEquivalent: "")
+        loginItem.target = self
+        loginItem.state = loginManager.isEnabled ? .on : .off
+        menu.addItem(loginItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        // 6. Preferences
+        let prefsItem = NSMenuItem(title: "Preferences…", action: #selector(openPreferencesAction), keyEquivalent: ",")
+        prefsItem.target = self
+        menu.addItem(prefsItem)
+
+        // 7. Detected Screens info
         let screens = NSScreen.screens
         let screensInfo = "Connected Displays: \(screens.count) (\(screens.map { $0.localizedName }.joined(separator: ", ")))"
         let screensItem = NSMenuItem(title: screensInfo, action: nil, keyEquivalent: "")
@@ -123,7 +137,7 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        // 6. Quit
+        // 8. Quit
         let quitItem = NSMenuItem(title: "Quit Wake Me Up", action: #selector(quitAction), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
@@ -132,7 +146,7 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
     // MARK: - Actions
 
     @objc private func startSleepAction() {
-        appState.startSleep(bedtime: Date(), durationMinutes: 450.0, reason: "menu_bar_manual")
+        appState.startSleep(bedtime: Date(), durationMinutes: appState.defaultSleepMinutes, reason: "menu_bar_manual")
     }
 
     @objc private func stopSleepAction() {
@@ -145,6 +159,15 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
 
     @objc private func toggleAwayAction() {
         appState.toggleAwayMode()
+    }
+
+    @objc private func toggleLaunchAtLoginAction() {
+        LaunchAtLoginManager.shared.toggle()
+        refreshMenuItems()
+    }
+
+    @objc private func openPreferencesAction() {
+        PreferencesWindowController.shared.show()
     }
 
     @objc private func quitAction() {

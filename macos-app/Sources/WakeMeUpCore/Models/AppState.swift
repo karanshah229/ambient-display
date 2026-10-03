@@ -19,6 +19,16 @@ public final class AppState: ObservableObject {
             handleAwayModeChanged()
         }
     }
+    @Published public var defaultSleepMinutes: Double = 450.0 {
+        didSet {
+            userDefaults?.set(defaultSleepMinutes, forKey: "WakeMeUp_defaultSleepMinutes")
+        }
+    }
+    @Published public var showCountdownInMenuBar: Bool = true {
+        didSet {
+            userDefaults?.set(showCountdownInMenuBar, forKey: "WakeMeUp_showCountdownInMenuBar")
+        }
+    }
     @Published public private(set) var isTestMode: Bool = false
     @Published public private(set) var lastUpdated: Date = Date()
 
@@ -28,6 +38,9 @@ public final class AppState: ObservableObject {
     public init(userDefaults: UserDefaults? = UserDefaults.standard) {
         self.userDefaults = userDefaults
         self.isAwayMode = userDefaults?.bool(forKey: "WakeMeUp_isAwayMode") ?? false
+        let savedMinutes = userDefaults?.double(forKey: "WakeMeUp_defaultSleepMinutes") ?? 0
+        self.defaultSleepMinutes = savedMinutes > 0 ? savedMinutes : 450.0
+        self.showCountdownInMenuBar = userDefaults?.object(forKey: "WakeMeUp_showCountdownInMenuBar") as? Bool ?? true
     }
 
     private func saveAwayMode(_ value: Bool) {

@@ -121,6 +121,13 @@ public final class LocalHTTPServer {
         case ("POST", "/api/away"):
             return handlePostAway(body: body)
 
+        case ("POST", "/api/preferences"):
+            DispatchQueue.main.async {
+                PreferencesWindowController.shared.show()
+            }
+            let json = "{\"status\": \"success\", \"message\": \"Preferences opened\"}".data(using: .utf8)!
+            return (200, "application/json", json)
+
         case ("GET", "/"):
             return handleGetIndex()
 
