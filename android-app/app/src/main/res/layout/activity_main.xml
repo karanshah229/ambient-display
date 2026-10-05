@@ -125,11 +125,20 @@
                     android:textColor="#FF9F0A"
                     android:textSize="13sp" />
 
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchAwayMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Away Mode (Suppress Monitors)"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp" />
+
                 <Button
                     android:id="@+id/btnSyncConfig"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="8dp"
                     android:backgroundTint="#2C2C2E"
                     android:text="🔄 Sync Settings with Mac"
                     android:textColor="#FFFFFF" />
@@ -165,7 +174,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:hint="Mac IP Address (e.g. 192.168.1.3)"
+                    android:hint="Mac IP Address (e.g. 192.168.1.100)"
                     app:boxBackgroundColor="#2C2C2E"
                     app:boxCornerRadiusBottomEnd="8dp"
                     app:boxCornerRadiusBottomStart="8dp"
@@ -218,6 +227,184 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Screen Message Billboard Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#1C1C1E"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="#2C2C2E"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🖥️ Screen Message Billboard"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Display a custom message on connected Mac monitors"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp" />
+
+                <!-- Message Text Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="Type message (e.g. Call in 10 mins / BRB)"
+                    app:boxBackgroundColor="#2C2C2E"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusTopStart="8dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etScreenMessage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textMultiLine"
+                        android:minLines="2"
+                        android:maxLines="4"
+                        android:textColor="#FFFFFF" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Recent & Saved Messages Chips -->
+                <TextView
+                    android:id="@+id/tvRecentMessagesLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Recent messages (tap to use):"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:scrollbars="none">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipGroupRecentMessages"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:singleLine="true" />
+                </HorizontalScrollView>
+
+                <!-- Target Display Selector -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Target Display:"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp" />
+
+                <Spinner
+                    android:id="@+id/spTargetDisplay"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="4dp"
+                    android:background="#2C2C2E" />
+
+                <!-- Duration Radio Group -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Display Duration:"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp" />
+
+                <RadioGroup
+                    android:id="@+id/rgMessageDuration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbPersistent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Persistent (ESC)"
+                        android:textColor="#EBEBF5"
+                        android:textSize="13sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbToast15s"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="15s Toast"
+                        android:textColor="#EBEBF5"
+                        android:textSize="13sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbToast30s"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="30s Toast"
+                        android:textColor="#EBEBF5"
+                        android:textSize="13sp" />
+                </RadioGroup>
+
+                <!-- Action Buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnSendMessage"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:backgroundTint="#0A84FF"
+                        android:text="📤 Send to Screen"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnDismissScreenMessage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:backgroundTint="#3A1C1C"
+                        android:text="Clear Screen"
+                        android:textColor="#FF453A" />
+                </LinearLayout>
+
+                <!-- Active message status indicator -->
+                <TextView
+                    android:id="@+id/tvActiveMessageStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="#30D158"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Actions -->
         <TextView
             android:layout_width="wrap_content"
@@ -247,6 +434,26 @@
             android:backgroundTint="#2C2C2E"
             android:text="Preview Display (10s Test Mode)"
             android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btnTestPhoneAlarm"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="#FF9F0A"
+            android:text="🔔 Test Phone Alarm (Ring in 5s)"
+            android:textColor="#000000"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnTest1MinSleep"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="#32D74B"
+            android:text="⏱️ Test 1-Min Sleep &amp; Alarm Flow"
+            android:textColor="#000000"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnStopSleep"

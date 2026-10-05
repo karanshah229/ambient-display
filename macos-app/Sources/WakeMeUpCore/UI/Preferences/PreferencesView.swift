@@ -8,10 +8,11 @@ public struct PreferencesView: View {
 
     @State private var sleepHoursText: String = ""
     @State private var inactivityOffsetText: String = ""
-    @State private var nightColor: Color = .orange
-    @State private var dawnColor: Color = .yellow
-    @State private var wakeColor: Color = .green
+    @State private var nightColor: Color = AmbientTheme.defaultNightColor
+    @State private var dawnColor: Color = AmbientTheme.defaultDawnColor
+    @State private var wakeColor: Color = AmbientTheme.defaultWakeColor
     @State private var wifiIPAddress: String = "Detecting..."
+    @State private var isLoaded: Bool = false
 
     public init() {}
 
@@ -42,14 +43,20 @@ public struct PreferencesView: View {
                     Label("Network", systemImage: "network")
                 }
         }
-        .frame(width: 530, height: 520)
+        .frame(width: 530, height: 580)
         .padding(20)
         .onAppear {
             loadInitialValues()
         }
+        .onDisappear {
+            commitSleepHours()
+            commitOffsetMinutes()
+            appState.synchronize()
+        }
     }
 
     private func loadInitialValues() {
+        isLoaded = false
         let hours = appState.defaultSleepHours
         sleepHoursText = String(format: hours.truncatingRemainder(dividingBy: 1) == 0 ? "%.1f" : "%.2g", hours)
         inactivityOffsetText = String(format: "%.0f", appState.inactivityOffsetMinutes)
@@ -59,6 +66,7 @@ public struct PreferencesView: View {
         wakeColor = Color(hex: appState.ambientWakeColorHex, defaultFallback: AmbientTheme.defaultWakeColor)
 
         wifiIPAddress = fetchLocalWiFiIP() ?? "Unavailable (Not connected to Wi-Fi)"
+        isLoaded = true
     }
 
     // MARK: - General Tab
@@ -95,20 +103,27 @@ public struct PreferencesView: View {
     private var sleepTab: some View {
         Form {
             Section(header: Text("Target Sleep Duration").font(.headline)) {
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     Text("Duration:")
                     TextField("", text: $sleepHoursText)
                         .frame(width: 60)
                         .textFieldStyle(.roundedBorder)
+                        .onChange(of: sleepHoursText) { newValue in
+                            guard isLoaded else { return }
+                            if let val = Double(newValue.trimmingCharacters(in: .whitespaces)), val >= 1.0, val <= 16.0 {
+                                appState.defaultSleepHours = val
+                            }
+                        }
                         .onSubmit { commitSleepHours() }
+                    Stepper("", value: Binding(
+                        get: { appState.defaultSleepHours },
+                        set: { newVal in
+                            appState.defaultSleepHours = newVal
+                            sleepHoursText = String(format: newVal.truncatingRemainder(dividingBy: 1) == 0 ? "%.1f" : "%.2g", newVal)
+                        }
+                    ), in: 1.0...16.0, step: 0.5)
+                    .labelsHidden()
                     Text("hours")
-                    Spacer()
-                    Button("Reset to 7.5h") {
-                        appState.defaultSleepHours = 7.5
-                        sleepHoursText = "7.5"
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.accentColor)
                 }
 
                 Text("Default is 7.5 hours (5 × 90-minute ultradian sleep cycles). Custom duration can be any value between 1 and 16 hours.")
@@ -117,23 +132,31 @@ public struct PreferencesView: View {
             }
 
             Section(header: Text("Eligible Sleep Window").font(.headline)) {
-                HStack {
-                    Text("Detect Sleep Between:")
-                    Picker("Start", selection: $appState.sleepWindowStartHour) {
-                        ForEach(0..<24, id: \.self) { h in
-                            Text(formatHour(h)).tag(h)
-                        }
-                    }
-                    .frame(width: 110)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Allow sleep detection between:")
+                        .font(.subheadline)
+                        .foregroundColor(.primary)
 
-                    Text("and")
-
-                    Picker("End", selection: $appState.sleepWindowEndHour) {
-                        ForEach(0..<24, id: \.self) { h in
-                            Text(formatHour(h)).tag(h)
+                    HStack(spacing: 12) {
+                        Picker("Start Time", selection: $appState.sleepWindowStartHour) {
+                            ForEach(0..<24, id: \.self) { h in
+                                Text(formatHour(h)).tag(h)
+                            }
                         }
+                        .labelsHidden()
+                        .frame(minWidth: 125)
+
+                        Text("to")
+                            .foregroundColor(.secondary)
+
+                        Picker("End Time", selection: $appState.sleepWindowEndHour) {
+                            ForEach(0..<24, id: \.self) { h in
+                                Text(formatHour(h)).tag(h)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(minWidth: 125)
                     }
-                    .frame(width: 110)
                 }
 
                 Text("Phone inactivity outside this window (e.g. at 3 PM) is completely ignored and will never trigger sleep.")
@@ -142,23 +165,31 @@ public struct PreferencesView: View {
             }
 
             Section(header: Text("Auto-Push Sleep Target Window").font(.headline)) {
-                HStack {
-                    Text("Auto-Push Between:")
-                    Picker("Start", selection: $appState.autoPushWindowStartHour) {
-                        ForEach(0..<24, id: \.self) { h in
-                            Text(formatHour(h)).tag(h)
-                        }
-                    }
-                    .frame(width: 110)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Automatically push target bedtime back between:")
+                        .font(.subheadline)
+                        .foregroundColor(.primary)
 
-                    Text("and")
-
-                    Picker("End", selection: $appState.autoPushWindowEndHour) {
-                        ForEach(0..<24, id: \.self) { h in
-                            Text(formatHour(h)).tag(h)
+                    HStack(spacing: 12) {
+                        Picker("Auto-Push Start", selection: $appState.autoPushWindowStartHour) {
+                            ForEach(0..<24, id: \.self) { h in
+                                Text(formatHour(h)).tag(h)
+                            }
                         }
+                        .labelsHidden()
+                        .frame(minWidth: 125)
+
+                        Text("to")
+                            .foregroundColor(.secondary)
+
+                        Picker("Auto-Push End", selection: $appState.autoPushWindowEndHour) {
+                            ForEach(0..<24, id: \.self) { h in
+                                Text(formatHour(h)).tag(h)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(minWidth: 125)
                     }
-                    .frame(width: 110)
                 }
 
                 Text("During this early evening window (default 9–11 PM), using your phone automatically rolls your sleep target back. Outside this window, phone use triggers an interactive notification asking before modifying.")
@@ -170,13 +201,31 @@ public struct PreferencesView: View {
                 Toggle("Auto-detect offset from phone system settings", isOn: $appState.autoDetectInactivityOffset)
 
                 if !appState.autoDetectInactivityOffset {
-                    HStack {
+                    HStack(spacing: 8) {
                         Text("Custom Inactivity Offset:")
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
                         TextField("Minutes", text: $inactivityOffsetText)
-                            .frame(width: 80)
+                            .frame(width: 60)
                             .textFieldStyle(.roundedBorder)
+                            .onChange(of: inactivityOffsetText) { newValue in
+                                guard isLoaded else { return }
+                                if let val = Double(newValue.trimmingCharacters(in: .whitespaces)), val >= 0, val <= 120 {
+                                    appState.inactivityOffsetMinutes = val
+                                }
+                            }
                             .onSubmit { commitOffsetMinutes() }
+                        Stepper("", value: Binding(
+                            get: { appState.inactivityOffsetMinutes },
+                            set: { newVal in
+                                appState.inactivityOffsetMinutes = newVal
+                                inactivityOffsetText = String(format: "%.0f", newVal)
+                            }
+                        ), in: 0...120, step: 5)
+                        .labelsHidden()
                         Text("minutes")
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
                     }
                 }
 
@@ -197,17 +246,18 @@ public struct PreferencesView: View {
     private func commitSleepHours() {
         if let val = Double(sleepHoursText.trimmingCharacters(in: .whitespaces)), val >= 1.0, val <= 16.0 {
             appState.defaultSleepHours = val
-        } else {
-            sleepHoursText = String(format: "%.1f", appState.defaultSleepHours)
         }
+        let current = appState.defaultSleepHours
+        sleepHoursText = String(format: current.truncatingRemainder(dividingBy: 1) == 0 ? "%.1f" : "%.2g", current)
+        appState.synchronize()
     }
 
     private func commitOffsetMinutes() {
         if let val = Double(inactivityOffsetText.trimmingCharacters(in: .whitespaces)), val >= 0, val <= 120 {
             appState.inactivityOffsetMinutes = val
-        } else {
-            inactivityOffsetText = String(format: "%.0f", appState.inactivityOffsetMinutes)
         }
+        inactivityOffsetText = String(format: "%.0f", appState.inactivityOffsetMinutes)
+        appState.synchronize()
     }
 
     // MARK: - Displays Tab
@@ -215,8 +265,7 @@ public struct PreferencesView: View {
         Form {
             Section(header: Text("Detected Displays (\(NSScreen.screens.count))").font(.headline)) {
                 ForEach(Array(NSScreen.screens.enumerated()), id: \.offset) { index, screen in
-                    let screenId = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
-                    let isIgnored = appState.ignoredDisplayIDs.contains(screenId)
+                    let isIgnored = appState.isDisplayIgnored(screen: screen)
 
                     HStack(spacing: 12) {
                         Image(systemName: isIgnored ? "display.trianglebadge.exclamationmark" : "display")
@@ -235,7 +284,7 @@ public struct PreferencesView: View {
                         Spacer()
 
                         Button(action: {
-                            appState.toggleDisplayIgnored(id: screenId)
+                            appState.toggleDisplayIgnored(screen: screen)
                         }) {
                             Text(isIgnored ? "Enable" : "Ignore Display")
                                 .font(.caption)
@@ -262,6 +311,7 @@ public struct PreferencesView: View {
             Section(header: Text("Ambient Theme Presentation").font(.headline)) {
                 ColorPicker("Deep Night Glow", selection: $nightColor)
                     .onChange(of: nightColor) { newColor in
+                        guard isLoaded else { return }
                         if let hex = newColor.toHex() {
                             appState.ambientNightColorHex = hex
                         }
@@ -269,6 +319,7 @@ public struct PreferencesView: View {
 
                 ColorPicker("Dawn Warm Glow", selection: $dawnColor)
                     .onChange(of: dawnColor) { newColor in
+                        guard isLoaded else { return }
                         if let hex = newColor.toHex() {
                             appState.ambientDawnColorHex = hex
                         }
@@ -276,13 +327,22 @@ public struct PreferencesView: View {
 
                 ColorPicker("Morning Wake-Up Glow", selection: $wakeColor)
                     .onChange(of: wakeColor) { newColor in
+                        guard isLoaded else { return }
                         if let hex = newColor.toHex() {
                             appState.ambientWakeColorHex = hex
                         }
                     }
 
                 HStack {
+                    Button(action: {
+                        appState.startTestMode(durationSeconds: 10)
+                    }) {
+                        Label("Test Ambient Display (10s)", systemImage: "play.circle.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+
                     Spacer()
+
                     Button("Reset to Defaults") {
                         appState.resetAmbientDefaults()
                         nightColor = Color(hex: appState.ambientNightColorHex, defaultFallback: AmbientTheme.defaultNightColor)
@@ -291,10 +351,11 @@ public struct PreferencesView: View {
                     }
                     .buttonStyle(.bordered)
                 }
+                .padding(.top, 4)
             }
 
             Section(header: Text("Preview Notes").font(.headline)) {
-                Text("All themes render over pitch black (#000000) for zero backlight bleed in dark environments.")
+                Text("All themes render over pitch black (#000000) for zero backlight bleed in dark environments. Click \"Test Ambient Display\" to preview the active glow palette across your connected screens.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

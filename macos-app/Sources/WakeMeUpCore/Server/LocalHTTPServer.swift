@@ -63,7 +63,7 @@ public final class LocalHTTPServer {
             guard let self = self else { return }
 
             if let data = content, !data.isEmpty {
-                let response = self.processRawHTTPRequest(data)
+                let response = self.processRawHTTPRequest(data, from: connection)
                 self.sendHTTPResponse(response, on: connection)
             } else if isComplete || error != nil {
                 connection.cancel()
@@ -71,7 +71,7 @@ public final class LocalHTTPServer {
         }
     }
 
-    private func processRawHTTPRequest(_ data: Data) -> (statusCode: Int, contentType: String, body: Data) {
+    private func processRawHTTPRequest(_ data: Data, from connection: NWConnection) -> (statusCode: Int, contentType: String, body: Data) {
         guard let requestString = String(data: data, encoding: .utf8) else {
             return (400, "text/plain", Data("Bad Request".utf8))
         }
@@ -95,6 +95,9 @@ public final class LocalHTTPServer {
             let bodyLines = lines[(emptyLineIndex + 1)...].joined(separator: "\r\n")
             bodyData = Data(bodyLines.utf8)
         }
+
+        let remoteEndpoint = connection.endpoint
+        print("[LocalHTTPServer] \(method) \(path) from \(remoteEndpoint) (body: \(bodyData.count) bytes)")
 
         return route(method: method, path: path, body: bodyData)
     }
@@ -133,6 +136,18 @@ public final class LocalHTTPServer {
 
         case ("POST", "/api/config"):
             return handlePostConfig(body: body)
+
+        case ("GET", "/api/displays"):
+            return handleGetDisplays()
+
+        case ("POST", "/api/message"):
+            return handlePostMessage(body: body)
+
+        case ("POST", "/api/message/dismiss"):
+            return handlePostDismissMessage(body: body)
+
+        case ("GET", "/api/message/status"):
+            return handleGetMessageStatus()
 
         case ("GET", "/"):
             return handleGetIndex()
@@ -239,7 +254,8 @@ public final class LocalHTTPServer {
                 auto_push_window_start_hour: app.autoPushWindowStartHour,
                 auto_push_window_end_hour: app.autoPushWindowEndHour,
                 inactivity_offset_minutes: app.inactivityOffsetMinutes,
-                auto_detect_inactivity: app.autoDetectInactivityOffset
+                auto_detect_inactivity: app.autoDetectInactivityOffset,
+                is_away_mode: app.isAwayMode
             )
         }
         let encoder = JSONEncoder()
@@ -263,6 +279,7 @@ public final class LocalHTTPServer {
             if let apEnd = req.auto_push_window_end_hour { app.autoPushWindowEndHour = apEnd }
             if let offset = req.inactivity_offset_minutes { app.inactivityOffsetMinutes = offset }
             if let autoDetect = req.auto_detect_inactivity { app.autoDetectInactivityOffset = autoDetect }
+            if let away = req.is_away_mode { app.isAwayMode = away }
         }
 
         let json = "{\"status\": \"success\", \"message\": \"Configuration updated\"}".data(using: .utf8)!
@@ -310,6 +327,67 @@ public final class LocalHTTPServer {
         </html>
         """
         return (200, "text/html", Data(html.utf8))
+    }
+
+    private func handleGetDisplays() -> (Int, String, Data) {
+        let payload: DisplaysResponsePayload = DispatchQueue.main.sync {
+            let displays = WindowManager.shared.getConnectedDisplays()
+            return DisplaysResponsePayload(displays: displays)
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        let data = (try? encoder.encode(payload)) ?? Data()
+        return (200, "application/json", data)
+    }
+
+    private func handlePostMessage(body: Data) -> (Int, String, Data) {
+        guard let req = try? JSONDecoder().decode(PostMessageRequestPayload.self, from: body) else {
+            let errorJson = "{\"error\": \"Invalid request payload. Expected { text, target_display_id?, duration_seconds? }\"}".data(using: .utf8)!
+            return (400, "application/json", errorJson)
+        }
+
+        let trimmedText = req.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else {
+            let errorJson = "{\"error\": \"Message text cannot be empty\"}".data(using: .utf8)!
+            return (400, "application/json", errorJson)
+        }
+
+        let activeMsg: ActiveMessageDTO = DispatchQueue.main.sync {
+            WindowManager.shared.showMessage(
+                text: trimmedText,
+                targetDisplayId: req.target_display_id ?? "all",
+                durationSeconds: req.duration_seconds
+            )
+        }
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        let data = (try? encoder.encode(activeMsg)) ?? Data()
+        return (200, "application/json", data)
+    }
+
+    private func handlePostDismissMessage(body: Data) -> (Int, String, Data) {
+        let req = try? JSONDecoder().decode(DismissMessageRequestPayload.self, from: body)
+        let target = req?.target_display_id ?? "all"
+
+        DispatchQueue.main.sync {
+            WindowManager.shared.dismissMessage(targetDisplayId: target)
+        }
+
+        let json = "{\"status\": \"success\", \"message\": \"Message dismissed on target: \(target)\"}".data(using: .utf8)!
+        return (200, "application/json", json)
+    }
+
+    private func handleGetMessageStatus() -> (Int, String, Data) {
+        let payload: MessageStatusResponsePayload = DispatchQueue.main.sync {
+            let active = WindowManager.shared.getActiveMessagesList()
+            return MessageStatusResponsePayload(active_messages: active)
+        }
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        let data = (try? encoder.encode(payload)) ?? Data()
+        return (200, "application/json", data)
     }
 
     private func sendHTTPResponse(_ response: (statusCode: Int, contentType: String, body: Data), on connection: NWConnection) {

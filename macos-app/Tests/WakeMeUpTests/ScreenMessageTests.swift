@@ -1,0 +1,153 @@
+import XCTest
+@testable import WakeMeUpCore
+import AppKit
+
+@MainActor
+final class ScreenMessageTests: XCTestCase {
+
+    override func setUp() async throws {
+        AppState.shared.stopSleep()
+        WindowManager.shared.hideAllWindows()
+    }
+
+    override func tearDown() async throws {
+        AppState.shared.stopSleep()
+        WindowManager.shared.hideAllWindows()
+    }
+
+    func testDisplayDTOEncodingAndDecoding() throws {
+        let displays = [
+            DisplayInfoDTO(id: "1", name: "Dell P2722HE", is_main: true, width: 1920, height: 1080, active_mode: "idle", is_ignored: false),
+            DisplayInfoDTO(id: "2", name: "Built-in Retina", is_main: false, width: 1470, height: 956, active_mode: "sleeping", is_ignored: true)
+        ]
+        let payload = DisplaysResponsePayload(displays: displays)
+
+        let data = try JSONEncoder().encode(payload)
+        let decoded = try JSONDecoder().decode(DisplaysResponsePayload.self, from: data)
+
+        XCTAssertEqual(decoded.displays.count, 2)
+        XCTAssertEqual(decoded.displays[0].id, "1")
+        XCTAssertEqual(decoded.displays[0].name, "Dell P2722HE")
+        XCTAssertTrue(decoded.displays[0].is_main)
+        XCTAssertEqual(decoded.displays[1].active_mode, "sleeping")
+        XCTAssertTrue(decoded.displays[1].is_ignored)
+    }
+
+    func testPostMessagePayloadEncodingAndDecoding() throws {
+        let payload = PostMessageRequestPayload(text: "Meeting at 5:00 PM", target_display_id: "3", duration_seconds: 30)
+
+        let data = try JSONEncoder().encode(payload)
+        let decoded = try JSONDecoder().decode(PostMessageRequestPayload.self, from: data)
+
+        XCTAssertEqual(decoded.text, "Meeting at 5:00 PM")
+        XCTAssertEqual(decoded.target_display_id, "3")
+        XCTAssertEqual(decoded.duration_seconds, 30)
+    }
+
+    func testShowMessageAndDismissLifecycle() {
+        let wm = WindowManager.shared
+
+        // Initially no active messages
+        XCTAssertFalse(wm.hasActiveMessages())
+
+        // Show message
+        let activeDto = wm.showMessage(text: "Hello World", targetDisplayId: "all", durationSeconds: 0)
+        XCTAssertEqual(activeDto.text, "Hello World")
+        XCTAssertEqual(activeDto.target_display_id, "all")
+        XCTAssertTrue(wm.hasActiveMessages())
+
+        let list = wm.getActiveMessagesList()
+        XCTAssertEqual(list.count, 1)
+        XCTAssertEqual(list[0].text, "Hello World")
+
+        // Connected displays report active_mode == "message"
+        let displays = wm.getConnectedDisplays()
+        if !displays.isEmpty {
+            XCTAssertEqual(displays[0].active_mode, "message")
+        }
+
+        // Dismiss message
+        wm.dismissMessage(targetDisplayId: "all")
+        XCTAssertFalse(wm.hasActiveMessages())
+
+        let displaysAfter = wm.getConnectedDisplays()
+        if !displaysAfter.isEmpty {
+            XCTAssertEqual(displaysAfter[0].active_mode, "idle")
+        }
+    }
+
+    func testMutualExclusionAndReversionToSleep() {
+        let appState = AppState.shared
+        let wm = WindowManager.shared
+
+        // Start active sleep session
+        appState.startSleep(bedtime: Date(), durationMinutes: 450.0)
+        RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(appState.state, .sleeping)
+
+        let displaysSleep = wm.getConnectedDisplays()
+        if !displaysSleep.isEmpty {
+            XCTAssertEqual(displaysSleep[0].active_mode, "sleeping")
+        }
+
+        // Send a custom message while sleep is active
+        wm.showMessage(text: "Water the plants!", targetDisplayId: "all")
+        XCTAssertTrue(wm.hasActiveMessages())
+
+        let displaysMsg = wm.getConnectedDisplays()
+        if !displaysMsg.isEmpty {
+            XCTAssertEqual(displaysMsg[0].active_mode, "message", "Message must override sleep on targeted screen")
+        }
+
+        // Dismiss message -> MUST REVERT TO SLEEP COUNTDOWN!
+        wm.dismissMessage(targetDisplayId: "all")
+        XCTAssertFalse(wm.hasActiveMessages())
+        XCTAssertEqual(appState.state, .sleeping, "Sleep state must remain active")
+
+        let displaysReverted = wm.getConnectedDisplays()
+        if !displaysReverted.isEmpty {
+            XCTAssertEqual(displaysReverted[0].active_mode, "sleeping", "Screen must revert back to sleep display")
+        }
+
+        // Stop sleep -> reverts to idle
+        appState.stopSleep()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(appState.state, .idle)
+
+        let displaysIdle = wm.getConnectedDisplays()
+        if !displaysIdle.isEmpty {
+            XCTAssertEqual(displaysIdle[0].active_mode, "idle")
+        }
+    }
+
+    func testUniversalDismissalDismissesOnAllScreens() {
+        let appState = AppState.shared
+        let wm = WindowManager.shared
+
+        // Show a message on all screens
+        wm.showMessage(text: "Important Notice", targetDisplayId: "all")
+        XCTAssertTrue(wm.hasActiveMessages())
+
+        // Dismiss targetDisplayId: "all" clears active messages completely
+        wm.dismissMessage(targetDisplayId: "all")
+        XCTAssertFalse(wm.hasActiveMessages())
+
+        for display in wm.getConnectedDisplays() {
+            XCTAssertEqual(display.active_mode, "idle")
+        }
+
+        // Now test alarm clock / sleep dismissal across all screens
+        appState.startSleep(bedtime: Date(), durationMinutes: 450.0)
+        RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(appState.state, .sleeping)
+
+        // Stopping sleep resets all displays to idle
+        appState.stopSleep()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(appState.state, .idle)
+
+        for display in wm.getConnectedDisplays() {
+            XCTAssertEqual(display.active_mode, "idle")
+        }
+    }
+}

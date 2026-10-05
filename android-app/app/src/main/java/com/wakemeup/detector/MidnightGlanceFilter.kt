@@ -92,7 +92,7 @@ class MidnightGlanceFilter(
         return durationMs < (3 * 60 * 1000L)
     }
 
-    private fun showAwakePromptNotification() {
+    fun showAwakePromptNotification() {
         val keepIntent = Intent(context, SleepDetectionService::class.java).apply {
             action = ACTION_KEEP_ALARM
         }

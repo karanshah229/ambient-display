@@ -10,9 +10,9 @@ public struct AmbientTheme {
     public let opacity: Double
     public let isNightMode: Bool
 
-    public static let defaultNightColor = Color(red: 0.85, green: 0.35, blue: 0.15) // #D95926
-    public static let defaultDawnColor = Color(red: 1.0, green: 0.75, blue: 0.40)  // #FFBF66
-    public static let defaultWakeColor = Color(red: 0.25, green: 0.90, blue: 0.55) // #40E68C
+    public static let defaultNightColor = Color(red: 0.85, green: 0.35, blue: 0.15) // #D95926 (Deep Night Ember)
+    public static let defaultDawnColor = Color(red: 0.98, green: 0.45, blue: 0.41)  // #FA7268 (Sunrise Coral / Horizon Blush)
+    public static let defaultWakeColor = Color(red: 1.0, green: 0.82, blue: 0.0)    // #FFD000 (Radiant Solar Gold / Morning Sun)
 
     public static let deepNight = makeNightTheme(accentColor: defaultNightColor)
     public static let dawn = makeDawnTheme(accentColor: defaultDawnColor)
@@ -21,7 +21,7 @@ public struct AmbientTheme {
     public static func makeNightTheme(accentColor: Color) -> AmbientTheme {
         AmbientTheme(
             textPrimary: accentColor,
-            textSecondary: accentColor.opacity(0.7),
+            textSecondary: accentColor.opacity(0.75),
             accent: accentColor,
             background: Color.black,
             opacity: 0.65,
@@ -32,7 +32,7 @@ public struct AmbientTheme {
     public static func makeDawnTheme(accentColor: Color) -> AmbientTheme {
         AmbientTheme(
             textPrimary: accentColor,
-            textSecondary: accentColor.opacity(0.8),
+            textSecondary: accentColor.opacity(0.85),
             accent: accentColor,
             background: Color.black,
             opacity: 0.85,
@@ -43,7 +43,7 @@ public struct AmbientTheme {
     public static func makeWakeTheme(accentColor: Color) -> AmbientTheme {
         AmbientTheme(
             textPrimary: accentColor,
-            textSecondary: Color(red: 0.85, green: 0.95, blue: 0.90),
+            textSecondary: accentColor.opacity(0.85),
             accent: accentColor,
             background: Color.black,
             opacity: 1.0,
@@ -82,8 +82,8 @@ public extension Color {
 public final class SolarCalculator {
     public static func currentTheme(session: SleepSession?, state: SessionState, date: Date = Date(), appState: AppState? = nil) -> AmbientTheme {
         let nightColor = Color(hex: appState?.ambientNightColorHex ?? "#D95926", defaultFallback: AmbientTheme.defaultNightColor)
-        let dawnColor = Color(hex: appState?.ambientDawnColorHex ?? "#FFBF66", defaultFallback: AmbientTheme.defaultDawnColor)
-        let wakeColor = Color(hex: appState?.ambientWakeColorHex ?? "#40E68C", defaultFallback: AmbientTheme.defaultWakeColor)
+        let dawnColor = Color(hex: appState?.ambientDawnColorHex ?? "#FA7268", defaultFallback: AmbientTheme.defaultDawnColor)
+        let wakeColor = Color(hex: appState?.ambientWakeColorHex ?? "#FFD000", defaultFallback: AmbientTheme.defaultWakeColor)
 
         if state == .wakeUpReady {
             return AmbientTheme.makeWakeTheme(accentColor: wakeColor)

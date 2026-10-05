@@ -70,6 +70,7 @@ public struct ConfigResponsePayload: Codable {
     public let auto_push_window_end_hour: Int
     public let inactivity_offset_minutes: Double
     public let auto_detect_inactivity: Bool
+    public let is_away_mode: Bool
 
     public init(
         default_sleep_hours: Double,
@@ -78,7 +79,8 @@ public struct ConfigResponsePayload: Codable {
         auto_push_window_start_hour: Int,
         auto_push_window_end_hour: Int,
         inactivity_offset_minutes: Double,
-        auto_detect_inactivity: Bool
+        auto_detect_inactivity: Bool,
+        is_away_mode: Bool
     ) {
         self.default_sleep_hours = default_sleep_hours
         self.sleep_window_start_hour = sleep_window_start_hour
@@ -87,6 +89,7 @@ public struct ConfigResponsePayload: Codable {
         self.auto_push_window_end_hour = auto_push_window_end_hour
         self.inactivity_offset_minutes = inactivity_offset_minutes
         self.auto_detect_inactivity = auto_detect_inactivity
+        self.is_away_mode = is_away_mode
     }
 }
 
@@ -98,6 +101,7 @@ public struct ConfigUpdateRequestPayload: Codable {
     public let auto_push_window_end_hour: Int?
     public let inactivity_offset_minutes: Double?
     public let auto_detect_inactivity: Bool?
+    public let is_away_mode: Bool?
 
     public init(
         default_sleep_hours: Double? = nil,
@@ -106,7 +110,8 @@ public struct ConfigUpdateRequestPayload: Codable {
         auto_push_window_start_hour: Int? = nil,
         auto_push_window_end_hour: Int? = nil,
         inactivity_offset_minutes: Double? = nil,
-        auto_detect_inactivity: Bool? = nil
+        auto_detect_inactivity: Bool? = nil,
+        is_away_mode: Bool? = nil
     ) {
         self.default_sleep_hours = default_sleep_hours
         self.sleep_window_start_hour = sleep_window_start_hour
@@ -115,5 +120,96 @@ public struct ConfigUpdateRequestPayload: Codable {
         self.auto_push_window_end_hour = auto_push_window_end_hour
         self.inactivity_offset_minutes = inactivity_offset_minutes
         self.auto_detect_inactivity = auto_detect_inactivity
+        self.is_away_mode = is_away_mode
     }
 }
+
+public struct DisplayInfoDTO: Codable {
+    public let id: String
+    public let name: String
+    public let is_main: Bool
+    public let width: Int
+    public let height: Int
+    public let active_mode: String // "idle", "sleeping", "message"
+    public let is_ignored: Bool
+
+    public init(
+        id: String,
+        name: String,
+        is_main: Bool,
+        width: Int,
+        height: Int,
+        active_mode: String,
+        is_ignored: Bool
+    ) {
+        self.id = id
+        self.name = name
+        self.is_main = is_main
+        self.width = width
+        self.height = height
+        self.active_mode = active_mode
+        self.is_ignored = is_ignored
+    }
+}
+
+public struct DisplaysResponsePayload: Codable {
+    public let displays: [DisplayInfoDTO]
+
+    public init(displays: [DisplayInfoDTO]) {
+        self.displays = displays
+    }
+}
+
+public struct PostMessageRequestPayload: Codable {
+    public let text: String
+    public let target_display_id: String? // "all" or specific display ID
+    public let duration_seconds: Int? // nil or 0 = persistent
+
+    public init(text: String, target_display_id: String? = "all", duration_seconds: Int? = nil) {
+        self.text = text
+        self.target_display_id = target_display_id
+        self.duration_seconds = duration_seconds
+    }
+}
+
+public struct DismissMessageRequestPayload: Codable {
+    public let target_display_id: String? // "all" or specific display ID
+
+    public init(target_display_id: String? = "all") {
+        self.target_display_id = target_display_id
+    }
+}
+
+public struct ActiveMessageDTO: Codable {
+    public let id: String
+    public let text: String
+    public let target_display_id: String
+    public let duration_seconds: Int?
+    public let created_at: String
+    public let remaining_seconds: Int?
+
+    public init(
+        id: String,
+        text: String,
+        target_display_id: String,
+        duration_seconds: Int?,
+        created_at: String,
+        remaining_seconds: Int? = nil
+    ) {
+        self.id = id
+        self.text = text
+        self.target_display_id = target_display_id
+        self.duration_seconds = duration_seconds
+        self.created_at = created_at
+        self.remaining_seconds = remaining_seconds
+    }
+}
+
+public struct MessageStatusResponsePayload: Codable {
+    public let active_messages: [ActiveMessageDTO]
+
+    public init(active_messages: [ActiveMessageDTO]) {
+        self.active_messages = active_messages
+    }
+}
+

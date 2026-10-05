@@ -7,49 +7,86 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
-import android.media.Ringtone
+import android.media.AudioManager
+import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.os.Build
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.wakemeup.MainActivity
 
 class AlarmTriggerReceiver : BroadcastReceiver() {
 
     companion object {
+        private const val TAG = "AlarmTriggerReceiver"
         const val CHANNEL_ID = "wake_me_up_alarm"
         const val NOTIFICATION_ID = 5001
         const val ACTION_DISMISS_ALARM = "com.wakemeup.ACTION_DISMISS_ALARM"
 
-        private var activeRingtone: Ringtone? = null
+        private var mediaPlayer: MediaPlayer? = null
+        private var cpuWakeLock: PowerManager.WakeLock? = null
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        Log.i(TAG, "onReceive invoked with action=${intent.action}")
         if (intent.action == ACTION_DISMISS_ALARM) {
+            Log.i(TAG, "Stopping alarm per user dismiss")
             stopAlarm(context)
             return
         }
 
-        // Play alarm sound on phone
+        // Acquire partial wake lock so phone doesn't sleep while alarm rings
+        acquireWakeLock(context)
+
+        // Play looping alarm sound on phone
         startAlarm(context)
         showAlarmNotification(context)
     }
 
+    private fun acquireWakeLock(context: Context) {
+        try {
+            if (cpuWakeLock == null) {
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+                cpuWakeLock = powerManager.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    "WakeMeUp::AlarmWakeLock"
+                ).apply {
+                    setReferenceCounted(false)
+                }
+            }
+            cpuWakeLock?.acquire(10 * 60 * 1000L) // 10 minutes max safety limit
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun startAlarm(context: Context) {
         try {
-            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            val ringtone = RingtoneManager.getRingtone(context, alarmUri)
-            ringtone.audioAttributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-            ringtone.play()
-            activeRingtone = ringtone
+            stopAlarmSound()
 
-            // Trigger vibration
+            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+            val mp = MediaPlayer().apply {
+                setDataSource(context, alarmUri)
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                isLooping = true
+                prepare()
+                start()
+            }
+            mediaPlayer = mp
+
+            // Trigger continuous vibration pattern
             val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
                 vibratorManager.defaultVibrator
@@ -59,20 +96,34 @@ class AlarmTriggerReceiver : BroadcastReceiver() {
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val pattern = longArrayOf(0, 800, 400, 800, 400, 800)
+                val pattern = longArrayOf(0, 1000, 500, 1000, 500)
                 vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0))
             } else {
                 @Suppress("DEPRECATION")
-                vibrator.vibrate(longArrayOf(0, 800, 400, 800), 0)
+                vibrator.vibrate(longArrayOf(0, 1000, 500, 1000, 500), 0)
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
+    private fun stopAlarmSound() {
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+        } catch (_: Exception) {}
+        mediaPlayer = null
+    }
+
     private fun stopAlarm(context: Context) {
-        activeRingtone?.stop()
-        activeRingtone = null
+        stopAlarmSound()
+
+        try {
+            if (cpuWakeLock?.isHeld == true) {
+                cpuWakeLock?.release()
+            }
+        } catch (_: Exception) {}
+        cpuWakeLock = null
 
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -113,9 +164,11 @@ class AlarmTriggerReceiver : BroadcastReceiver() {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle("Wake Me Up!")
-            .setContentText("7.5 hours of sleep completed. Time to wake up!")
+            .setContentText("Target sleep completed. Time to wake up!")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setFullScreenIntent(openAppPendingIntent, true)
             .setAutoCancel(false)
             .setOngoing(true)
             .setContentIntent(openAppPendingIntent)
@@ -134,8 +187,10 @@ class AlarmTriggerReceiver : BroadcastReceiver() {
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Audio alarm triggered at target wake time"
-                setSound(null, null) // Sound is played by Ringtone instance
+                setSound(null, null) // Audio is handled via looping MediaPlayer on ALARM stream
                 enableVibration(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                setBypassDnd(true)
             }
             val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)

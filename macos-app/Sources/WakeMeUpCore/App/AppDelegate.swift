@@ -18,6 +18,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
+        AppState.shared.synchronize()
         PowerAssertionManager.shared.release()
         LocalHTTPServer.shared.stop()
         print("[AppDelegate] Wake Me Up application terminated.")

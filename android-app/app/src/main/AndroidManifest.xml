@@ -68,7 +68,12 @@
         <!-- Broadcast Receivers -->
         <receiver
             android:name=".receiver.AlarmTriggerReceiver"
-            android:exported="false" />
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.wakemeup.ACTION_ALARM_TRIGGER" />
+                <action android:name="com.wakemeup.ACTION_DISMISS_ALARM" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

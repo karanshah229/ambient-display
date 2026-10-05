@@ -28,7 +28,7 @@ public struct AmbientDisplayView: View {
                 HStack {
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(appState.state == .wakeUpReady ? Color.green : theme.accent)
+                            .fill(theme.accent)
                             .frame(width: 10, height: 10)
                         Text(topStatusText)
                             .font(.system(size: 18, weight: .medium, design: .monospaced))
@@ -84,6 +84,8 @@ public struct AmbientDisplayView: View {
         .onTapGesture {
             if appState.state == .wakeUpReady {
                 appState.dismissWakeUp()
+            } else if appState.state == .sleeping {
+                appState.stopSleep()
             }
         }
     }
@@ -95,8 +97,8 @@ public struct AmbientDisplayView: View {
         VStack(spacing: 24) {
             Image(systemName: "sun.max.fill")
                 .font(.system(size: 96))
-                .foregroundColor(Color(red: 1.0, green: 0.85, blue: 0.3))
-                .shadow(color: Color.yellow.opacity(0.4), radius: 25)
+                .foregroundColor(theme.accent)
+                .shadow(color: theme.accent.opacity(0.4), radius: 25)
 
             Text("WAKE ME UP")
                 .font(.system(size: 88, weight: .black, design: .rounded))
@@ -105,7 +107,7 @@ public struct AmbientDisplayView: View {
 
             let durationHours = (appState.currentSession?.durationMinutes ?? (appState.defaultSleepHours * 60.0)) / 60.0
             let durationString = String(format: durationHours.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", durationHours)
-            Text("\(durationString) hours of sleep completed. Karan is ready to wake up!")
+            Text("\(durationString) hours of sleep completed. You are ready to wake up!")
                 .font(.system(size: 32, weight: .medium, design: .rounded))
                 .foregroundColor(theme.textSecondary)
                 .multilineTextAlignment(.center)
@@ -117,12 +119,12 @@ public struct AmbientDisplayView: View {
                     .font(.system(size: 20, weight: .semibold))
                     .padding(.horizontal, 32)
                     .padding(.vertical, 14)
-                    .background(Color.green.opacity(0.25))
-                    .foregroundColor(Color.green)
+                    .background(theme.accent.opacity(0.2))
+                    .foregroundColor(theme.textPrimary)
                     .cornerRadius(12)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.green, lineWidth: 1.5)
+                            .stroke(theme.accent, lineWidth: 1.5)
                     )
             }
             .buttonStyle(PlainButtonStyle())

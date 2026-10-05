@@ -13,17 +13,26 @@ public enum SessionState: String, Codable {
 public final class AppState: ObservableObject {
     public static let shared = AppState()
 
+    public nonisolated static let defaultsSuiteName = "com.wakemeup.mac"
+
+    public nonisolated static var defaultUserDefaults: UserDefaults {
+        if let suite = UserDefaults(suiteName: defaultsSuiteName) {
+            return suite
+        }
+        return UserDefaults.standard
+    }
+
     @Published public private(set) var state: SessionState = .idle
     @Published public private(set) var currentSession: SleepSession? = nil
     @Published public var isAwayMode: Bool = false {
         didSet {
-            saveAwayMode(isAwayMode)
+            savePreference(isAwayMode, forKey: "WakeMeUp_isAwayMode")
             handleAwayModeChanged()
         }
     }
     @Published public var defaultSleepHours: Double = 7.5 {
         didSet {
-            userDefaults?.set(defaultSleepHours, forKey: "WakeMeUp_defaultSleepHours")
+            savePreference(defaultSleepHours, forKey: "WakeMeUp_defaultSleepHours")
         }
     }
     public var defaultSleepMinutes: Double {
@@ -31,58 +40,68 @@ public final class AppState: ObservableObject {
     }
     @Published public var inactivityOffsetMinutes: Double = 30.0 {
         didSet {
-            userDefaults?.set(inactivityOffsetMinutes, forKey: "WakeMeUp_inactivityOffsetMinutes")
+            savePreference(inactivityOffsetMinutes, forKey: "WakeMeUp_inactivityOffsetMinutes")
         }
     }
     @Published public var autoDetectInactivityOffset: Bool = true {
         didSet {
-            userDefaults?.set(autoDetectInactivityOffset, forKey: "WakeMeUp_autoDetectInactivityOffset")
+            savePreference(autoDetectInactivityOffset, forKey: "WakeMeUp_autoDetectInactivityOffset")
         }
     }
     @Published public var sleepWindowStartHour: Int = 21 { // 9 PM
         didSet {
-            userDefaults?.set(sleepWindowStartHour, forKey: "WakeMeUp_sleepWindowStartHour")
+            savePreference(sleepWindowStartHour, forKey: "WakeMeUp_sleepWindowStartHour")
         }
     }
     @Published public var sleepWindowEndHour: Int = 6 { // 6 AM
         didSet {
-            userDefaults?.set(sleepWindowEndHour, forKey: "WakeMeUp_sleepWindowEndHour")
+            savePreference(sleepWindowEndHour, forKey: "WakeMeUp_sleepWindowEndHour")
         }
     }
     @Published public var autoPushWindowStartHour: Int = 21 { // 9 PM
         didSet {
-            userDefaults?.set(autoPushWindowStartHour, forKey: "WakeMeUp_autoPushWindowStartHour")
+            savePreference(autoPushWindowStartHour, forKey: "WakeMeUp_autoPushWindowStartHour")
         }
     }
     @Published public var autoPushWindowEndHour: Int = 23 { // 11 PM
         didSet {
-            userDefaults?.set(autoPushWindowEndHour, forKey: "WakeMeUp_autoPushWindowEndHour")
+            savePreference(autoPushWindowEndHour, forKey: "WakeMeUp_autoPushWindowEndHour")
         }
     }
     @Published public var ignoredDisplayIDs: Set<CGDirectDisplayID> = [] {
         didSet {
             let array = Array(ignoredDisplayIDs).map { Int($0) }
-            userDefaults?.set(array, forKey: "WakeMeUp_ignoredDisplayIDs")
+            savePreference(array, forKey: "WakeMeUp_ignoredDisplayIDs")
+        }
+    }
+    @Published public var ignoredDisplayNames: Set<String> = [] {
+        didSet {
+            savePreference(Array(ignoredDisplayNames), forKey: "WakeMeUp_ignoredDisplayNames")
+        }
+    }
+    @Published public var ignoredDisplayUUIDs: Set<String> = [] {
+        didSet {
+            savePreference(Array(ignoredDisplayUUIDs), forKey: "WakeMeUp_ignoredDisplayUUIDs")
         }
     }
     @Published public var ambientNightColorHex: String = "#D95926" {
         didSet {
-            userDefaults?.set(ambientNightColorHex, forKey: "WakeMeUp_ambientNightColorHex")
+            savePreference(ambientNightColorHex, forKey: "WakeMeUp_ambientNightColorHex")
         }
     }
-    @Published public var ambientDawnColorHex: String = "#FFBF66" {
+    @Published public var ambientDawnColorHex: String = "#FA7268" {
         didSet {
-            userDefaults?.set(ambientDawnColorHex, forKey: "WakeMeUp_ambientDawnColorHex")
+            savePreference(ambientDawnColorHex, forKey: "WakeMeUp_ambientDawnColorHex")
         }
     }
-    @Published public var ambientWakeColorHex: String = "#40E68C" {
+    @Published public var ambientWakeColorHex: String = "#FFD000" {
         didSet {
-            userDefaults?.set(ambientWakeColorHex, forKey: "WakeMeUp_ambientWakeColorHex")
+            savePreference(ambientWakeColorHex, forKey: "WakeMeUp_ambientWakeColorHex")
         }
     }
     @Published public var showCountdownInMenuBar: Bool = true {
         didSet {
-            userDefaults?.set(showCountdownInMenuBar, forKey: "WakeMeUp_showCountdownInMenuBar")
+            savePreference(showCountdownInMenuBar, forKey: "WakeMeUp_showCountdownInMenuBar")
         }
     }
     @Published public private(set) var isTestMode: Bool = false
@@ -91,8 +110,10 @@ public final class AppState: ObservableObject {
     private var timer: Timer?
     private let userDefaults: UserDefaults?
 
-    public init(userDefaults: UserDefaults? = UserDefaults.standard) {
+    public init(userDefaults: UserDefaults? = defaultUserDefaults) {
         self.userDefaults = userDefaults
+        migratePreferencesIfNeeded()
+
         self.isAwayMode = userDefaults?.bool(forKey: "WakeMeUp_isAwayMode") ?? false
 
         let savedHours = userDefaults?.double(forKey: "WakeMeUp_defaultSleepHours") ?? 0
@@ -123,28 +144,136 @@ public final class AppState: ObservableObject {
             self.ignoredDisplayIDs = []
         }
 
+        if let savedNames = userDefaults?.array(forKey: "WakeMeUp_ignoredDisplayNames") as? [String] {
+            self.ignoredDisplayNames = Set(savedNames)
+        } else {
+            self.ignoredDisplayNames = []
+        }
+
+        if let savedUUIDs = userDefaults?.array(forKey: "WakeMeUp_ignoredDisplayUUIDs") as? [String] {
+            self.ignoredDisplayUUIDs = Set(savedUUIDs)
+        } else {
+            self.ignoredDisplayUUIDs = []
+        }
+
+        // Re-sync ignoredDisplayIDs with currently connected screens matching ignored UUIDs or names
+        for screen in NSScreen.screens {
+            let screenId = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
+            let screenName = screen.localizedName
+            let uuid = persistentUUID(for: screenId)
+            if ignoredDisplayNames.contains(screenName) || (uuid != nil && ignoredDisplayUUIDs.contains(uuid!)) {
+                self.ignoredDisplayIDs.insert(screenId)
+            }
+        }
+
         self.ambientNightColorHex = userDefaults?.string(forKey: "WakeMeUp_ambientNightColorHex") ?? "#D95926"
-        self.ambientDawnColorHex = userDefaults?.string(forKey: "WakeMeUp_ambientDawnColorHex") ?? "#FFBF66"
-        self.ambientWakeColorHex = userDefaults?.string(forKey: "WakeMeUp_ambientWakeColorHex") ?? "#40E68C"
+        let savedDawn = userDefaults?.string(forKey: "WakeMeUp_ambientDawnColorHex")
+        self.ambientDawnColorHex = (savedDawn == nil || savedDawn == "#FFBF66") ? "#FA7268" : savedDawn!
+        let savedWake = userDefaults?.string(forKey: "WakeMeUp_ambientWakeColorHex")
+        self.ambientWakeColorHex = (savedWake == nil || savedWake == "#40E68C" || savedWake == "#FFB800") ? "#FFD000" : savedWake!
         self.showCountdownInMenuBar = userDefaults?.object(forKey: "WakeMeUp_showCountdownInMenuBar") as? Bool ?? true
     }
 
-    public func toggleDisplayIgnored(id: CGDirectDisplayID) {
-        if ignoredDisplayIDs.contains(id) {
-            ignoredDisplayIDs.remove(id)
+    private func migratePreferencesIfNeeded() {
+        guard let target = userDefaults else { return }
+        let sources = [UserDefaults.standard, UserDefaults(suiteName: "WakeMeUp")].compactMap { $0 }
+        let keys = [
+            "WakeMeUp_isAwayMode",
+            "WakeMeUp_defaultSleepHours",
+            "WakeMeUp_defaultSleepMinutes",
+            "WakeMeUp_inactivityOffsetMinutes",
+            "WakeMeUp_autoDetectInactivityOffset",
+            "WakeMeUp_sleepWindowStartHour",
+            "WakeMeUp_sleepWindowEndHour",
+            "WakeMeUp_autoPushWindowStartHour",
+            "WakeMeUp_autoPushWindowEndHour",
+            "WakeMeUp_ignoredDisplayIDs",
+            "WakeMeUp_ignoredDisplayNames",
+            "WakeMeUp_ignoredDisplayUUIDs",
+            "WakeMeUp_ambientNightColorHex",
+            "WakeMeUp_ambientDawnColorHex",
+            "WakeMeUp_ambientWakeColorHex",
+            "WakeMeUp_showCountdownInMenuBar",
+            "WakeMeUp_launchAtLogin"
+        ]
+        for key in keys {
+            if target.object(forKey: key) == nil {
+                for source in sources {
+                    if let val = source.object(forKey: key) {
+                        target.set(val, forKey: key)
+                        break
+                    }
+                }
+            }
+        }
+        target.synchronize()
+    }
+
+    public func persistentUUID(for displayID: CGDirectDisplayID) -> String? {
+        guard let cfUUID = CGDisplayCreateUUIDFromDisplayID(displayID)?.takeRetainedValue() else { return nil }
+        return CFUUIDCreateString(nil, cfUUID) as String
+    }
+
+    public func isDisplayIgnored(screen: NSScreen) -> Bool {
+        let screenId = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
+        let screenName = screen.localizedName
+        let uuid = persistentUUID(for: screenId)
+
+        if ignoredDisplayIDs.contains(screenId) { return true }
+        if ignoredDisplayNames.contains(screenName) { return true }
+        if let uuid = uuid, ignoredDisplayUUIDs.contains(uuid) { return true }
+        return false
+    }
+
+    public func toggleDisplayIgnored(screen: NSScreen) {
+        let screenId = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
+        let screenName = screen.localizedName
+        let uuid = persistentUUID(for: screenId)
+
+        let currentlyIgnored = isDisplayIgnored(screen: screen)
+        if currentlyIgnored {
+            ignoredDisplayIDs.remove(screenId)
+            ignoredDisplayNames.remove(screenName)
+            if let uuid = uuid { ignoredDisplayUUIDs.remove(uuid) }
         } else {
-            ignoredDisplayIDs.insert(id)
+            ignoredDisplayIDs.insert(screenId)
+            ignoredDisplayNames.insert(screenName)
+            if let uuid = uuid { ignoredDisplayUUIDs.insert(uuid) }
+        }
+    }
+
+    public func toggleDisplayIgnored(id: CGDirectDisplayID) {
+        if let matchingScreen = NSScreen.screens.first(where: {
+            (( $0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0) == id
+        }) {
+            toggleDisplayIgnored(screen: matchingScreen)
+        } else {
+            if ignoredDisplayIDs.contains(id) {
+                ignoredDisplayIDs.remove(id)
+            } else {
+                ignoredDisplayIDs.insert(id)
+            }
         }
     }
 
     public func resetAmbientDefaults() {
         ambientNightColorHex = "#D95926"
-        ambientDawnColorHex = "#FFBF66"
-        ambientWakeColorHex = "#40E68C"
+        ambientDawnColorHex = "#FA7268"
+        ambientWakeColorHex = "#FFD000"
     }
 
-    private func saveAwayMode(_ value: Bool) {
-        userDefaults?.set(value, forKey: "WakeMeUp_isAwayMode")
+    private func savePreference(_ value: Any?, forKey key: String) {
+        userDefaults?.set(value, forKey: key)
+        userDefaults?.synchronize()
+        if userDefaults != UserDefaults.standard {
+            UserDefaults.standard.set(value, forKey: key)
+            UserDefaults.standard.synchronize()
+        }
+    }
+
+    public func synchronize() {
+        userDefaults?.synchronize()
+        UserDefaults.standard.synchronize()
     }
 
     public func startSleep(

@@ -17,7 +17,11 @@ local.properties
 .idea/
 *.iml
 
-# Test artifacts
+# Test artifacts & Python
+__pycache__/
+*.py[cod]
+*$py.class
 tests/artifacts/*.png
 tests/.pytest_cache/
+.pytest_cache/
 .venv/

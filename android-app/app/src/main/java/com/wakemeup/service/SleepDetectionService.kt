@@ -38,9 +38,26 @@ class SleepDetectionService : Service() {
         const val ACTION_STOP_SERVICE = "com.wakemeup.ACTION_STOP_SERVICE"
         const val ACTION_MANUAL_SLEEP = "com.wakemeup.ACTION_MANUAL_SLEEP"
         const val ACTION_STOP_SLEEP = "com.wakemeup.ACTION_STOP_SLEEP"
+        const val ACTION_UPDATE_STATUS = "com.wakemeup.ACTION_UPDATE_STATUS"
+        const val ACTION_SHOW_MIDNIGHT_PROMPT = "com.wakemeup.ACTION_SHOW_MIDNIGHT_PROMPT"
+        const val EXTRA_DURATION_MINUTES = "com.wakemeup.EXTRA_DURATION_MINUTES"
 
         var isServiceRunning = false
             private set
+
+        fun isHourInWindow(hour: Int, startHour: Int, endHour: Int): Boolean {
+            return if (startHour <= endHour) {
+                hour in startHour until endHour
+            } else {
+                hour >= startHour || hour < endHour
+            }
+        }
+
+        fun formatHour(hour: Int): String {
+            val h = if (hour % 12 == 0) 12 else hour % 12
+            val ampm = if (hour < 12) "AM" else "PM"
+            return "$h:00 $ampm"
+        }
 
         fun getActiveBedtimeMs(context: Context): Long? {
             val prefs = context.getSharedPreferences("WakeMeUpState", Context.MODE_PRIVATE)
@@ -63,7 +80,8 @@ class SleepDetectionService : Service() {
                 autoPushWindowStartHour = prefs.getInt("auto_push_window_start_hour", 21),
                 autoPushWindowEndHour = prefs.getInt("auto_push_window_end_hour", 23),
                 inactivityOffsetMinutes = prefs.getFloat("inactivity_offset_minutes", 30.0f).toDouble(),
-                autoDetectInactivity = prefs.getBoolean("auto_detect_inactivity", true)
+                autoDetectInactivity = prefs.getBoolean("auto_detect_inactivity", true),
+                isAwayMode = prefs.getBoolean("is_away_mode", false)
             )
         }
 
@@ -77,7 +95,23 @@ class SleepDetectionService : Service() {
                 .putInt("auto_push_window_end_hour", config.autoPushWindowEndHour)
                 .putFloat("inactivity_offset_minutes", config.inactivityOffsetMinutes.toFloat())
                 .putBoolean("auto_detect_inactivity", config.autoDetectInactivity)
+                .putBoolean("is_away_mode", config.isAwayMode)
                 .apply()
+
+            if (isServiceRunning) {
+                val intent = Intent(context, SleepDetectionService::class.java).apply {
+                    action = ACTION_UPDATE_STATUS
+                }
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(intent)
+                    } else {
+                        context.startService(intent)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
@@ -120,21 +154,31 @@ class SleepDetectionService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = createForegroundNotification("Monitoring phone lock/unlock...")
+        val notification = createForegroundNotification(getStandbyStatusText())
         startForeground(NOTIFICATION_ID, notification)
+        scheduleNextWindowTransitionAlarm()
 
         when (intent?.action) {
             ACTION_STOP_SERVICE -> {
                 stopSelf()
                 return START_NOT_STICKY
             }
+            ACTION_UPDATE_STATUS -> {
+                updateStandbyNotification()
+                return START_STICKY
+            }
             ACTION_MANUAL_SLEEP -> {
                 val now = System.currentTimeMillis()
                 val config = getSleepConfig(this)
-                startSleepSession(now, config.defaultSleepHours * 60.0, "manual_app_trigger")
+                val overrideMinutes = intent.getDoubleExtra(EXTRA_DURATION_MINUTES, -1.0)
+                val durationMinutes = if (overrideMinutes > 0) overrideMinutes else config.defaultSleepHours * 60.0
+                startSleepSession(now, durationMinutes, "manual_app_trigger")
             }
             ACTION_STOP_SLEEP -> {
                 stopSleepSession()
+            }
+            ACTION_SHOW_MIDNIGHT_PROMPT -> {
+                glanceFilter.showAwakePromptNotification()
             }
             MidnightGlanceFilter.ACTION_KEEP_ALARM -> {
                 glanceFilter.dismissPrompt()
@@ -150,6 +194,33 @@ class SleepDetectionService : Service() {
         return START_STICKY
     }
 
+    private fun getStandbyStatusText(): String {
+        val targetMs = currentTargetWakeMs
+        if (currentBedtimeMs != null && targetMs != null) {
+            val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+            return "Sleeping: Target wake up at ${timeFormat.format(Date(targetMs))}"
+        }
+
+        val config = getSleepConfig(this)
+        if (config.isAwayMode) {
+            return "Away Mode · Sleep detection paused"
+        }
+
+        val calendar = java.util.Calendar.getInstance()
+        val currentHour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+        val isEligible = isHourInWindow(currentHour, config.sleepWindowStartHour, config.sleepWindowEndHour)
+
+        return if (isEligible) {
+            "Monitoring phone lock/unlock (${formatHour(config.sleepWindowStartHour)} – ${formatHour(config.sleepWindowEndHour)})"
+        } else {
+            "Standby · Sleep window: ${formatHour(config.sleepWindowStartHour)} – ${formatHour(config.sleepWindowEndHour)}"
+        }
+    }
+
+    private fun updateStandbyNotification() {
+        updateNotification(getStandbyStatusText())
+    }
+
     private fun registerScreenReceiver() {
         if (screenReceiver != null) return
 
@@ -159,12 +230,16 @@ class SleepDetectionService : Service() {
                     Intent.ACTION_SCREEN_ON -> {
                         if (currentBedtimeMs != null) {
                             glanceFilter.onScreenTurnedOn()
+                        } else {
+                            updateStandbyNotification()
                         }
                     }
                     Intent.ACTION_USER_PRESENT -> {
                         // User unlocked phone
                         if (currentBedtimeMs != null) {
                             glanceFilter.onScreenUnlocked()
+                        } else {
+                            updateStandbyNotification()
                         }
                     }
                     Intent.ACTION_SCREEN_OFF -> {
@@ -183,18 +258,15 @@ class SleepDetectionService : Service() {
         registerReceiver(screenReceiver, filter)
     }
 
-    private fun isHourInWindow(hour: Int, startHour: Int, endHour: Int): Boolean {
-        return if (startHour <= endHour) {
-            hour in startHour until endHour
-        } else {
-            hour >= startHour || hour < endHour
-        }
-    }
-
     private fun handleScreenOff() {
         val config = getSleepConfig(this)
         val calendar = java.util.Calendar.getInstance()
         val currentHour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+
+        if (config.isAwayMode) {
+            updateStandbyNotification()
+            return
+        }
 
         // 1. If an active sleep session exists: check if this was an ignorable glance or push target
         if (currentBedtimeMs != null) {
@@ -224,6 +296,7 @@ class SleepDetectionService : Service() {
         if (!isEligible) {
             // Outside eligible sleep window (e.g. 3:00 PM on a workday):
             // Phone inactivity is ignored! Do NOT trigger sleep.
+            updateStandbyNotification()
             return
         }
 
@@ -268,7 +341,15 @@ class SleepDetectionService : Service() {
         currentBedtimeMs = null
         currentTargetWakeMs = null
         cancelExactPhoneAlarm()
-        updateNotification("Monitoring phone lock/unlock...")
+        
+        // Stop any actively ringing alarm
+        val dismissIntent = Intent(this, AlarmTriggerReceiver::class.java).apply {
+            action = AlarmTriggerReceiver.ACTION_DISMISS_ALARM
+        }
+        sendBroadcast(dismissIntent)
+
+        updateStandbyNotification()
+        scheduleNextWindowTransitionAlarm()
 
         serviceScope.launch {
             syncClient.sendWakeEvent()
@@ -350,9 +431,82 @@ class SleepDetectionService : Service() {
         }
     }
 
+    private fun scheduleNextWindowTransitionAlarm() {
+        val config = getSleepConfig(this)
+        val now = System.currentTimeMillis()
+
+        fun getNextOccurrence(hour: Int): Long {
+            val cal = java.util.Calendar.getInstance().apply {
+                timeInMillis = now
+                set(java.util.Calendar.HOUR_OF_DAY, hour)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }
+            if (cal.timeInMillis <= now) {
+                cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+            }
+            return cal.timeInMillis
+        }
+
+        val nextStart = getNextOccurrence(config.sleepWindowStartHour)
+        val nextEnd = getNextOccurrence(config.sleepWindowEndHour)
+        val nextTrigger = minOf(nextStart, nextEnd)
+
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, SleepDetectionService::class.java).apply {
+            action = ACTION_UPDATE_STATUS
+        }
+        val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PendingIntent.getForegroundService(
+                this,
+                200,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            PendingIntent.getService(
+                this,
+                200,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC, nextTrigger, pendingIntent)
+        } else {
+            alarmManager.set(AlarmManager.RTC, nextTrigger, pendingIntent)
+        }
+    }
+
+    private fun cancelNextWindowTransitionAlarm() {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, SleepDetectionService::class.java).apply {
+            action = ACTION_UPDATE_STATUS
+        }
+        val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PendingIntent.getForegroundService(
+                this,
+                200,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            PendingIntent.getService(
+                this,
+                200,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+        alarmManager.cancel(pendingIntent)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         isServiceRunning = false
+        cancelNextWindowTransitionAlarm()
         screenReceiver?.let {
             unregisterReceiver(it)
             screenReceiver = null

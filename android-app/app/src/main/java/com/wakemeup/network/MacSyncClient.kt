@@ -16,6 +16,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.net.Inet4Address
@@ -37,7 +38,7 @@ class MacSyncClient(private val context: Context) {
         .build()
 
     var macHost: String
-        get() = prefs.getString("mac_host", "192.168.1.3") ?: "192.168.1.3"
+        get() = prefs.getString("mac_host", "") ?: ""
         set(value) = prefs.edit().putString("mac_host", value).apply()
 
     var macPort: Int
@@ -326,7 +327,8 @@ class MacSyncClient(private val context: Context) {
         val autoPushWindowStartHour: Int = 21,
         val autoPushWindowEndHour: Int = 23,
         val inactivityOffsetMinutes: Double = 30.0,
-        val autoDetectInactivity: Boolean = true
+        val autoDetectInactivity: Boolean = true,
+        val isAwayMode: Boolean = false
     )
 
     suspend fun fetchConfig(): Result<AppConfig> = executeWithAutoDiscovery {
@@ -348,7 +350,8 @@ class MacSyncClient(private val context: Context) {
                             autoPushWindowStartHour = obj.optInt("auto_push_window_start_hour", 21),
                             autoPushWindowEndHour = obj.optInt("auto_push_window_end_hour", 23),
                             inactivityOffsetMinutes = obj.optDouble("inactivity_offset_minutes", 30.0),
-                            autoDetectInactivity = obj.optBoolean("auto_detect_inactivity", true)
+                            autoDetectInactivity = obj.optBoolean("auto_detect_inactivity", true),
+                            isAwayMode = obj.optBoolean("is_away_mode", false)
                         )
                         Result.success(config)
                     } else {
@@ -372,10 +375,118 @@ class MacSyncClient(private val context: Context) {
                     put("auto_push_window_end_hour", config.autoPushWindowEndHour)
                     put("inactivity_offset_minutes", config.inactivityOffsetMinutes)
                     put("auto_detect_inactivity", config.autoDetectInactivity)
+                    put("is_away_mode", config.isAwayMode)
                 }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
                     .url("$baseUrl/api/config")
+                    .post(body)
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        Result.success(response.body?.string() ?: "OK")
+                    } else {
+                        Result.failure(Exception("HTTP ${response.code}"))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    data class DisplayInfo(
+        val id: String,
+        val name: String,
+        val isMain: Boolean,
+        val width: Int,
+        val height: Int,
+        val activeMode: String,
+        val isIgnored: Boolean
+    )
+
+    suspend fun fetchDisplays(): Result<List<DisplayInfo>> = executeWithAutoDiscovery {
+        withContext(Dispatchers.IO) {
+            try {
+                val request = Request.Builder()
+                    .url("$baseUrl/api/displays")
+                    .get()
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val body = response.body?.string() ?: "{}"
+                        val obj = JSONObject(body)
+                        val array = obj.optJSONArray("displays") ?: JSONArray()
+                        val list = mutableListOf<DisplayInfo>()
+                        for (i in 0 until array.length()) {
+                            val d = array.getJSONObject(i)
+                            list.add(
+                                DisplayInfo(
+                                    id = d.optString("id", ""),
+                                    name = d.optString("name", "Display $i"),
+                                    isMain = d.optBoolean("is_main", false),
+                                    width = d.optInt("width", 0),
+                                    height = d.optInt("height", 0),
+                                    activeMode = d.optString("active_mode", "idle"),
+                                    isIgnored = d.optBoolean("is_ignored", false)
+                                )
+                            )
+                        }
+                        Result.success(list)
+                    } else {
+                        Result.failure(Exception("HTTP ${response.code}"))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun sendMessage(
+        text: String,
+        targetDisplayId: String = "all",
+        durationSeconds: Int? = null
+    ): Result<String> = executeWithAutoDiscovery {
+        withContext(Dispatchers.IO) {
+            try {
+                val json = JSONObject().apply {
+                    put("text", text)
+                    put("target_display_id", targetDisplayId)
+                    if (durationSeconds != null && durationSeconds > 0) {
+                        put("duration_seconds", durationSeconds)
+                    }
+                }
+                val body = json.toString().toRequestBody("application/json".toMediaType())
+                val request = Request.Builder()
+                    .url("$baseUrl/api/message")
+                    .post(body)
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        Result.success(response.body?.string() ?: "OK")
+                    } else {
+                        Result.failure(Exception("HTTP ${response.code}: ${response.body?.string()}"))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun dismissMessage(targetDisplayId: String = "all"): Result<String> = executeWithAutoDiscovery {
+        withContext(Dispatchers.IO) {
+            try {
+                val json = JSONObject().apply {
+                    put("target_display_id", targetDisplayId)
+                }
+                val body = json.toString().toRequestBody("application/json".toMediaType())
+                val request = Request.Builder()
+                    .url("$baseUrl/api/message/dismiss")
                     .post(body)
                     .build()
 

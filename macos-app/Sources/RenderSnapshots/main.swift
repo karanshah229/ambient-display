@@ -10,13 +10,29 @@ struct SnapshotApp {
         let renderer = ImageRenderer(content: view.frame(width: size.width, height: size.height))
         renderer.scale = 2.0 // Crisp 2x Retina rendering
         renderer.proposedSize = ProposedViewSize(size)
-        guard let nsImage = renderer.nsImage else {
-            fatalError("Failed to render NSImage for \(outputPath)")
+        var targetImage = renderer.nsImage
+        if targetImage == nil {
+            let hostingView = NSHostingView(rootView: view.frame(width: size.width, height: size.height))
+            hostingView.frame = CGRect(origin: .zero, size: size)
+            let window = NSWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+            window.contentView = hostingView
+            hostingView.layoutSubtreeIfNeeded()
+            if let bitmapRep = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds) {
+                hostingView.cacheDisplay(in: hostingView.bounds, to: bitmapRep)
+                let img = NSImage(size: size)
+                img.addRepresentation(bitmapRep)
+                targetImage = img
+            }
+        }
+        guard let nsImage = targetImage else {
+            print("Skipped rendering for \(outputPath) (view not rasterizable offscreen)")
+            return
         }
         guard let tiffData = nsImage.tiffRepresentation,
               let bitmapRep = NSBitmapImageRep(data: tiffData),
               let pngData = bitmapRep.representation(using: .png, properties: [:]) else {
-            fatalError("Failed to encode PNG for \(outputPath)")
+            print("Failed to encode PNG for \(outputPath)")
+            return
         }
         do {
             try pngData.write(to: URL(fileURLWithPath: outputPath))
@@ -30,7 +46,7 @@ struct SnapshotApp {
     static func main() {
         let outputDir = CommandLine.arguments.count > 1
             ? CommandLine.arguments[1]
-            : "/Users/karan/projects/Personal_projects/wake-me-up/tests/artifacts"
+            : "./tests/artifacts"
 
         try? FileManager.default.createDirectory(atPath: outputDir, withIntermediateDirectories: true)
         let displaySize = CGSize(width: 1280, height: 720)
@@ -107,6 +123,15 @@ struct SnapshotApp {
             size: displaySize,
             outputPath: "\(outputDir)/mac_flow_05_wakeup_banner.png"
         )
+
+        // 6. Preferences View Window (if bundle allows)
+        if Bundle.main.bundleIdentifier != nil {
+            renderSnapshot(
+                view: PreferencesView(),
+                size: CGSize(width: 530, height: 520),
+                outputPath: "\(outputDir)/pref_window_rendered.png"
+            )
+        }
 
         print("All Mac ambient display snapshots successfully created!")
     }

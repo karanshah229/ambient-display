@@ -19,7 +19,7 @@ public final class PreferencesWindowController: NSObject, NSWindowDelegate {
         let hostingController = NSHostingController(rootView: preferencesView)
 
         let newWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 550, height: 540),
+            contentRect: NSRect(x: 0, y: 0, width: 550, height: 600),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -36,6 +36,7 @@ public final class PreferencesWindowController: NSObject, NSWindowDelegate {
     }
 
     public func windowWillClose(_ notification: Notification) {
+        AppState.shared.synchronize()
         window = nil
     }
 }
