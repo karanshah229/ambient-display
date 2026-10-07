@@ -397,7 +397,7 @@ class MainActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 val res = syncClient.sendCanvas(
                     type = canvasType,
-                    title = if (text.isNotEmpty()) text else (mediaUrl ?: "Ambient Surface"),
+                    title = if (text.isNotEmpty()) text else (mediaUrl ?: "Ambient Display"),
                     subtitle = subtitle,
                     mediaUrl = mediaUrl,
                     dismissPolicy = dismissPolicy,
@@ -420,7 +420,7 @@ class MainActivity : AppCompatActivity() {
             if (authManager.currentUser != null) {
                 val cloudPayload = hashMapOf<String, Any>(
                     "type" to canvasType,
-                    "title" to (if (text.isNotEmpty()) text else (mediaUrl ?: "Ambient Surface")),
+                    "title" to (if (text.isNotEmpty()) text else (mediaUrl ?: "Ambient Display")),
                     "subtitle" to (subtitle ?: ""),
                     "media_url" to (mediaUrl ?: ""),
                     "dismiss_policy" to dismissPolicy,
@@ -664,12 +664,13 @@ class MainActivity : AppCompatActivity() {
 
             deviceSyncManager.registerCurrentDevice()
             deviceSyncManager.startListeningToDevices { devices ->
-                cloudDevices = devices.filter { it.deviceType == "macos" }
-                val deviceOptions = mutableListOf("All Workstations (Cloud Broadcast)")
+                cloudDevices = devices.filter { it.deviceType in listOf("machine", "macos") }
+                val deviceOptions = mutableListOf("All Laptops / Machines (Cloud Broadcast)")
                 for (dev in cloudDevices) {
                     val statusEmoji = if (dev.status == "online") "🟢" else "⚪"
                     deviceOptions.add("$statusEmoji ${dev.deviceName} (${dev.deviceId})")
                 }
+
                 val adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, deviceOptions)
                 spCloudTargetDevice.adapter = adapter
             }

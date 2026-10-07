@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">Ambient Surface</string>
-    <string name="accessibility_service_description">Ensures Ambient Surface detection and sync stays active and is not killed by battery optimizations.</string>
+    <string name="app_name">Ambient Display</string>
+    <string name="accessibility_service_description">Ensures Ambient Display detection and sync stays active and is not killed by battery optimizations.</string>
 </resources>
+

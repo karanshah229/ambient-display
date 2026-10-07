@@ -20,7 +20,7 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "display.2", accessibilityDescription: "Ambient Surface")
+            button.image = NSImage(systemSymbolName: "display.2", accessibilityDescription: "Ambient Display")
             button.imagePosition = .imageLeading
         }
     }
@@ -56,10 +56,11 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
                 button.title = ""
             }
         case .idle:
-            button.image = NSImage(systemSymbolName: "display.2", accessibilityDescription: "Ambient Surface")
+            button.image = NSImage(systemSymbolName: "display.2", accessibilityDescription: "Ambient Display")
             button.title = appState.isAwayMode ? " (Away)" : ""
         }
     }
+
 
     public func menuWillOpen(_ menu: NSMenu) {
         refreshMenuItems()
@@ -117,18 +118,52 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         loginItem.state = loginManager.isEnabled ? .on : .off
         menu.addItem(loginItem)
 
-        // 5. Preferences
+        // 5. Cloud & Google Sign-In
+        menu.addItem(NSMenuItem.separator())
+        let cloud = FirebaseCloudService.shared
+        if let user = cloud.currentUser {
+            let email = user.email ?? "Google User"
+            let userItem = NSMenuItem(title: "☁️ \(email)", action: nil, keyEquivalent: "")
+            userItem.isEnabled = false
+            menu.addItem(userItem)
+
+            let devItem = NSMenuItem(title: "   Machine: \(cloud.deviceId) (Online)", action: nil, keyEquivalent: "")
+            devItem.isEnabled = false
+            menu.addItem(devItem)
+
+            let signOutItem = NSMenuItem(title: "Sign Out (Google)", action: #selector(cloudSignOutAction), keyEquivalent: "")
+            signOutItem.target = self
+            menu.addItem(signOutItem)
+        } else {
+            let signInItem = NSMenuItem(title: "☁️ Sign In with Google…", action: #selector(cloudSignInAction), keyEquivalent: "g")
+            signInItem.target = self
+            menu.addItem(signInItem)
+        }
+
+        menu.addItem(NSMenuItem.separator())
+
+        // 6. Preferences
         let prefsItem = NSMenuItem(title: "Preferences…", action: #selector(openPreferencesAction), keyEquivalent: ",")
         prefsItem.target = self
         menu.addItem(prefsItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        // 6. Quit
-        let quitItem = NSMenuItem(title: "Quit Ambient Surface", action: #selector(quitAction), keyEquivalent: "q")
+        // 7. Quit
+        let quitItem = NSMenuItem(title: "Quit Ambient Display", action: #selector(quitAction), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
     }
+
+    @objc private func cloudSignInAction() {
+        FirebaseCloudService.shared.startGoogleOAuthFlow()
+    }
+
+    @objc private func cloudSignOutAction() {
+        FirebaseCloudService.shared.signOut()
+        refreshMenuItems()
+    }
+
 
     // MARK: - Actions
 

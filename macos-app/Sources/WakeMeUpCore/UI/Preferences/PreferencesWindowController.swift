@@ -25,7 +25,7 @@ public final class PreferencesWindowController: NSObject, NSWindowDelegate {
             defer: false
         )
         newWindow.center()
-        newWindow.title = "Ambient Surface Preferences"
+        newWindow.title = "Ambient Display Preferences"
         newWindow.contentViewController = hostingController
         newWindow.isReleasedWhenClosed = false
         newWindow.delegate = self

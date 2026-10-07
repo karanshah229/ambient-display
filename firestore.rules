@@ -76,10 +76,10 @@ service cloud.firestore {
     // Helper Functions
     // ===============================================================
 
-    // Check if the user is authenticated specifically via Google Sign-In
+    // Check if the user is authenticated specifically via Google Sign-In (or associated service tokens)
     function isAuthenticated() {
       return request.auth != null &&
-             request.auth.token.firebase.sign_in_provider == 'google.com';
+             (request.auth.token.firebase.sign_in_provider in ['google.com', 'custom']);
     }
 
     // Check if authenticated user owns the resource path
@@ -217,7 +217,7 @@ service cloud.firestore {
              hasRequiredFields(['deviceId', 'deviceName', 'deviceType', 'status', 'lastSeen']) &&
              data.deviceId == deviceId &&
              data.deviceName is string && data.deviceName.size() >= 1 && data.deviceName.size() <= 100 &&
-             data.deviceType is string && data.deviceType in ['macos', 'android', 'ios', 'web', 'display', 'other', 'macOS', 'Android', 'iOS'] &&
+             data.deviceType is string && data.deviceType in ['mobile', 'machine', 'macos', 'android', 'ios', 'web', 'display', 'other', 'Mobile', 'Machine'] &&
              data.status is string && data.status in ['online', 'offline', 'active', 'idle', 'sleeping', 'standby', 'disconnected'] &&
              data.lastSeen is timestamp &&
              (!('activeCanvas' in data) || data.activeCanvas == null || isValidActiveCanvas(data.activeCanvas)) &&

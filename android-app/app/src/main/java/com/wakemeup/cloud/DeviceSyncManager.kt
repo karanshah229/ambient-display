@@ -25,7 +25,7 @@ class DeviceSyncManager(private val context: Context) {
 
     val deviceId: String by lazy {
         val androidId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "phone"
-        "android_$androidId"
+        "mobile_$androidId"
     }
 
     val deviceName: String by lazy {
@@ -38,7 +38,7 @@ class DeviceSyncManager(private val context: Context) {
         val data = hashMapOf(
             "deviceId" to deviceId,
             "deviceName" to deviceName,
-            "deviceType" to "android",
+            "deviceType" to "mobile",
             "status" to "online",
             "lastSeen" to Timestamp(Date())
         )
@@ -57,6 +57,7 @@ class DeviceSyncManager(private val context: Context) {
                     val type = doc.getString("deviceType") ?: "unknown"
                     val status = doc.getString("status") ?: "offline"
                     val lastSeen = doc.getTimestamp("lastSeen")
+                    android.util.Log.i("AmbientDisplay", "Discovered device: id=$id name=$name type=$type status=$status")
                     CloudDevice(id, name, type, status, lastSeen)
                 }
                 onDevicesUpdated(devices)
@@ -76,9 +77,12 @@ class DeviceSyncManager(private val context: Context) {
         val devicesColl = firestore.collection("users").document(uid).collection("devices")
         return try {
             if (targetDeviceId == "all") {
-                val snapshot = devicesColl.whereEqualTo("deviceType", "macos").get().await()
+                val snapshot = devicesColl.get().await()
                 for (doc in snapshot.documents) {
-                    doc.reference.update("activeCanvas", canvasPayload).await()
+                    val dType = doc.getString("deviceType")
+                    if (dType == "machine" || dType == "macos") {
+                        doc.reference.update("activeCanvas", canvasPayload).await()
+                    }
                 }
             } else {
                 devicesColl.document(targetDeviceId).update("activeCanvas", canvasPayload).await()
@@ -94,9 +98,12 @@ class DeviceSyncManager(private val context: Context) {
         val devicesColl = firestore.collection("users").document(uid).collection("devices")
         return try {
             if (targetDeviceId == "all") {
-                val snapshot = devicesColl.whereEqualTo("deviceType", "macos").get().await()
+                val snapshot = devicesColl.get().await()
                 for (doc in snapshot.documents) {
-                    doc.reference.update("activeCanvas", null).await()
+                    val dType = doc.getString("deviceType")
+                    if (dType == "machine" || dType == "macos") {
+                        doc.reference.update("activeCanvas", null).await()
+                    }
                 }
             } else {
                 devicesColl.document(targetDeviceId).update("activeCanvas", null).await()
@@ -106,4 +113,5 @@ class DeviceSyncManager(private val context: Context) {
             false
         }
     }
+
 }

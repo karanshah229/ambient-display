@@ -79,11 +79,11 @@ public struct PreferencesView: View {
     private var generalTab: some View {
         Form {
             Section(header: Text("Startup & Menu Bar").font(.headline)) {
-                Toggle("Launch Ambient Surface at Login", isOn: Binding(
+                Toggle("Launch Ambient Display at Login", isOn: Binding(
                     get: { launchAtLogin.isEnabled },
                     set: { launchAtLogin.setEnabled($0) }
                 ))
-                .help("Automatically launches Ambient Surface when you log into your Mac")
+                .help("Automatically launches Ambient Display when you log into your Mac")
 
                 Text("Keeps the local ambient server and display mirror ready at all times.")
                     .font(.caption)

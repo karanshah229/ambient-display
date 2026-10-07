@@ -170,7 +170,7 @@ public struct CanvasOverlayView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "iphone.radiowaves.left.and.right")
                                 .font(.system(size: 14))
-                            Text("Dismiss from Ambient Surface on your phone")
+                            Text("Dismiss from Ambient Display on your phone")
                                 .font(.system(size: 14, weight: .medium))
                         }
                         .foregroundColor(Color(white: 0.45))
@@ -236,7 +236,7 @@ public struct CanvasOverlayView: View {
     private var headerTitle: String {
         switch canvas.type {
         case .billboard:
-            return canvas.dismissPolicy == .phoneOnly ? "AMBIENT SURFACE • LOCKED" : "AMBIENT SURFACE"
+            return canvas.dismissPolicy == .phoneOnly ? "AMBIENT DISPLAY • LOCKED" : "AMBIENT DISPLAY"
         case .sunrise:
             return "SUNRISE ROUTINE"
         case .image:

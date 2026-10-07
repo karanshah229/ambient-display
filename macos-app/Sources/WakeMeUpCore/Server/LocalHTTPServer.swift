@@ -164,6 +164,9 @@ public final class LocalHTTPServer {
         case ("POST", "/api/cloud/auth"):
             return handlePostCloudAuth(body: body)
 
+        case ("POST", "/api/cloud/oauth-start"):
+            return handlePostCloudOAuthStart()
+
         case ("POST", "/api/cloud/signout"):
             return handlePostCloudSignOut()
 
@@ -525,6 +528,14 @@ public final class LocalHTTPServer {
             let errJson = "{\"status\": \"error\", \"message\": \"\(errMsg)\"}".data(using: .utf8)!
             return (401, "application/json", errJson)
         }
+    }
+
+    private func handlePostCloudOAuthStart() -> (Int, String, Data) {
+        DispatchQueue.main.sync {
+            FirebaseCloudService.shared.startGoogleOAuthFlow()
+        }
+        let json = "{\"status\": \"oauth_started\", \"message\": \"Browser opened for Google sign in\"}".data(using: .utf8)!
+        return (200, "application/json", json)
     }
 
     private func handlePostCloudSignOut() -> (Int, String, Data) {

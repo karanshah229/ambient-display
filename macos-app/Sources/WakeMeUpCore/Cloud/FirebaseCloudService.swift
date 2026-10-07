@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import Combine
+import Network
 
 public struct CloudUserInfo: Codable {
     public let uid: String
@@ -85,6 +86,7 @@ public final class FirebaseCloudService: ObservableObject {
     private var heartbeatTimer: Timer?
     private var lastReceivedCanvasId: String? = nil
     private let urlSession = URLSession.shared
+    private var oauthListener: NWListener?
 
     private init() {
         loadPersistedSession()
@@ -103,10 +105,11 @@ public final class FirebaseCloudService: ObservableObject {
             .components(separatedBy: CharacterSet.alphanumerics.inverted)
             .filter { !$0.isEmpty }
             .joined(separator: "_")
-        let generated = "mac_\(clean.prefix(20))"
+        let generated = "machine_\(clean.prefix(20))"
         AppState.defaultUserDefaults.set(generated, forKey: "WakeMeUp_CloudDeviceId")
         return generated
     }
+
 
     public var deviceName: String {
         Host.current().localizedName ?? "Mac Workstation"
@@ -284,11 +287,12 @@ public final class FirebaseCloudService: ObservableObject {
             "fields": [
                 "deviceId": ["stringValue": deviceId],
                 "deviceName": ["stringValue": deviceName],
-                "deviceType": ["stringValue": "macos"],
+                "deviceType": ["stringValue": "machine"],
                 "status": ["stringValue": "online"],
                 "lastSeen": ["timestampValue": nowIso]
             ]
         ]
+
 
         do {
             req.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -368,7 +372,7 @@ public final class FirebaseCloudService: ObservableObject {
         }
 
         let typeStr = (canvasFields["type"] as? [String: Any])?["stringValue"] as? String ?? "billboard"
-        let titleStr = (canvasFields["title"] as? [String: Any])?["stringValue"] as? String ?? "Ambient Surface"
+        let titleStr = (canvasFields["title"] as? [String: Any])?["stringValue"] as? String ?? "Ambient Display"
         let subtitleStr = (canvasFields["subtitle"] as? [String: Any])?["stringValue"] as? String
         let mediaUrlStr = (canvasFields["mediaUrl"] as? [String: Any])?["stringValue"] as? String
             ?? (canvasFields["media_url"] as? [String: Any])?["stringValue"] as? String
@@ -473,4 +477,112 @@ public final class FirebaseCloudService: ObservableObject {
             }
         }
     }
+
+    // MARK: - Google OAuth Loopback Flow
+    public func startGoogleOAuthFlow() {
+        stopOAuthListener()
+        do {
+            let tcpOptions = NWProtocolTCP.Options()
+            let params = NWParameters(tls: nil, tcp: tcpOptions)
+            params.allowLocalEndpointReuse = true
+            let port = NWEndpoint.Port(rawValue: 8322)!
+            let listener = try NWListener(using: params, on: port)
+            self.oauthListener = listener
+
+            listener.newConnectionHandler = { [weak self] connection in
+                connection.start(queue: .main)
+                Task { @MainActor [weak self] in
+                    self?.handleOAuthConnection(connection)
+                }
+            }
+            listener.start(queue: .main)
+
+
+            let redirectUri = "http://127.0.0.1:8322/oauth2callback".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+            let scope = "openid%20email%20profile"
+            let authUrlStr = "https://accounts.google.com/o/oauth2/v2/auth?client_id=\(googleClientId)&redirect_uri=\(redirectUri)&response_type=code&scope=\(scope)"
+
+            if let url = URL(string: authUrlStr) {
+                NSWorkspace.shared.open(url)
+            }
+        } catch {
+            self.syncError = "Failed to start OAuth loopback: \(error.localizedDescription)"
+        }
+    }
+
+    public func stopOAuthListener() {
+        oauthListener?.cancel()
+        oauthListener = nil
+    }
+
+    private func handleOAuthConnection(_ connection: NWConnection) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { [weak self] data, _, _, _ in
+            guard let self = self, let data = data, let reqStr = String(data: data, encoding: .utf8) else {
+                connection.cancel()
+                return
+            }
+
+            var authCode: String? = nil
+            if let firstLine = reqStr.components(separatedBy: "\r\n").first,
+               let urlPart = firstLine.components(separatedBy: " ").dropFirst().first,
+               let components = URLComponents(string: urlPart) {
+                authCode = components.queryItems?.first(where: { $0.name == "code" })?.value
+            }
+
+            let htmlResponse: String
+            if let code = authCode {
+                htmlResponse = """
+                HTTP/1.1 200 OK\r
+                Content-Type: text/html; charset=utf-8\r
+                Connection: close\r
+                \r
+                <!DOCTYPE html>
+                <html>
+                <head><title>Ambient Display Authenticated</title></head>
+                <body style="font-family: -apple-system, sans-serif; background: #121212; color: #FFF; text-align: center; padding-top: 80px;">
+                    <h1 style="color: #30D158;">✓ Signed In Successfully</h1>
+                    <p style="color: #8E8E93; font-size: 16px;">Your Ambient Display workstation is now connected to Firebase.</p>
+                    <p style="color: #636366; font-size: 13px;">You can close this tab and return to Ambient Display.</p>
+                </body>
+                </html>
+                """
+
+                Task { @MainActor [weak self] in
+                    await self?.exchangeCodeForGoogleTokens(code: code)
+                }
+            } else {
+                htmlResponse = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\nAuthorization code not received."
+            }
+
+            let respData = Data(htmlResponse.utf8)
+            connection.send(content: respData, completion: .contentProcessed { [weak self] _ in
+                connection.cancel()
+                Task { @MainActor [weak self] in
+                    self?.stopOAuthListener()
+                }
+            })
+        }
+    }
+
+    public func exchangeCodeForGoogleTokens(code: String) async {
+        let tokenUrl = URL(string: "https://oauth2.googleapis.com/token")!
+        var req = URLRequest(url: tokenUrl)
+        req.httpMethod = "POST"
+        req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+
+        let body = "code=\(code)&client_id=\(googleClientId)&redirect_uri=http://127.0.0.1:8322/oauth2callback&grant_type=authorization_code"
+        req.httpBody = body.data(using: .utf8)
+
+        do {
+            let (data, res) = try await urlSession.data(for: req)
+            guard let http = res as? HTTPURLResponse, http.statusCode == 200 else { return }
+            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let idToken = json["id_token"] as? String {
+                try await signInWithGoogleIdToken(idToken)
+            }
+        } catch {
+            self.syncError = error.localizedDescription
+        }
+    }
 }
+

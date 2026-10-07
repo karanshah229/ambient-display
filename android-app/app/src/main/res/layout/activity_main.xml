@@ -15,7 +15,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ambient Surface"
+            android:text="Ambient Display"
             android:textColor="#FF9F0A"
             android:textSize="28sp"
             android:textStyle="bold" />
@@ -24,9 +24,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Workstation Ambient Canvas &amp; Circadian Sunrise Companion"
+            android:text="Workstation Ambient Canvas &amp; Screen Billboard Companion"
             android:textColor="#8E8E93"
             android:textSize="14sp" />
+
 
         <!-- Status Card -->
         <com.google.android.material.card.MaterialCardView
@@ -325,7 +326,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🖥️ Ambient Surface Canvas"
+                    android:text="🖥️ Ambient Display Canvas"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold" />
