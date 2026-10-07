@@ -15,7 +15,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Wake Me Up"
+            android:text="Ambient Surface"
             android:textColor="#FF9F0A"
             android:textSize="28sp"
             android:textStyle="bold" />
@@ -24,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Automatic 7.5h Sleep &amp; Monitor Display Companion"
+            android:text="Workstation Ambient Canvas &amp; Circadian Sunrise Companion"
             android:textColor="#8E8E93"
             android:textSize="14sp" />
 
@@ -246,7 +246,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🖥️ Screen Message Billboard"
+                    android:text="🖥️ Ambient Surface Canvas"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -255,16 +255,16 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Display a custom message on connected Mac monitors"
+                    android:text="Broadcast billboard message or privacy lock across displays"
                     android:textColor="#8E8E93"
                     android:textSize="12sp" />
 
-                <!-- Message Text Input -->
+                <!-- Message Headline Input -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:hint="Type message (e.g. Call in 10 mins / BRB)"
+                    android:hint="Headline / Message (e.g. At the Gym / BRB)"
                     app:boxBackgroundColor="#2C2C2E"
                     app:boxCornerRadiusBottomEnd="8dp"
                     app:boxCornerRadiusBottomStart="8dp"
@@ -276,8 +276,28 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="textMultiLine"
-                        android:minLines="2"
-                        android:maxLines="4"
+                        android:minLines="1"
+                        android:maxLines="3"
+                        android:textColor="#FFFFFF" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Subtitle / Note Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="Subtitle (optional, e.g. Back at 5:30. Do not touch.)"
+                    app:boxBackgroundColor="#2C2C2E"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusTopStart="8dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCanvasSubtitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
                         android:textColor="#FFFFFF" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -287,7 +307,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Recent messages (tap to use):"
+                    android:text="Recent presets (tap to use):"
                     android:textColor="#8E8E93"
                     android:textSize="12sp" />
 
@@ -320,12 +340,12 @@
                     android:layout_marginTop="4dp"
                     android:background="#2C2C2E" />
 
-                <!-- Duration Radio Group -->
+                <!-- Duration & Policy Radio Group -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:text="Display Duration:"
+                    android:text="Dismiss Policy &amp; Duration:"
                     android:textColor="#8E8E93"
                     android:textSize="12sp" />
 
@@ -341,16 +361,25 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checked="true"
-                        android:text="Persistent (ESC)"
+                        android:text="ESC (Any)"
                         android:textColor="#EBEBF5"
+                        android:textSize="13sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbLockPhoneOnly"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="🔒 Locked"
+                        android:textColor="#FF453A"
                         android:textSize="13sp" />
 
                     <RadioButton
                         android:id="@+id/rbToast15s"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="15s Toast"
+                        android:layout_marginStart="8dp"
+                        android:text="15s"
                         android:textColor="#EBEBF5"
                         android:textSize="13sp" />
 
@@ -358,8 +387,8 @@
                         android:id="@+id/rbToast30s"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:text="30s Toast"
+                        android:layout_marginStart="8dp"
+                        android:text="30s"
                         android:textColor="#EBEBF5"
                         android:textSize="13sp" />
                 </RadioGroup>

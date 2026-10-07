@@ -1,0 +1,18 @@
+{
+  "request": {
+    "type": "billboard",
+    "title": "At the Gym",
+    "subtitle": "Back around 5:30 PM. Please do not touch.",
+    "dismiss_policy": "esc_any",
+    "target_display_id": "all"
+  },
+  "response": {
+    "target_display_id": "all",
+    "dismiss_policy": "esc_any",
+    "subtitle": "Back around 5:30 PM. Please do not touch.",
+    "type": "billboard",
+    "created_at": "2026-10-07T06:30:39Z",
+    "id": "F52140F6-E09D-4C1F-A50B-6FEC5806A985",
+    "title": "At the Gym"
+  }
+}

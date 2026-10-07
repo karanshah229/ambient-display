@@ -1,0 +1,18 @@
+{
+  "request": {
+    "type": "billboard",
+    "title": "Workstation Locked",
+    "subtitle": "Rendering in progress. Dismiss via phone.",
+    "dismiss_policy": "phone_only",
+    "target_display_id": "all"
+  },
+  "response": {
+    "dismiss_policy": "phone_only",
+    "id": "42B11631-6E04-4CE5-9EB9-17511DC4679A",
+    "type": "billboard",
+    "title": "Workstation Locked",
+    "target_display_id": "all",
+    "created_at": "2026-10-07T06:30:41Z",
+    "subtitle": "Rendering in progress. Dismiss via phone."
+  }
+}

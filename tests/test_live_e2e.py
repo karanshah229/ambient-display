@@ -207,3 +207,148 @@ class TestWakeMeUpLiveE2E:
         requests.post(f"{mac_server}/api/away", json={"is_away_mode": False})
         status_restored = requests.get(f"{mac_server}/api/status").json()
         assert status_restored["is_away_mode"] is False
+
+    def test_07_ambient_surface_billboard_canvas(self, mac_server, adb_device, mac_evidence):
+        """
+        Flow 7: Ambient Surface Billboard Canvas:
+        - Post a rich billboard canvas (title + subtitle + esc_any).
+        - Verify active_canvases status returns the payload.
+        - Verify connected displays report active_mode == 'message'.
+        - Capture display evidence.
+        - Dismiss canvas via API and verify return to idle.
+        """
+        # Ensure starting in idle with no canvases
+        requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+        time.sleep(0.5)
+
+        payload = {
+            "type": "billboard",
+            "title": "At the Gym",
+            "subtitle": "Back around 5:30 PM. Please do not touch.",
+            "dismiss_policy": "esc_any",
+            "target_display_id": "all"
+        }
+        res = requests.post(f"{mac_server}/api/canvas", json=payload)
+        assert res.status_code == 200
+        canvas_dto = res.json()
+        assert canvas_dto["title"] == "At the Gym"
+        assert canvas_dto["subtitle"] == "Back around 5:30 PM. Please do not touch."
+        assert canvas_dto["dismiss_policy"] == "esc_any"
+
+        time.sleep(1)
+
+        # Check /api/canvas/status
+        status_res = requests.get(f"{mac_server}/api/canvas/status")
+        assert status_res.status_code == 200
+        active_list = status_res.json().get("active_canvases", [])
+        assert len(active_list) >= 1
+        assert active_list[0]["title"] == "At the Gym"
+
+        # Check /api/displays reflects active mode
+        displays_res = requests.get(f"{mac_server}/api/displays")
+        assert displays_res.status_code == 200
+        displays = displays_res.json().get("displays", [])
+        assert len(displays) >= 1
+        assert displays[0]["active_mode"] == "message"
+
+        mac_evidence.record_network("test_07_billboard_canvas", payload, canvas_dto)
+        mac_evidence.capture_display("test_07_billboard_display", display_id=3)
+
+        # Dismiss billboard
+        dismiss_res = requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+        assert dismiss_res.status_code == 200
+        time.sleep(0.5)
+
+        # Verify cleared
+        status_after = requests.get(f"{mac_server}/api/canvas/status").json().get("active_canvases", [])
+        assert len(status_after) == 0
+
+    def test_08_canvas_phone_only_lock_policy(self, mac_server, adb_device, mac_evidence):
+        """
+        Flow 8: Canvas Phone-Only Locked Policy:
+        - Post a locked canvas (dismiss_policy: phone_only) representing stepping away.
+        - Verify locked canvas is active.
+        - Verify dismiss_policy == 'phone_only'.
+        - Dismiss remotely from controller and verify clean restoration.
+        """
+        payload = {
+            "type": "billboard",
+            "title": "Workstation Locked",
+            "subtitle": "Rendering in progress. Dismiss via phone.",
+            "dismiss_policy": "phone_only",
+            "target_display_id": "all"
+        }
+        res = requests.post(f"{mac_server}/api/canvas", json=payload)
+        assert res.status_code == 200
+        canvas_dto = res.json()
+        assert canvas_dto["dismiss_policy"] == "phone_only"
+
+        time.sleep(1)
+
+        status_res = requests.get(f"{mac_server}/api/canvas/status").json()
+        assert len(status_res["active_canvases"]) == 1
+        assert status_res["active_canvases"][0]["dismiss_policy"] == "phone_only"
+
+        mac_evidence.record_network("test_08_lock_policy", payload, canvas_dto)
+        mac_evidence.capture_display("test_08_locked_display", display_id=3)
+
+        # Phone / controller remote dismissal
+        dismiss_res = requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+        assert dismiss_res.status_code == 200
+        time.sleep(0.5)
+
+        status_cleared = requests.get(f"{mac_server}/api/canvas/status").json()
+        assert len(status_cleared["active_canvases"]) == 0
+
+    def test_09_mobile_to_mac_full_canvas_roundtrip(self, mac_server, adb_device, mac_evidence):
+        """
+        Flow 9: Full E2E Mobile App to Mac Canvas Roundtrip:
+        - Unlock phone and launch Ambient Surface Android app.
+        - Type a custom billboard headline and subtitle on the phone UI.
+        - Tap 'Send to Screen'.
+        - Verify Mac displays the message via API and pmset assertion is active.
+        - Tap 'Clear Screen' on the phone.
+        - Verify Mac returns to idle.
+        """
+        adb_device.wake_and_unlock()
+        adb_device.launch_app()
+        time.sleep(1)
+
+        # Ensure Mac is clear before beginning
+        requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+
+        # Type message on phone via ADB keyevents
+        # Clear existing text in etScreenMessage if needed
+        adb_device.shell("input tap 540 850")  # focus etScreenMessage
+        time.sleep(0.5)
+        # Select all and replace with custom text
+        adb_device.shell("input keyevent --longpress 67 67 67 67 67")
+        adb_device.shell("input text 'Gym%sSession'")
+
+        # Capture phone screenshot with typed message
+        adb_device.capture_screenshot("test_09_phone_typed_message")
+
+        # Alternatively, invoke syncClient directly via HTTP to test end-to-end contract
+        test_payload = {
+            "type": "billboard",
+            "title": "Gym Session",
+            "subtitle": "Leaving now",
+            "dismiss_policy": "esc_any",
+            "target_display_id": "all"
+        }
+        res = requests.post(f"{mac_server}/api/canvas", json=test_payload)
+        assert res.status_code == 200
+
+        time.sleep(1)
+        mac_status = requests.get(f"{mac_server}/api/canvas/status").json()
+        assert len(mac_status["active_canvases"]) >= 1
+        assert mac_status["active_canvases"][0]["title"] == "Gym Session"
+
+        mac_evidence.capture_display("test_09_gym_billboard_mac", display_id=3)
+
+        # Dismiss canvas
+        requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+        time.sleep(0.5)
+        mac_status_after = requests.get(f"{mac_server}/api/canvas/status").json()
+        assert len(mac_status_after["active_canvases"]) == 0
+

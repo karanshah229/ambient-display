@@ -3,10 +3,10 @@
     "is_away_mode": true
   },
   "response": {
-    "state": "idle",
+    "is_test_mode": false,
     "screens_count": 4,
     "power_assertion_active": false,
-    "is_away_mode": true,
-    "is_test_mode": false
+    "state": "idle",
+    "is_away_mode": true
   }
 }

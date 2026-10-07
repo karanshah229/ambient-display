@@ -50,9 +50,11 @@ class MainActivity : AppCompatActivity() {
     private var isUpdatingAwaySwitch = false
 
     private lateinit var etScreenMessage: EditText
+    private lateinit var etCanvasSubtitle: EditText
     private lateinit var spTargetDisplay: Spinner
     private lateinit var rgMessageDuration: RadioGroup
     private lateinit var rbPersistent: RadioButton
+    private lateinit var rbLockPhoneOnly: RadioButton
     private lateinit var rbToast15s: RadioButton
     private lateinit var rbToast30s: RadioButton
     private lateinit var btnSendMessage: Button
@@ -64,11 +66,11 @@ class MainActivity : AppCompatActivity() {
     private val PREFS_KEY_LAST_MESSAGE = "last_screen_message"
     private val PREFS_KEY_MESSAGE_HISTORY = "screen_message_history"
     private val defaultMessages = listOf(
+        "At the Gym",
         "Taking a quick walk. Back in 15m!",
         "BRB in 10m",
-        "In a meeting / Call in progress",
-        "Do Not Disturb: Sleeping",
-        "Step away from the screen!"
+        "Focus Time / In a Call",
+        "Do Not Touch / Rendering"
     )
 
     private val requestNotificationPermission =
@@ -256,12 +258,14 @@ class MainActivity : AppCompatActivity() {
             OxygenOSHelper.openOnePlusAutoLaunchSettings(this)
         }
 
-        // Screen Message Billboard bindings
+        // Screen Message / Ambient Canvas Billboard bindings
         etScreenMessage = findViewById(R.id.etScreenMessage)
+        etCanvasSubtitle = findViewById(R.id.etCanvasSubtitle)
         chipGroupRecentMessages = findViewById(R.id.chipGroupRecentMessages)
         spTargetDisplay = findViewById(R.id.spTargetDisplay)
         rgMessageDuration = findViewById(R.id.rgMessageDuration)
         rbPersistent = findViewById(R.id.rbPersistent)
+        rbLockPhoneOnly = findViewById(R.id.rbLockPhoneOnly)
         rbToast15s = findViewById(R.id.rbToast15s)
         rbToast30s = findViewById(R.id.rbToast30s)
         btnSendMessage = findViewById(R.id.btnSendMessage)
@@ -293,6 +297,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Please type a message first", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            val subtitle = etCanvasSubtitle.text.toString().trim().ifEmpty { null }
 
             // Remember message in persistent history
             saveMessageToHistory(text)
@@ -304,6 +309,7 @@ class MainActivity : AppCompatActivity() {
                 connectedDisplays[selectedIndex - 1].id
             }
 
+            val dismissPolicy = if (rbLockPhoneOnly.isChecked) "phone_only" else "esc_any"
             val durationSeconds = when {
                 rbToast15s.isChecked -> 15
                 rbToast30s.isChecked -> 30
@@ -311,12 +317,20 @@ class MainActivity : AppCompatActivity() {
             }
 
             lifecycleScope.launch {
-                val res = syncClient.sendMessage(text, targetDisplayId, durationSeconds)
+                val res = syncClient.sendCanvas(
+                    type = "billboard",
+                    title = text,
+                    subtitle = subtitle,
+                    dismissPolicy = dismissPolicy,
+                    targetDisplayId = targetDisplayId,
+                    durationSeconds = durationSeconds
+                )
                 if (res.isSuccess) {
-                    val durationLabel = if (durationSeconds != null) "${durationSeconds}s toast" else "persistent billboard"
-                    Toast.makeText(this@MainActivity, "Sent to Mac ($durationLabel)!", Toast.LENGTH_SHORT).show()
+                    val policyTag = if (dismissPolicy == "phone_only") " [🔒 LOCKED]" else ""
+                    val durationLabel = if (durationSeconds != null) "${durationSeconds}s toast" else "persistent"
+                    Toast.makeText(this@MainActivity, "Sent to Mac ($durationLabel$policyTag)!", Toast.LENGTH_SHORT).show()
                     tvActiveMessageStatus.visibility = View.VISIBLE
-                    tvActiveMessageStatus.text = "Active on Screen: \"${text.take(30)}${if (text.length > 30) "..." else ""}\""
+                    tvActiveMessageStatus.text = "Active on Screen: \"${text.take(30)}${if (text.length > 30) "..." else ""}\"$policyTag"
                     loadDisplays()
                 } else {
                     Toast.makeText(this@MainActivity, "Failed: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
@@ -333,7 +347,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             lifecycleScope.launch {
-                val res = syncClient.dismissMessage(targetDisplayId)
+                val res = syncClient.dismissCanvas(targetDisplayId)
                 if (res.isSuccess) {
                     Toast.makeText(this@MainActivity, "Screen cleared", Toast.LENGTH_SHORT).show()
                     tvActiveMessageStatus.visibility = View.GONE

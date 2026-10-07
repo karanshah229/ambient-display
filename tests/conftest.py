@@ -82,13 +82,13 @@ def adb_device():
             self.device_id = lines[0].split()[0]
 
         def shell(self, cmd: str) -> str:
-            res = subprocess.check_output(["adb", "shell", cmd], text=True)
+            res = subprocess.check_output(["adb", "-s", self.device_id, "shell", cmd], text=True)
             return res.strip()
 
         def capture_screenshot(self, name: str) -> str:
             target_path = os.path.join(ARTIFACTS_DIR, f"{name}.png")
             with open(target_path, "wb") as f:
-                subprocess.check_call(["adb", "exec-out", "screencap", "-p"], stdout=f)
+                subprocess.check_call(["adb", "-s", self.device_id, "exec-out", "screencap", "-p"], stdout=f)
             return target_path
 
         def lock_screen(self):

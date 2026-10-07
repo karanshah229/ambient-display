@@ -24,10 +24,58 @@ public struct ActiveMessage: Identifiable {
     }
 }
 
+public struct ActiveCanvas: Identifiable {
+    public let id: UUID
+    public let type: CanvasPayloadType
+    public let title: String
+    public let subtitle: String?
+    public let mediaUrl: String?
+    public let theme: String?
+    public let dismissPolicy: DismissPolicy
+    public let targetDisplayId: String
+    public let durationSeconds: Int?
+    public let createdAt: Date
+
+    public init(
+        id: UUID = UUID(),
+        type: CanvasPayloadType = .billboard,
+        title: String,
+        subtitle: String? = nil,
+        mediaUrl: String? = nil,
+        theme: String? = nil,
+        dismissPolicy: DismissPolicy = .escAny,
+        targetDisplayId: String = "all",
+        durationSeconds: Int? = nil,
+        createdAt: Date = Date()
+    ) {
+        self.id = id
+        self.type = type
+        self.title = title
+        self.subtitle = subtitle
+        self.mediaUrl = mediaUrl
+        self.theme = theme
+        self.dismissPolicy = dismissPolicy
+        self.targetDisplayId = targetDisplayId
+        self.durationSeconds = durationSeconds
+        self.createdAt = createdAt
+    }
+
+    public var asActiveMessage: ActiveMessage {
+        ActiveMessage(
+            id: id,
+            text: subtitle != nil ? "\(title)\n\(subtitle!)" : title,
+            targetDisplayId: targetDisplayId,
+            durationSeconds: durationSeconds,
+            createdAt: createdAt
+        )
+    }
+}
+
 public enum ScreenDisplayMode {
     case idle
     case sleeping
     case message(ActiveMessage)
+    case canvas(ActiveCanvas)
 }
 
 @MainActor
@@ -36,8 +84,8 @@ public final class WindowManager: ObservableObject {
 
     private var screenWindows: [String: NSWindow] = [:]
     private var screenModes: [String: ScreenDisplayMode] = [:]
-    private var activeMessages: [UUID: ActiveMessage] = [:]
-    private var messageTimers: [UUID: Timer] = [:]
+    private var activeCanvases: [UUID: ActiveCanvas] = [:]
+    private var canvasTimers: [UUID: Timer] = [:]
 
     private var cancellables = Set<AnyCancellable>()
     private let appState = AppState.shared
@@ -57,24 +105,50 @@ public final class WindowManager: ObservableObject {
     }
 
     public func hasActiveMessages() -> Bool {
-        !activeMessages.isEmpty
+        !activeCanvases.isEmpty
     }
 
     public func getActiveMessagesList() -> [ActiveMessageDTO] {
         let formatter = ISO8601DateFormatter()
         let now = Date()
-        return activeMessages.values.map { msg in
+        return activeCanvases.values.map { c in
             var remaining: Int? = nil
-            if let duration = msg.durationSeconds, duration > 0 {
-                let elapsed = Int(now.timeIntervalSince(msg.createdAt))
+            if let duration = c.durationSeconds, duration > 0 {
+                let elapsed = Int(now.timeIntervalSince(c.createdAt))
                 remaining = max(0, duration - elapsed)
             }
+            let text = c.subtitle != nil ? "\(c.title) - \(c.subtitle!)" : c.title
             return ActiveMessageDTO(
-                id: msg.id.uuidString,
-                text: msg.text,
-                target_display_id: msg.targetDisplayId,
-                duration_seconds: msg.durationSeconds,
-                created_at: formatter.string(from: msg.createdAt),
+                id: c.id.uuidString,
+                text: text,
+                target_display_id: c.targetDisplayId,
+                duration_seconds: c.durationSeconds,
+                created_at: formatter.string(from: c.createdAt),
+                remaining_seconds: remaining
+            )
+        }
+    }
+
+    public func getActiveCanvasesList() -> [CanvasPayloadDTO] {
+        let formatter = ISO8601DateFormatter()
+        let now = Date()
+        return activeCanvases.values.map { c in
+            var remaining: Int? = nil
+            if let duration = c.durationSeconds, duration > 0 {
+                let elapsed = Int(now.timeIntervalSince(c.createdAt))
+                remaining = max(0, duration - elapsed)
+            }
+            return CanvasPayloadDTO(
+                id: c.id.uuidString,
+                type: c.type.rawValue,
+                title: c.title,
+                subtitle: c.subtitle,
+                media_url: c.mediaUrl,
+                theme: c.theme,
+                dismiss_policy: c.dismissPolicy.rawValue,
+                target_display_id: c.targetDisplayId,
+                duration_seconds: c.durationSeconds,
+                created_at: formatter.string(from: c.createdAt),
                 remaining_seconds: remaining
             )
         }
@@ -92,7 +166,7 @@ public final class WindowManager: ObservableObject {
             switch screenModes[id] ?? .idle {
             case .idle: modeStr = "idle"
             case .sleeping: modeStr = "sleeping"
-            case .message: modeStr = "message"
+            case .message, .canvas: modeStr = "message"
             }
             return DisplayInfoDTO(
                 id: id,
@@ -146,7 +220,7 @@ public final class WindowManager: ObservableObject {
 
     // MARK: - Sleep Display Windows
 
-    /// Shows mirrored ambient countdown on all eligible screens (respecting mutual exclusion if screen has active message)
+    /// Shows mirrored ambient countdown on all eligible screens (respecting mutual exclusion if screen has active message/canvas)
     public func showMirroredWindows() {
         let screens = NSScreen.screens
         print("[WindowManager] Refreshing sleep displays on \(screens.count) screen(s):")
@@ -161,10 +235,13 @@ public final class WindowManager: ObservableObject {
                 continue
             }
 
-            // Mutual exclusion: if screen already has an active custom message, do not overwrite it
-            if case .message = screenModes[screenId] {
-                print("  - Display \(index + 1): \(screenName) (ID: \(screenId)) [BUSY: Showing Custom Message]")
+            // Mutual exclusion: if screen already has an active custom canvas/message, do not overwrite it
+            switch screenModes[screenId] {
+            case .canvas, .message:
+                print("  - Display \(index + 1): \(screenName) (ID: \(screenId)) [BUSY: Showing Custom Canvas]")
                 continue
+            default:
+                break
             }
 
             print("  - Display \(index + 1): \(screenName) (ID: \(screenId)) frame: \(screen.frame)")
@@ -200,11 +277,11 @@ public final class WindowManager: ObservableObject {
     }
 
     public func hideAllWindows() {
-        for timer in messageTimers.values {
+        for timer in canvasTimers.values {
             timer.invalidate()
         }
-        messageTimers.removeAll()
-        activeMessages.removeAll()
+        canvasTimers.removeAll()
+        activeCanvases.removeAll()
         screenModes.removeAll()
 
         for (_, window) in screenWindows {
@@ -220,23 +297,33 @@ public final class WindowManager: ObservableObject {
         }
     }
 
-    // MARK: - Custom Screen Messages
+    // MARK: - Ambient Surface Canvas & Screen Messages
 
     @discardableResult
-    public func showMessage(
-        text: String,
+    public func showCanvas(
+        type: CanvasPayloadType = .billboard,
+        title: String,
+        subtitle: String? = nil,
+        mediaUrl: String? = nil,
+        theme: String? = nil,
+        dismissPolicy: DismissPolicy = .escAny,
         targetDisplayId: String = "all",
         durationSeconds: Int? = nil
-    ) -> ActiveMessageDTO {
+    ) -> CanvasPayloadDTO {
         let targetId = targetDisplayId.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let effectiveTarget = targetId.isEmpty ? "all" : targetId
 
-        let message = ActiveMessage(
-            text: text,
+        let canvas = ActiveCanvas(
+            type: type,
+            title: title,
+            subtitle: subtitle,
+            mediaUrl: mediaUrl,
+            theme: theme,
+            dismissPolicy: dismissPolicy,
             targetDisplayId: effectiveTarget,
             durationSeconds: durationSeconds
         )
-        activeMessages[message.id] = message
+        activeCanvases[canvas.id] = canvas
 
         // Determine targeted screens
         let screens: [NSScreen]
@@ -247,53 +334,85 @@ public final class WindowManager: ObservableObject {
             screens = matched.isEmpty ? NSScreen.screens : matched
         }
 
-        print("[WindowManager] Displaying message '\(text)' on \(screens.count) screen(s) (target: \(effectiveTarget), duration: \(durationSeconds?.description ?? "persistent"))")
+        print("[WindowManager] Displaying canvas [\(type.rawValue)] '\(title)' on \(screens.count) screen(s) (target: \(effectiveTarget), policy: \(dismissPolicy.rawValue), duration: \(durationSeconds?.description ?? "persistent"))")
 
         for screen in screens {
             let screenId = Self.displayId(for: screen)
-            screenModes[screenId] = .message(message)
-            presentMessageView(on: screen, screenId: screenId, message: message)
+            screenModes[screenId] = .canvas(canvas)
+            presentCanvasView(on: screen, screenId: screenId, canvas: canvas)
         }
 
-        // Acquire power assertion so screens do not sleep while message is displayed
+        // Acquire power assertion so screens do not sleep while canvas is active
         PowerAssertionManager.shared.acquire()
         NSApp.activate(ignoringOtherApps: true)
 
-        // Set up timer if timed toast
+        // Set up timer if timed canvas
         if let duration = durationSeconds, duration > 0 {
-            let msgId = message.id
+            let canvasId = canvas.id
             let timer = Timer.scheduledTimer(withTimeInterval: Double(duration), repeats: false) { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    self?.dismissMessageById(msgId)
+                    self?.dismissCanvasById(canvasId)
                 }
             }
-            messageTimers[msgId] = timer
+            canvasTimers[canvasId] = timer
         }
 
         let formatter = ISO8601DateFormatter()
-        return ActiveMessageDTO(
-            id: message.id.uuidString,
-            text: message.text,
-            target_display_id: message.targetDisplayId,
-            duration_seconds: message.durationSeconds,
-            created_at: formatter.string(from: message.createdAt),
+        return CanvasPayloadDTO(
+            id: canvas.id.uuidString,
+            type: canvas.type.rawValue,
+            title: canvas.title,
+            subtitle: canvas.subtitle,
+            media_url: canvas.mediaUrl,
+            theme: canvas.theme,
+            dismiss_policy: canvas.dismissPolicy.rawValue,
+            target_display_id: canvas.targetDisplayId,
+            duration_seconds: canvas.durationSeconds,
+            created_at: formatter.string(from: canvas.createdAt),
             remaining_seconds: durationSeconds
         )
     }
 
-    private func presentMessageView(on screen: NSScreen, screenId: String, message: ActiveMessage) {
+    /// Backward-compatible bridge for legacy message API
+    @discardableResult
+    public func showMessage(
+        text: String,
+        targetDisplayId: String = "all",
+        durationSeconds: Int? = nil
+    ) -> ActiveMessageDTO {
+        let canvasDto = showCanvas(
+            type: .billboard,
+            title: text,
+            subtitle: nil,
+            mediaUrl: nil,
+            theme: nil,
+            dismissPolicy: .escAny,
+            targetDisplayId: targetDisplayId,
+            durationSeconds: durationSeconds
+        )
+        return ActiveMessageDTO(
+            id: canvasDto.id,
+            text: canvasDto.title ?? text,
+            target_display_id: canvasDto.target_display_id,
+            duration_seconds: canvasDto.duration_seconds,
+            created_at: canvasDto.created_at,
+            remaining_seconds: canvasDto.remaining_seconds
+        )
+    }
+
+    private func presentCanvasView(on screen: NSScreen, screenId: String, canvas: ActiveCanvas) {
         let window = screenWindows[screenId] ?? createOverlayWindow(for: screen, screenId: screenId)
         screenWindows[screenId] = window
 
         let hostingController = NSHostingController(
-            rootView: MessageOverlayView(
-                text: message.text,
+            rootView: CanvasOverlayView(
+                canvas: canvas,
                 screenName: screen.localizedName,
-                createdAt: message.createdAt,
-                durationSeconds: message.durationSeconds,
                 onDismiss: { [weak self] in
-                    // Dismiss on any one screen dismisses message on every screen
-                    self?.dismissMessage(targetDisplayId: "all")
+                    if canvas.dismissPolicy != .phoneOnly {
+                        // Dismiss on any one screen dismisses canvas on every screen
+                        self?.dismissCanvas(targetDisplayId: "all")
+                    }
                 }
             )
         )
@@ -305,22 +424,25 @@ public final class WindowManager: ObservableObject {
         window.makeKey()
     }
 
-    public func dismissMessage(targetDisplayId: String = "all") {
+    public func dismissCanvas(targetDisplayId: String = "all") {
         let targetId = targetDisplayId.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if targetId == "all" || targetId.isEmpty {
-            for timer in messageTimers.values { timer.invalidate() }
-            messageTimers.removeAll()
-            activeMessages.removeAll()
+            for timer in canvasTimers.values { timer.invalidate() }
+            canvasTimers.removeAll()
+            activeCanvases.removeAll()
 
             for screen in NSScreen.screens {
                 let screenId = Self.displayId(for: screen)
-                if case .message = screenModes[screenId] {
-                    revertScreenPostMessage(screen: screen, screenId: screenId)
+                switch screenModes[screenId] {
+                case .canvas, .message:
+                    revertScreenPostCanvas(screen: screen, screenId: screenId)
+                default:
+                    break
                 }
             }
         } else {
             if NSScreen.screens.contains(where: { Self.displayId(for: $0) == targetId }) {
-                dismissMessage(onScreenId: targetId)
+                dismissCanvas(onScreenId: targetId)
             }
         }
 
@@ -329,29 +451,41 @@ public final class WindowManager: ObservableObject {
         }
     }
 
-    public func dismissMessage(onScreenId screenId: String) {
+    public func dismissCanvas(onScreenId screenId: String) {
         guard let screen = NSScreen.screens.first(where: { Self.displayId(for: $0) == screenId }) else { return }
-        if case .message(let msg) = screenModes[screenId] {
-            messageTimers[msg.id]?.invalidate()
-            messageTimers.removeValue(forKey: msg.id)
-            activeMessages.removeValue(forKey: msg.id)
+        switch screenModes[screenId] {
+        case .canvas(let c):
+            canvasTimers[c.id]?.invalidate()
+            canvasTimers.removeValue(forKey: c.id)
+            activeCanvases.removeValue(forKey: c.id)
+        case .message(let m):
+            canvasTimers[m.id]?.invalidate()
+            canvasTimers.removeValue(forKey: m.id)
+            activeCanvases.removeValue(forKey: m.id)
+        default:
+            break
         }
-        revertScreenPostMessage(screen: screen, screenId: screenId)
+        revertScreenPostCanvas(screen: screen, screenId: screenId)
 
         if !hasActiveMessages() && appState.state == .idle {
             PowerAssertionManager.shared.release()
         }
     }
 
-    private func dismissMessageById(_ id: UUID) {
-        guard activeMessages.removeValue(forKey: id) != nil else { return }
-        messageTimers[id]?.invalidate()
-        messageTimers.removeValue(forKey: id)
+    private func dismissCanvasById(_ id: UUID) {
+        guard activeCanvases.removeValue(forKey: id) != nil else { return }
+        canvasTimers[id]?.invalidate()
+        canvasTimers.removeValue(forKey: id)
 
         for screen in NSScreen.screens {
             let screenId = Self.displayId(for: screen)
-            if case .message(let activeMsg) = screenModes[screenId], activeMsg.id == id {
-                revertScreenPostMessage(screen: screen, screenId: screenId)
+            switch screenModes[screenId] {
+            case .canvas(let c) where c.id == id:
+                revertScreenPostCanvas(screen: screen, screenId: screenId)
+            case .message(let m) where m.id == id:
+                revertScreenPostCanvas(screen: screen, screenId: screenId)
+            default:
+                break
             }
         }
 
@@ -360,14 +494,22 @@ public final class WindowManager: ObservableObject {
         }
     }
 
+    public func dismissMessage(targetDisplayId: String = "all") {
+        dismissCanvas(targetDisplayId: targetDisplayId)
+    }
+
+    public func dismissMessage(onScreenId screenId: String) {
+        dismissCanvas(onScreenId: screenId)
+    }
+
     /// Reverts a screen back to sleep countdown if sleep is active, or closes window if idle
-    private func revertScreenPostMessage(screen: NSScreen, screenId: String) {
+    private func revertScreenPostCanvas(screen: NSScreen, screenId: String) {
         if appState.state == .sleeping || appState.state == .wakeUpReady {
-            print("[WindowManager] Screen \(screenId) reverted from message to active sleep display.")
+            print("[WindowManager] Screen \(screenId) reverted from canvas to active sleep display.")
             screenModes[screenId] = .sleeping
             presentAmbientView(on: screen, screenId: screenId)
         } else {
-            print("[WindowManager] Screen \(screenId) message dismissed (idle desktop restored).")
+            print("[WindowManager] Screen \(screenId) canvas dismissed (idle desktop restored).")
             screenModes[screenId] = .idle
             hideWindow(forScreenId: screenId)
         }
@@ -414,15 +556,24 @@ private final class KeyCatchingWindow: NSWindow {
             Task { @MainActor in
                 let mode = WindowManager.shared.currentMode(forScreenId: screenId)
                 switch mode {
+                case .canvas(let canvas):
+                    if canvas.dismissPolicy == .phoneOnly {
+                        // Phone-only policy rejects ESC dismissal
+                        NSSound.beep()
+                        print("[WindowManager] ESC ignored: Canvas is locked (phone_only dismiss policy)")
+                    } else {
+                        // ESC on any screen dismisses canvas on every screen
+                        WindowManager.shared.dismissCanvas(targetDisplayId: "all")
+                    }
                 case .message:
                     // ESC on any screen dismisses message on every screen
-                    WindowManager.shared.dismissMessage(targetDisplayId: "all")
+                    WindowManager.shared.dismissCanvas(targetDisplayId: "all")
                 case .sleeping:
                     // ESC on any screen dismisses alarm clock / sleep session on every screen
                     AppState.shared.stopSleep()
                 case .idle:
                     if WindowManager.shared.hasActiveMessages() {
-                        WindowManager.shared.dismissMessage(targetDisplayId: "all")
+                        WindowManager.shared.dismissCanvas(targetDisplayId: "all")
                     } else if AppState.shared.state != .idle {
                         AppState.shared.stopSleep()
                     }

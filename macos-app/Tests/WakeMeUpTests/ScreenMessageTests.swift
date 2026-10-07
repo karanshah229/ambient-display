@@ -6,11 +6,13 @@ import AppKit
 final class ScreenMessageTests: XCTestCase {
 
     override func setUp() async throws {
+        AppState.shared.isAwayMode = false
         AppState.shared.stopSleep()
         WindowManager.shared.hideAllWindows()
     }
 
     override func tearDown() async throws {
+        AppState.shared.isAwayMode = false
         AppState.shared.stopSleep()
         WindowManager.shared.hideAllWindows()
     }
@@ -150,4 +152,58 @@ final class ScreenMessageTests: XCTestCase {
             XCTAssertEqual(display.active_mode, "idle")
         }
     }
+
+    func testCanvasShowAndDismissLifecycle() throws {
+        let wm = WindowManager.shared
+
+        let canvasDto = wm.showCanvas(
+            type: .billboard,
+            title: "At the Gym",
+            subtitle: "Back around 5:30 PM. Please do not touch.",
+            mediaUrl: nil,
+            theme: "midnight_ember",
+            dismissPolicy: .phoneOnly,
+            targetDisplayId: "all",
+            durationSeconds: nil
+        )
+
+        XCTAssertEqual(canvasDto.title, "At the Gym")
+        XCTAssertEqual(canvasDto.subtitle, "Back around 5:30 PM. Please do not touch.")
+        XCTAssertEqual(canvasDto.type, "billboard")
+        XCTAssertEqual(canvasDto.dismiss_policy, "phone_only")
+        XCTAssertTrue(wm.hasActiveMessages())
+
+        let canvases = wm.getActiveCanvasesList()
+        XCTAssertEqual(canvases.count, 1)
+        XCTAssertEqual(canvases[0].title, "At the Gym")
+        XCTAssertEqual(canvases[0].dismiss_policy, "phone_only")
+
+        // Dismiss canvas
+        wm.dismissCanvas(targetDisplayId: "all")
+        XCTAssertFalse(wm.hasActiveMessages())
+        XCTAssertEqual(wm.getActiveCanvasesList().count, 0)
+    }
+
+    func testCanvasPayloadEncodingAndDecoding() throws {
+        let req = PostCanvasRequestPayload(
+            type: "billboard",
+            title: "Focus Time",
+            subtitle: "Deep work session in progress",
+            text: nil,
+            media_url: nil,
+            theme: "dark",
+            dismiss_policy: "phone_only",
+            target_display_id: "all",
+            duration_seconds: 120
+        )
+
+        let data = try JSONEncoder().encode(req)
+        let decoded = try JSONDecoder().decode(PostCanvasRequestPayload.self, from: data)
+
+        XCTAssertEqual(decoded.title, "Focus Time")
+        XCTAssertEqual(decoded.subtitle, "Deep work session in progress")
+        XCTAssertEqual(decoded.dismiss_policy, "phone_only")
+        XCTAssertEqual(decoded.duration_seconds, 120)
+    }
 }
+

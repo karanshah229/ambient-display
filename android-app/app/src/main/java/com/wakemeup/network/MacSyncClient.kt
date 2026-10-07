@@ -502,4 +502,73 @@ class MacSyncClient(private val context: Context) {
             }
         }
     }
+
+    suspend fun sendCanvas(
+        type: String = "billboard",
+        title: String,
+        subtitle: String? = null,
+        mediaUrl: String? = null,
+        theme: String? = null,
+        dismissPolicy: String = "esc_any",
+        targetDisplayId: String = "all",
+        durationSeconds: Int? = null
+    ): Result<String> = executeWithAutoDiscovery {
+        withContext(Dispatchers.IO) {
+            try {
+                val json = JSONObject().apply {
+                    put("type", type)
+                    put("title", title)
+                    if (!subtitle.isNullOrBlank()) put("subtitle", subtitle)
+                    if (!mediaUrl.isNullOrBlank()) put("media_url", mediaUrl)
+                    if (!theme.isNullOrBlank()) put("theme", theme)
+                    put("dismiss_policy", dismissPolicy)
+                    put("target_display_id", targetDisplayId)
+                    if (durationSeconds != null && durationSeconds > 0) {
+                        put("duration_seconds", durationSeconds)
+                    }
+                }
+                val body = json.toString().toRequestBody("application/json".toMediaType())
+                val request = Request.Builder()
+                    .url("$baseUrl/api/canvas")
+                    .post(body)
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        Result.success(response.body?.string() ?: "OK")
+                    } else {
+                        Result.failure(Exception("HTTP ${response.code}: ${response.body?.string()}"))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun dismissCanvas(targetDisplayId: String = "all"): Result<String> = executeWithAutoDiscovery {
+        withContext(Dispatchers.IO) {
+            try {
+                val json = JSONObject().apply {
+                    put("target_display_id", targetDisplayId)
+                }
+                val body = json.toString().toRequestBody("application/json".toMediaType())
+                val request = Request.Builder()
+                    .url("$baseUrl/api/canvas/dismiss")
+                    .post(body)
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        Result.success(response.body?.string() ?: "OK")
+                    } else {
+                        Result.failure(Exception("HTTP ${response.code}"))
+                    }
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
 }
+

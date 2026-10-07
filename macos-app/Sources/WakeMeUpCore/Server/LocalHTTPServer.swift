@@ -149,6 +149,15 @@ public final class LocalHTTPServer {
         case ("GET", "/api/message/status"):
             return handleGetMessageStatus()
 
+        case ("POST", "/api/canvas"):
+            return handlePostCanvas(body: body)
+
+        case ("POST", "/api/canvas/dismiss"):
+            return handlePostDismissCanvas(body: body)
+
+        case ("GET", "/api/canvas/status"):
+            return handleGetCanvasStatus()
+
         case ("GET", "/"):
             return handleGetIndex()
 
@@ -389,6 +398,65 @@ public final class LocalHTTPServer {
         let data = (try? encoder.encode(payload)) ?? Data()
         return (200, "application/json", data)
     }
+
+    private func handlePostCanvas(body: Data) -> (Int, String, Data) {
+        guard let req = try? JSONDecoder().decode(PostCanvasRequestPayload.self, from: body) else {
+            let errorJson = "{\"error\": \"Invalid request payload. Expected { type?, title?, subtitle?, text?, media_url?, theme?, dismiss_policy?, target_display_id?, duration_seconds? }\"}".data(using: .utf8)!
+            return (400, "application/json", errorJson)
+        }
+
+        let effectiveTitle = (req.title ?? req.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !effectiveTitle.isEmpty else {
+            let errorJson = "{\"error\": \"Canvas title/text cannot be empty\"}".data(using: .utf8)!
+            return (400, "application/json", errorJson)
+        }
+
+        let payloadType = CanvasPayloadType(rawValue: req.type ?? "billboard") ?? .billboard
+        let policy = DismissPolicy(rawValue: req.dismiss_policy ?? "esc_any") ?? .escAny
+
+        let canvasDto: CanvasPayloadDTO = DispatchQueue.main.sync {
+            WindowManager.shared.showCanvas(
+                type: payloadType,
+                title: effectiveTitle,
+                subtitle: req.subtitle?.trimmingCharacters(in: .whitespacesAndNewlines),
+                mediaUrl: req.media_url,
+                theme: req.theme,
+                dismissPolicy: policy,
+                targetDisplayId: req.target_display_id ?? "all",
+                durationSeconds: req.duration_seconds
+            )
+        }
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        let data = (try? encoder.encode(canvasDto)) ?? Data()
+        return (200, "application/json", data)
+    }
+
+    private func handlePostDismissCanvas(body: Data) -> (Int, String, Data) {
+        let req = try? JSONDecoder().decode(DismissCanvasRequestPayload.self, from: body)
+        let target = req?.target_display_id ?? "all"
+
+        DispatchQueue.main.sync {
+            WindowManager.shared.dismissCanvas(targetDisplayId: target)
+        }
+
+        let json = "{\"status\": \"success\", \"message\": \"Canvas dismissed on target: \(target)\"}".data(using: .utf8)!
+        return (200, "application/json", json)
+    }
+
+    private func handleGetCanvasStatus() -> (Int, String, Data) {
+        let payload: CanvasStatusResponsePayload = DispatchQueue.main.sync {
+            let active = WindowManager.shared.getActiveCanvasesList()
+            return CanvasStatusResponsePayload(active_canvases: active)
+        }
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        let data = (try? encoder.encode(payload)) ?? Data()
+        return (200, "application/json", data)
+    }
+
 
     private func sendHTTPResponse(_ response: (statusCode: Int, contentType: String, body: Data), on connection: NWConnection) {
         let statusText = response.statusCode == 200 ? "OK" : (response.statusCode == 404 ? "Not Found" : "Error")

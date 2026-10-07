@@ -213,3 +213,110 @@ public struct MessageStatusResponsePayload: Codable {
     }
 }
 
+// MARK: - Ambient Surface Canvas DTOs
+
+public enum CanvasPayloadType: String, Codable {
+    case billboard // Text headline & message
+    case sunrise   // Circadian sunrise alarm countdown & gradient
+    case image     // Fullscreen image from URL
+    case video     // Fullscreen video loop from URL
+    case webview   // Fullscreen web view / dashboard
+}
+
+public enum DismissPolicy: String, Codable {
+    case escAny = "esc_any"       // Dismiss on ESC or tap on any display
+    case phoneOnly = "phone_only" // Persistent, cannot be dismissed by ESC on Mac
+    case pin = "pin"               // Reserved for PIN lock
+}
+
+public struct CanvasPayloadDTO: Codable {
+    public let id: String
+    public let type: String
+    public let title: String?
+    public let subtitle: String?
+    public let media_url: String?
+    public let theme: String?
+    public let dismiss_policy: String
+    public let target_display_id: String
+    public let duration_seconds: Int?
+    public let created_at: String
+    public let remaining_seconds: Int?
+
+    public init(
+        id: String,
+        type: String,
+        title: String? = nil,
+        subtitle: String? = nil,
+        media_url: String? = nil,
+        theme: String? = nil,
+        dismiss_policy: String = DismissPolicy.escAny.rawValue,
+        target_display_id: String = "all",
+        duration_seconds: Int? = nil,
+        created_at: String,
+        remaining_seconds: Int? = nil
+    ) {
+        self.id = id
+        self.type = type
+        self.title = title
+        self.subtitle = subtitle
+        self.media_url = media_url
+        self.theme = theme
+        self.dismiss_policy = dismiss_policy
+        self.target_display_id = target_display_id
+        self.duration_seconds = duration_seconds
+        self.created_at = created_at
+        self.remaining_seconds = remaining_seconds
+    }
+}
+
+public struct PostCanvasRequestPayload: Codable {
+    public let type: String? // defaults to "billboard"
+    public let title: String?
+    public let subtitle: String?
+    public let text: String? // backward-compatible alias for title
+    public let media_url: String?
+    public let theme: String?
+    public let dismiss_policy: String? // "esc_any" (default) or "phone_only"
+    public let target_display_id: String?
+    public let duration_seconds: Int?
+
+    public init(
+        type: String? = "billboard",
+        title: String? = nil,
+        subtitle: String? = nil,
+        text: String? = nil,
+        media_url: String? = nil,
+        theme: String? = nil,
+        dismiss_policy: String? = DismissPolicy.escAny.rawValue,
+        target_display_id: String? = "all",
+        duration_seconds: Int? = nil
+    ) {
+        self.type = type
+        self.title = title
+        self.subtitle = subtitle
+        self.text = text
+        self.media_url = media_url
+        self.theme = theme
+        self.dismiss_policy = dismiss_policy
+        self.target_display_id = target_display_id
+        self.duration_seconds = duration_seconds
+    }
+}
+
+public struct DismissCanvasRequestPayload: Codable {
+    public let target_display_id: String?
+
+    public init(target_display_id: String? = "all") {
+        self.target_display_id = target_display_id
+    }
+}
+
+public struct CanvasStatusResponsePayload: Codable {
+    public let active_canvases: [CanvasPayloadDTO]
+
+    public init(active_canvases: [CanvasPayloadDTO]) {
+        self.active_canvases = active_canvases
+    }
+}
+
+

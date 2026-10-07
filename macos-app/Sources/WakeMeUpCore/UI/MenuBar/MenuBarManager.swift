@@ -20,7 +20,7 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "bed.double.fill", accessibilityDescription: "Wake Me Up")
+            button.image = NSImage(systemSymbolName: "display.2", accessibilityDescription: "Ambient Surface")
             button.imagePosition = .imageLeading
         }
     }
@@ -56,7 +56,7 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
                 button.title = ""
             }
         case .idle:
-            button.image = NSImage(systemSymbolName: "bed.double.fill", accessibilityDescription: "Wake Me Up")
+            button.image = NSImage(systemSymbolName: "display.2", accessibilityDescription: "Ambient Surface")
             button.title = appState.isAwayMode ? " (Away)" : ""
         }
     }
@@ -125,7 +125,7 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         menu.addItem(NSMenuItem.separator())
 
         // 6. Quit
-        let quitItem = NSMenuItem(title: "Quit Wake Me Up", action: #selector(quitAction), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit Ambient Surface", action: #selector(quitAction), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
     }
