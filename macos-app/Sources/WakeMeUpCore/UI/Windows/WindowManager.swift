@@ -323,18 +323,32 @@ public final class WindowManager: ObservableObject {
             targetDisplayId: effectiveTarget,
             durationSeconds: durationSeconds
         )
-        activeCanvases[canvas.id] = canvas
-
         // Determine targeted screens
         let screens: [NSScreen]
         if effectiveTarget == "all" {
             screens = NSScreen.screens.filter { !appState.isDisplayIgnored(screen: $0) }
+            // If broadcasting to all screens, clear previous active canvases & timers
+            for timer in canvasTimers.values { timer.invalidate() }
+            canvasTimers.removeAll()
+            activeCanvases.removeAll()
         } else {
             let matched = NSScreen.screens.filter { Self.displayId(for: $0) == effectiveTarget }
             screens = matched.isEmpty ? NSScreen.screens : matched
+            // If targeting specific screen, remove prior canvas occupying that screen
+            for screen in screens {
+                let sId = Self.displayId(for: screen)
+                if case .canvas(let prior) = screenModes[sId] {
+                    canvasTimers[prior.id]?.invalidate()
+                    canvasTimers.removeValue(forKey: prior.id)
+                    activeCanvases.removeValue(forKey: prior.id)
+                }
+            }
         }
 
+        activeCanvases[canvas.id] = canvas
+
         print("[WindowManager] Displaying canvas [\(type.rawValue)] '\(title)' on \(screens.count) screen(s) (target: \(effectiveTarget), policy: \(dismissPolicy.rawValue), duration: \(durationSeconds?.description ?? "persistent"))")
+
 
         for screen in screens {
             let screenId = Self.displayId(for: screen)

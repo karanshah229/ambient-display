@@ -352,3 +352,71 @@ class TestWakeMeUpLiveE2E:
         mac_status_after = requests.get(f"{mac_server}/api/canvas/status").json()
         assert len(mac_status_after["active_canvases"]) == 0
 
+    def test_10_rich_media_canvas_payloads(self, mac_server, adb_device, mac_evidence):
+        """
+        Flow 10: Rich Media Payloads (Phase 2):
+        - Post an Ambient Image Canvas (type: image) with a media URL.
+        - Verify active canvas status captures type, media_url, and title.
+        - Post a Looping Ambient Video Canvas (type: video).
+        - Verify active canvas updates with video type and URL.
+        - Cleanly dismiss and verify return to idle.
+        """
+        # Ensure clean initial state
+        requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+        time.sleep(0.5)
+
+        # 1. Image Canvas Payload
+        img_payload = {
+            "type": "image",
+            "title": "Minimal Architecture",
+            "subtitle": "Ambient Poster Mode",
+            "media_url": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1920",
+            "dismiss_policy": "esc_any",
+            "target_display_id": "all"
+        }
+        res_img = requests.post(f"{mac_server}/api/canvas", json=img_payload)
+        assert res_img.status_code == 200
+        canvas_img = res_img.json()
+        assert canvas_img["type"] == "image"
+        assert canvas_img["media_url"] == img_payload["media_url"]
+
+        time.sleep(1)
+        status_img = requests.get(f"{mac_server}/api/canvas/status").json()
+        assert len(status_img["active_canvases"]) == 1
+        assert status_img["active_canvases"][0]["type"] == "image"
+
+        mac_evidence.record_network("test_10_image_canvas", img_payload, canvas_img)
+        mac_evidence.capture_display("test_10_image_display", display_id=3)
+
+        # 2. Looping Video Canvas Payload
+        vid_payload = {
+            "type": "video",
+            "title": "Ambient Loop",
+            "subtitle": "Continuous Looping Surface",
+            "media_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+            "dismiss_policy": "phone_only",
+            "target_display_id": "all"
+        }
+        res_vid = requests.post(f"{mac_server}/api/canvas", json=vid_payload)
+        assert res_vid.status_code == 200
+        canvas_vid = res_vid.json()
+        assert canvas_vid["type"] == "video"
+        assert canvas_vid["dismiss_policy"] == "phone_only"
+
+        time.sleep(1)
+        status_vid = requests.get(f"{mac_server}/api/canvas/status").json()
+        assert len(status_vid["active_canvases"]) == 1
+        assert status_vid["active_canvases"][0]["type"] == "video"
+
+        mac_evidence.record_network("test_10_video_canvas", vid_payload, canvas_vid)
+        mac_evidence.capture_display("test_10_video_display", display_id=3)
+
+        # 3. Clean Remote Dismissal
+        dismiss_res = requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+        assert dismiss_res.status_code == 200
+        time.sleep(0.5)
+
+        status_final = requests.get(f"{mac_server}/api/canvas/status").json()
+        assert len(status_final["active_canvases"]) == 0
+
+

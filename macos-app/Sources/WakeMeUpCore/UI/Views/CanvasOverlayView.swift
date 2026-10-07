@@ -50,6 +50,36 @@ public struct CanvasOverlayView: View {
             Color.black
                 .ignoresSafeArea()
 
+            // Background Media Layer (for image, video, webview)
+            if let mediaUrlStr = canvas.mediaUrl, let mediaUrl = URL(string: mediaUrlStr) {
+                switch canvas.type {
+                case .image:
+                    RemoteAmbientImageView(url: mediaUrl)
+                        .ignoresSafeArea()
+                    // Subtle vignette overlay so text overlay remains readable if provided
+                    LinearGradient(
+                        colors: [Color.black.opacity(0.6), Color.black.opacity(0.3), Color.black.opacity(0.7)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
+                case .video:
+                    LoopingVideoPlayerView(url: mediaUrl)
+                        .ignoresSafeArea()
+                    LinearGradient(
+                        colors: [Color.black.opacity(0.5), Color.clear, Color.black.opacity(0.6)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
+                case .webview:
+                    AmbientWebView(url: mediaUrl)
+                        .ignoresSafeArea()
+                default:
+                    EmptyView()
+                }
+            }
+
             VStack(spacing: 24) {
                 // Top status bar
                 HStack {
@@ -107,24 +137,28 @@ public struct CanvasOverlayView: View {
 
                 Spacer()
 
-                // Center Content
-                VStack(spacing: 16) {
-                    Text(canvas.title)
-                        .font(.system(size: fontSize, weight: .semibold, design: .rounded))
-                        .foregroundColor(Color(red: 0.92, green: 0.92, blue: 0.95))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(10)
-                        .padding(.horizontal, 64)
-                        .fixedSize(horizontal: false, vertical: true)
+                // Center Content (Title & Subtitle if not a standalone webview)
+                if canvas.type != .webview || !canvas.title.isEmpty {
+                    VStack(spacing: 16) {
+                        if !canvas.title.isEmpty {
+                            Text(canvas.title)
+                                .font(.system(size: fontSize, weight: .semibold, design: .rounded))
+                                .foregroundColor(Color(red: 0.92, green: 0.92, blue: 0.95))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(10)
+                                .padding(.horizontal, 64)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
 
-                    if let subtitle = canvas.subtitle, !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.system(size: max(18, fontSize * 0.45), weight: .regular, design: .rounded))
-                            .foregroundColor(Color(red: 0.65, green: 0.65, blue: 0.7))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(6)
-                            .padding(.horizontal, 80)
-                            .fixedSize(horizontal: false, vertical: true)
+                        if let subtitle = canvas.subtitle, !subtitle.isEmpty {
+                            Text(subtitle)
+                                .font(.system(size: max(18, fontSize * 0.45), weight: .regular, design: .rounded))
+                                .foregroundColor(Color(red: 0.65, green: 0.65, blue: 0.7))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(6)
+                                .padding(.horizontal, 80)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
 

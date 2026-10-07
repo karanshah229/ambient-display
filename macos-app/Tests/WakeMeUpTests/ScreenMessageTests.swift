@@ -205,5 +205,42 @@ final class ScreenMessageTests: XCTestCase {
         XCTAssertEqual(decoded.dismiss_policy, "phone_only")
         XCTAssertEqual(decoded.duration_seconds, 120)
     }
+
+    func testImageAndVideoCanvasPayloads() throws {
+        let wm = WindowManager.shared
+
+        // 1. Image Canvas
+        let imageCanvas = wm.showCanvas(
+            type: .image,
+            title: "Nature Wallpaper",
+            subtitle: "Yosemite Valley",
+            mediaUrl: "https://images.unsplash.com/photo-1426604966848-d7adac402bff",
+            theme: "nature",
+            dismissPolicy: .escAny,
+            targetDisplayId: "all",
+            durationSeconds: 60
+        )
+        XCTAssertEqual(imageCanvas.type, "image")
+        XCTAssertEqual(imageCanvas.media_url, "https://images.unsplash.com/photo-1426604966848-d7adac402bff")
+
+        // 2. Video Loop Canvas
+        let videoCanvas = wm.showCanvas(
+            type: .video,
+            title: "Rainy Cafe",
+            subtitle: "Lo-Fi Focus Stream",
+            mediaUrl: "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4",
+            theme: "rain",
+            dismissPolicy: .phoneOnly,
+            targetDisplayId: "all",
+            durationSeconds: nil
+        )
+        XCTAssertEqual(videoCanvas.type, "video")
+        XCTAssertEqual(videoCanvas.dismiss_policy, "phone_only")
+        XCTAssertTrue(wm.hasActiveMessages())
+
+        wm.dismissCanvas(targetDisplayId: "all")
+        XCTAssertFalse(wm.hasActiveMessages())
+    }
 }
+
 

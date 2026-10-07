@@ -259,11 +259,27 @@
                     android:textColor="#8E8E93"
                     android:textSize="12sp" />
 
+                <!-- Canvas Type Selector -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Canvas Mode:"
+                    android:textColor="#8E8E93"
+                    android:textSize="12sp" />
+
+                <Spinner
+                    android:id="@+id/spCanvasType"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="4dp"
+                    android:background="#2C2C2E" />
+
                 <!-- Message Headline Input -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="10dp"
                     android:hint="Headline / Message (e.g. At the Gym / BRB)"
                     app:boxBackgroundColor="#2C2C2E"
                     app:boxCornerRadiusBottomEnd="8dp"
@@ -298,6 +314,27 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="text"
+                        android:textColor="#FFFFFF" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Media URL Input (Image / Video Loop / Webview) -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilMediaUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="Media URL (Image, MP4 loop, or Web URL)"
+                    app:boxBackgroundColor="#2C2C2E"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusTopStart="8dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etMediaUrl"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textUri"
                         android:textColor="#FFFFFF" />
                 </com.google.android.material.textfield.TextInputLayout>
 

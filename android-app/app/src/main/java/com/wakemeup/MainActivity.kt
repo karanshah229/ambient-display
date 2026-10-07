@@ -49,8 +49,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etMacHost: EditText
     private var isUpdatingAwaySwitch = false
 
+    private lateinit var spCanvasType: Spinner
     private lateinit var etScreenMessage: EditText
     private lateinit var etCanvasSubtitle: EditText
+    private lateinit var etMediaUrl: EditText
     private lateinit var spTargetDisplay: Spinner
     private lateinit var rgMessageDuration: RadioGroup
     private lateinit var rbPersistent: RadioButton
@@ -259,8 +261,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Screen Message / Ambient Canvas Billboard bindings
+        spCanvasType = findViewById(R.id.spCanvasType)
         etScreenMessage = findViewById(R.id.etScreenMessage)
         etCanvasSubtitle = findViewById(R.id.etCanvasSubtitle)
+        etMediaUrl = findViewById(R.id.etMediaUrl)
         chipGroupRecentMessages = findViewById(R.id.chipGroupRecentMessages)
         spTargetDisplay = findViewById(R.id.spTargetDisplay)
         rgMessageDuration = findViewById(R.id.rgMessageDuration)
@@ -271,6 +275,16 @@ class MainActivity : AppCompatActivity() {
         btnSendMessage = findViewById(R.id.btnSendMessage)
         btnDismissScreenMessage = findViewById(R.id.btnDismissScreenMessage)
         tvActiveMessageStatus = findViewById(R.id.tvActiveMessageStatus)
+
+        // Setup Canvas Type Spinner
+        val canvasTypes = listOf(
+            "Billboard (Typography)",
+            "Ambient Image Poster",
+            "Looping Ambient Video",
+            "Web Dashboard / URL"
+        )
+        val canvasTypeAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, canvasTypes)
+        spCanvasType.adapter = canvasTypeAdapter
 
         // Prefill last typed or sent message
         val prefs = getSharedPreferences("WakeMeUpPrefs", Context.MODE_PRIVATE)
@@ -293,14 +307,25 @@ class MainActivity : AppCompatActivity() {
 
         btnSendMessage.setOnClickListener {
             val text = etScreenMessage.text.toString().trim()
-            if (text.isEmpty()) {
-                Toast.makeText(this, "Please type a message first", Toast.LENGTH_SHORT).show()
+            val subtitle = etCanvasSubtitle.text.toString().trim().ifEmpty { null }
+            val mediaUrl = etMediaUrl.text.toString().trim().ifEmpty { null }
+
+            val canvasType = when (spCanvasType.selectedItemPosition) {
+                1 -> "image"
+                2 -> "video"
+                3 -> "webview"
+                else -> "billboard"
+            }
+
+            if (text.isEmpty() && mediaUrl.isNullOrEmpty()) {
+                Toast.makeText(this, "Please provide a headline or media URL", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val subtitle = etCanvasSubtitle.text.toString().trim().ifEmpty { null }
 
             // Remember message in persistent history
-            saveMessageToHistory(text)
+            if (text.isNotEmpty()) {
+                saveMessageToHistory(text)
+            }
 
             val selectedIndex = spTargetDisplay.selectedItemPosition
             val targetDisplayId = if (selectedIndex <= 0 || selectedIndex > connectedDisplays.size) {
@@ -318,9 +343,10 @@ class MainActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 val res = syncClient.sendCanvas(
-                    type = "billboard",
-                    title = text,
+                    type = canvasType,
+                    title = if (text.isNotEmpty()) text else (mediaUrl ?: "Ambient Surface"),
                     subtitle = subtitle,
+                    mediaUrl = mediaUrl,
                     dismissPolicy = dismissPolicy,
                     targetDisplayId = targetDisplayId,
                     durationSeconds = durationSeconds
@@ -328,9 +354,9 @@ class MainActivity : AppCompatActivity() {
                 if (res.isSuccess) {
                     val policyTag = if (dismissPolicy == "phone_only") " [🔒 LOCKED]" else ""
                     val durationLabel = if (durationSeconds != null) "${durationSeconds}s toast" else "persistent"
-                    Toast.makeText(this@MainActivity, "Sent to Mac ($durationLabel$policyTag)!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "Sent to Mac ($canvasType$policyTag)!", Toast.LENGTH_SHORT).show()
                     tvActiveMessageStatus.visibility = View.VISIBLE
-                    tvActiveMessageStatus.text = "Active on Screen: \"${text.take(30)}${if (text.length > 30) "..." else ""}\"$policyTag"
+                    tvActiveMessageStatus.text = "Active on Screen: \"${(text.ifEmpty { mediaUrl ?: "" }).take(30)}\"$policyTag"
                     loadDisplays()
                 } else {
                     Toast.makeText(this@MainActivity, "Failed: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
