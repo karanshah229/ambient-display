@@ -411,8 +411,15 @@ public final class LocalHTTPServer {
             return (400, "application/json", errorJson)
         }
 
-        let payloadType = CanvasPayloadType(rawValue: req.type ?? "billboard") ?? .billboard
+        let rawType = req.type?.lowercased() ?? "billboard"
+        let payloadType: CanvasPayloadType
+        if rawType == "web" || rawType == "webview" {
+            payloadType = .webview
+        } else {
+            payloadType = CanvasPayloadType(rawValue: rawType) ?? .billboard
+        }
         let policy = DismissPolicy(rawValue: req.dismiss_policy ?? "esc_any") ?? .escAny
+
 
         let canvasDto: CanvasPayloadDTO = DispatchQueue.main.sync {
             WindowManager.shared.showCanvas(

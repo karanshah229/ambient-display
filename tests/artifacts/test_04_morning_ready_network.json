@@ -3,14 +3,14 @@
     "duration_seconds": 5
   },
   "response": {
+    "countdown_text": "00:00",
+    "state": "wakeUpReady",
+    "is_away_mode": false,
+    "target_wake_time": "12:47\u202fPM",
+    "bedtime": "5:17\u202fAM",
+    "power_assertion_active": true,
     "screens_count": 4,
     "remaining_seconds": 0,
-    "is_away_mode": false,
-    "bedtime": "4:30\u202fAM",
-    "target_wake_time": "12:00\u202fPM",
-    "is_test_mode": true,
-    "countdown_text": "00:00",
-    "power_assertion_active": true,
-    "state": "wakeUpReady"
+    "is_test_mode": true
   }
 }

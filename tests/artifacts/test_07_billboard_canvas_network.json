@@ -8,11 +8,11 @@
   },
   "response": {
     "target_display_id": "all",
-    "dismiss_policy": "esc_any",
     "subtitle": "Back around 5:30 PM. Please do not touch.",
+    "created_at": "2026-10-07T07:18:02Z",
+    "dismiss_policy": "esc_any",
+    "title": "At the Gym",
     "type": "billboard",
-    "created_at": "2026-10-07T06:30:39Z",
-    "id": "F52140F6-E09D-4C1F-A50B-6FEC5806A985",
-    "title": "At the Gym"
+    "id": "977E98E3-1235-4547-8F8E-F546F70E2336"
   }
 }

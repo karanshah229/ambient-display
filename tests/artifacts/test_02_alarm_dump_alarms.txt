@@ -6,71 +6,84 @@ com.myairtelapp
     Restricted packages:
     Stats:
 --
-      policyWhenElapsed: requester=+8h57m5s664ms app_standby=-1h42m51s216ms device_idle=-5m22s19ms battery_saver=-1h59m20s203ms adjustment=+8h57m4s56ms
-      whenElapsed=+8h57m4s56ms maxWhenElapsed=+8h57m4s56ms
+      whenElapsed=+6h15m51s757ms maxWhenElapsed=+6h15m51s757ms
+      operation=PendingIntent{fb39e9a: PendingIntentRecord{7ea8a7d android broadcastIntent}}
+      idle-options=Bundle[{android.pendingIntent.backgroundActivityAllowed=2, android:broadcast.temporaryAppAllowlistReasonCode=302, android:broadcast.temporaryAppAllowlistDuration=10000, android:broadcast.temporaryAppAllowlistReason=, android:broadcast.temporaryAppAllowlistType=0, android:broadcast.flags=8}]
+    RTC_WAKEUP #79: Alarm{87c7532 type 0 origWhen 1791383112606 whenElapsed 603000000 com.wakemeup} uid 10409 whenElapsed 603000000 windowLength 3600000 maxWhenElapsed 603000000 repeatInterval 0 action null component ComponentInfo{com.wakemeup/com.wakemeup.receiver.AlarmTriggerReceiver} flags 0x8 procName com.wakemeup
+      tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver
+      type=RTC_WAKEUP origWhen=2026-10-07 19:55:12.606 window=+1h0m0s0ms exactAllowReason=policy_permission repeatInterval=0 count=0 flags=0x8
+      policyWhenElapsed: requester=+7h7m37s540ms app_standby=-22m22s439ms device_idle=-3m31s306ms battery_saver=-22m22s439ms adjustment=+7h9m45s374ms
+      whenElapsed=+7h9m45s374ms maxWhenElapsed=+7h9m45s374ms
+      operation=PendingIntent{f5f5283: PendingIntentRecord{b0c3c00 com.wakemeup broadcastIntent}}
+      idle-options=Bundle[{android.pendingIntent.backgroundActivityAllowed=2, android:broadcast.temporaryAppAllowlistReasonCode=302, android:broadcast.temporaryAppAllowlistDuration=10000, android:broadcast.temporaryAppAllowlistReason=, android:broadcast.temporaryAppAllowlistType=0, android:broadcast.flags=8}]
+    RTC_WAKEUP #80: Alarm{ee9a3cb type 0 origWhen 1791384600000 whenElapsed 604359560 com.android.providers.calendar} uid 10230 whenElapsed 604359560 windowLength 0 maxWhenElapsed 604359560 repeatInterval 0 action android.intent.action.EVENT_REMINDER component null flags 0x9 procName com.android.providers.calendar
+      tag=*walarm*:android.intent.action.EVENT_REMINDER
+--
+      policyWhenElapsed: requester=+8h9m46s982ms app_standby=-2h30m9s898ms device_idle=-3m31s306ms battery_saver=-2h46m38s885ms adjustment=+8h9m45s374ms
+      whenElapsed=+8h9m45s374ms maxWhenElapsed=+8h9m45s374ms
       operation=PendingIntent{e3b70a2: PendingIntentRecord{226ac32 com.oplus.deepthinker broadcastIntent}}
-    RTC #99: Alarm{aec8133 type 1 origWhen 1791387000000 whenElapsed 606759560 com.wakemeup} uid 10409 whenElapsed 606759560 windowLength 3600000 maxWhenElapsed 610359560 repeatInterval 0 action com.wakemeup.ACTION_UPDATE_STATUS component ComponentInfo{com.wakemeup/com.wakemeup.service.SleepDetectionService} flags 0x8 procName com.wakemeup
+    RTC #96: Alarm{eb3b37c type 1 origWhen 1791387000000 whenElapsed 606759560 com.wakemeup} uid 10409 whenElapsed 606759560 windowLength 3600000 maxWhenElapsed 610359560 repeatInterval 0 action com.wakemeup.ACTION_UPDATE_STATUS component ComponentInfo{com.wakemeup/com.wakemeup.service.SleepDetectionService} flags 0x8 procName com.wakemeup
       tag=*alarm*:com.wakemeup.ACTION_UPDATE_STATUS
       type=RTC origWhen=2026-10-07 21:00:00.000 window=+1h0m0s0ms repeatInterval=0 count=0 flags=0x8
-      policyWhenElapsed: requester=+8h59m43s616ms app_standby=-3s361ms device_idle=-- battery_saver=-- adjustment=--
-      whenElapsed=+8h59m43s616ms maxWhenElapsed=+9h59m43s616ms
-      operation=PendingIntent{682bcf0: PendingIntentRecord{cdbc269 com.wakemeup startForegroundService}}
-    ELAPSED_WAKEUP #100: Alarm{503f4ee type 2 origWhen 607388205 whenElapsed 607388205 com.google.android.networkstack} uid 1073 whenElapsed 607388205 windowLength 0 maxWhenElapsed 607388205 repeatInterval 0 action null component null tag DhcpClient.wlan0.RENEW flags 0x9 procName com.android.networkstack.process
+      policyWhenElapsed: requester=+8h12m24s934ms app_standby=-3s835ms device_idle=-- battery_saver=-- adjustment=--
+      whenElapsed=+8h12m24s934ms maxWhenElapsed=+9h12m24s934ms
+      operation=PendingIntent{11b6405: PendingIntentRecord{cdbc269 com.wakemeup startForegroundService}}
+    ELAPSED_WAKEUP #97: Alarm{503f4ee type 2 origWhen 607388205 whenElapsed 607388205 com.google.android.networkstack} uid 1073 whenElapsed 607388205 windowLength 0 maxWhenElapsed 607388205 repeatInterval 0 action null component null tag DhcpClient.wlan0.RENEW flags 0x9 procName com.android.networkstack.process
       tag=*walarm*:DhcpClient.wlan0.RENEW
-      type=ELAPSED_WAKEUP origWhen=+9h10m12s261ms window=0 exactAllowReason=listener repeatInterval=0 count=0 flags=0x9
+      type=ELAPSED_WAKEUP origWhen=+8h22m53s579ms window=0 exactAllowReason=listener repeatInterval=0 count=0 flags=0x9
 --
     u0a409:
-      #1: Reason=alarm_cancelled elapsed=-1d14h55m59s111ms rtc=2026-10-05 21:04:18.722
+      #1: Reason=alarm_cancelled elapsed=-1d15h43m17s793ms rtc=2026-10-05 21:04:18.722
         Snapshot:
           type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
-          policyWhenElapsed: requester=-1d7h26m21s499ms app_standby=-1d14h56m21s484ms device_idle=-- battery_saver=-1d14h56m21s484ms adjustment=-1d7h27m55s944ms
-      #2: Reason=alarm_cancelled elapsed=-1d21h51m7s937ms rtc=2026-10-05 14:09:09.897
+          policyWhenElapsed: requester=-1d8h13m40s181ms app_standby=-1d15h43m40s166ms device_idle=-- battery_saver=-1d15h43m40s166ms adjustment=-1d8h15m14s626ms
+      #2: Reason=alarm_cancelled elapsed=-1d22h38m26s619ms rtc=2026-10-05 14:09:09.897
         Snapshot:
           type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
-          policyWhenElapsed: requester=-1d21h50m39s754ms app_standby=-1d21h51m39s743ms device_idle=-- battery_saver=-1d21h51m39s743ms adjustment=--
-      #3: Reason=alarm_cancelled elapsed=-1d21h52m12s356ms rtc=2026-10-05 14:08:05.478
+          policyWhenElapsed: requester=-1d22h37m58s436ms app_standby=-1d22h38m58s425ms device_idle=-- battery_saver=-1d22h38m58s425ms adjustment=--
+      #3: Reason=alarm_cancelled elapsed=-1d22h39m31s38ms rtc=2026-10-05 14:08:05.478
         Snapshot:
           type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
-          policyWhenElapsed: requester=-1d14h22m20s747ms app_standby=-1d21h52m20s724ms device_idle=-- battery_saver=-1d21h52m20s724ms adjustment=--
-      #4: Reason=pi_cancelled elapsed=-1d23h10m53s892ms rtc=2026-10-05 12:49:23.941
+          policyWhenElapsed: requester=-1d15h9m39s429ms app_standby=-1d22h39m39s406ms device_idle=-- battery_saver=-1d22h39m39s406ms adjustment=--
+      #4: Reason=pi_cancelled elapsed=-1d23h58m12s574ms rtc=2026-10-05 12:49:23.941
         Snapshot:
           type=RTC tag=*alarm*:com.wakemeup.ACTION_UPDATE_STATUS 
-          policyWhenElapsed: requester=-1d15h0m17s833ms app_standby=-1d23h12m41s904ms device_idle=-- battery_saver=-- adjustment=--
-      #5: Reason=alarm_cancelled elapsed=-2d4h8m45s538ms rtc=2026-10-05 07:51:32.295
+          policyWhenElapsed: requester=-1d15h47m36s515ms app_standby=-2d0h0m0s586ms device_idle=-- battery_saver=-- adjustment=--
+      #5: Reason=alarm_cancelled elapsed=-2d4h56m4s220ms rtc=2026-10-05 07:51:32.295
         Snapshot:
           type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
-          policyWhenElapsed: requester=-2d2h59m39s268ms app_standby=-2d10h29m39s229ms device_idle=-2d4h8m46s551ms battery_saver=-2d10h29m39s229ms adjustment=-2d2h57m55s944ms
-      #6: Reason=alarm_cancelled elapsed=-2d10h29m40s654ms rtc=2026-10-05 01:30:37.180
+          policyWhenElapsed: requester=-2d3h46m57s950ms app_standby=-2d11h16m57s911ms device_idle=-2d4h56m5s233ms battery_saver=-2d11h16m57s911ms adjustment=-2d3h45m14s626ms
+      #6: Reason=alarm_cancelled elapsed=-2d11h16m59s336ms rtc=2026-10-05 01:30:37.180
         Snapshot:
           type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
-          policyWhenElapsed: requester=-2d2h59m50s368ms app_standby=-2d10h29m50s355ms device_idle=-- battery_saver=-2d10h29m50s355ms adjustment=--
-      #7: Reason=alarm_cancelled elapsed=-3d1h15m26s939ms rtc=2026-10-04 10:44:50.894
+          policyWhenElapsed: requester=-2d3h47m9s50ms app_standby=-2d11h17m9s37ms device_idle=-- battery_saver=-2d11h17m9s37ms adjustment=--
+      #7: Reason=alarm_cancelled elapsed=-3d2h2m45s621ms rtc=2026-10-04 10:44:50.894
         Snapshot:
           type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
-          policyWhenElapsed: requester=-2d17h46m0s589ms app_standby=-3d1h16m0s565ms device_idle=-- battery_saver=-3d1h16m0s565ms adjustment=--
-      #8: Reason=alarm_cancelled elapsed=-3d1h28m27s613ms rtc=2026-10-04 10:31:50.221
+          policyWhenElapsed: requester=-2d18h33m19s271ms app_standby=-3d2h3m19s247ms device_idle=-- battery_saver=-3d2h3m19s247ms adjustment=--
+      #8: Reason=alarm_cancelled elapsed=-3d2h15m46s295ms rtc=2026-10-04 10:31:50.221
         Snapshot:
           type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
-          policyWhenElapsed: requester=-3d1h27m31s456ms app_standby=-3d1h28m31s448ms device_idle=-- battery_saver=-3d1h28m31s448ms adjustment=--
-      #9: Reason=alarm_cancelled elapsed=-3d1h28m33s569ms rtc=2026-10-04 10:31:44.265
+          policyWhenElapsed: requester=-3d2h14m50s138ms app_standby=-3d2h15m50s130ms device_idle=-- battery_saver=-3d2h15m50s130ms adjustment=--
+      #9: Reason=alarm_cancelled elapsed=-3d2h15m52s251ms rtc=2026-10-04 10:31:44.265
         Snapshot:
           type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
-          policyWhenElapsed: requester=-2d17h58m40s581ms app_standby=-3d1h28m40s563ms device_idle=-- battery_saver=-3d1h28m40s563ms adjustment=--
-      #10: Reason=alarm_cancelled elapsed=-3d3h39m22s827ms rtc=2026-10-04 08:20:55.006
+          policyWhenElapsed: requester=-2d18h45m59s263ms app_standby=-3d2h15m59s245ms device_idle=-- battery_saver=-3d2h15m59s245ms adjustment=--
+      #10: Reason=alarm_cancelled elapsed=-3d4h26m41s509ms rtc=2026-10-04 08:20:55.006
         Snapshot:
           type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
-          policyWhenElapsed: requester=-2d20h9m33s774ms app_standby=-3d3h39m33s762ms device_idle=-- battery_saver=-3d3h39m33s762ms adjustment=--
+          policyWhenElapsed: requester=-2d20h56m52s456ms app_standby=-3d4h26m52s444ms device_idle=-- battery_saver=-3d4h26m52s444ms adjustment=--
     u0a436:
-      #1: Reason=alarm_cancelled elapsed=-4m11s758ms rtc=2026-10-07 11:56:04.626
+      #1: Reason=alarm_cancelled elapsed=-15m26s839ms rtc=2026-10-07 12:32:08.226
 --
       *walarm*:org.thoughtcrime.securesms/.service.RotateSenderCertificateListener
-    +19s949ms 2 wakes 2 alarms, last -2h4m5s806ms:
+    +19s949ms 2 wakes 2 alarms, last -2h51m24s488ms:
       *walarm*:org.thoughtcrime.securesms/.service.RotateSignedPreKeyListener
-  u0a409:com.wakemeup +1s219ms running, 2 wakeups:
-    +661ms 0 wakes 4 alarms, last -5h57m55s578ms:
-      *alarm*:com.wakemeup.ACTION_UPDATE_STATUS
-    +558ms 2 wakes 2 alarms, last -1d6h37m55s809ms:
+  u0a409:com.wakemeup +1s713ms running, 4 wakeups:
+    +1s52ms 4 wakes 4 alarms, last -14s626ms:
       *walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver
+    +661ms 0 wakes 4 alarms, last -6h45m14s260ms:
+      *alarm*:com.wakemeup.ACTION_UPDATE_STATUS
   u0a415:com.microsoft.office.onenote +5s452ms running, 7 wakeups:
-    +4s539ms 7 wakes 7 alarms, last -10h12m55s942ms:
+    +4s539ms 7 wakes 7 alarms, last -11h0m14s624ms:
       *walarm*:com.microsoft.office.action.OFF_PEAK_HOURS_DAILY

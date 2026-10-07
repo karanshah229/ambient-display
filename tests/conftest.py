@@ -97,17 +97,57 @@ def adb_device():
             time.sleep(1)
 
         def wake_and_unlock(self):
-            # Keyevent 224 = WAKEUP, 82 = MENU / UNLOCK
-            self.shell("input keyevent 224")
-            time.sleep(0.5)
+            # Ensure device is awake and display is ON
+            for _ in range(3):
+                wakefulness = self.shell("dumpsys power | grep mWakefulness=").strip()
+                screen_state = self.shell("dumpsys display | grep mScreenState=").strip()
+                if "Awake" in wakefulness and "ON" in screen_state:
+                    break
+                self.shell("input keyevent 224")  # WAKEUP
+                time.sleep(0.3)
+                self.shell("input keyevent 26")   # Power toggle if needed
+                time.sleep(0.3)
+            # Dismiss keyguard / swipe up
+            self.shell("input swipe 540 2000 540 400")
+            time.sleep(0.3)
             self.shell("input keyevent 82")
-            time.sleep(0.5)
+            time.sleep(0.3)
+            self.shell("wm dismiss-keyguard")
+
+
 
         def launch_app(self):
-            self.shell("am start -n com.wakemeup/.MainActivity")
+            # Bring activity reliably to foreground without exiting if back pressed
+            self.shell("am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.wakemeup/.MainActivity")
             time.sleep(1)
+            # Dismiss soft keyboard if visible using ESC / 111
+            self.shell("input keyevent 111")
+            time.sleep(0.3)
+
+
+
+        def get_bounds_by_id(self, res_id: str):
+            import re
+            self.shell("uiautomator dump /sdcard/ui_tmp.xml")
+            xml = self.shell("cat /sdcard/ui_tmp.xml")
+            m = re.search(r'resource-id="[^"]*' + re.escape(res_id) + r'"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', xml)
+            if not m:
+                # also check if bounds comes first
+                m = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"[^>]*resource-id="[^"]*' + re.escape(res_id) + r'"', xml)
+            if m:
+                x1, y1, x2, y2 = map(int, m.groups())
+                return ((x1 + x2) // 2, (y1 + y2) // 2)
+            return None
+
+        def tap_by_id(self, res_id: str) -> bool:
+            pt = self.get_bounds_by_id(res_id)
+            if pt:
+                self.shell(f"input tap {pt[0]} {pt[1]}")
+                return True
+            return False
 
         def dump_alarms(self, name: str) -> str:
+
             target_path = os.path.join(ARTIFACTS_DIR, f"{name}_alarms.txt")
             out = self.shell("dumpsys alarm | grep -C 3 'com.wakemeup'")
             with open(target_path, "w") as f:

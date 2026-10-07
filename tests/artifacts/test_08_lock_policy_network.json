@@ -7,12 +7,12 @@
     "target_display_id": "all"
   },
   "response": {
-    "dismiss_policy": "phone_only",
-    "id": "42B11631-6E04-4CE5-9EB9-17511DC4679A",
-    "type": "billboard",
-    "title": "Workstation Locked",
+    "subtitle": "Rendering in progress. Dismiss via phone.",
+    "id": "E32A89F3-03C5-4F10-B9ED-44602B2AB0D6",
+    "created_at": "2026-10-07T07:18:03Z",
     "target_display_id": "all",
-    "created_at": "2026-10-07T06:30:41Z",
-    "subtitle": "Rendering in progress. Dismiss via phone."
+    "title": "Workstation Locked",
+    "type": "billboard",
+    "dismiss_policy": "phone_only"
   }
 }

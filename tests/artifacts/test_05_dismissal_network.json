@@ -1,10 +1,10 @@
 {
   "request": {},
   "response": {
-    "state": "idle",
     "power_assertion_active": false,
-    "is_away_mode": false,
     "screens_count": 4,
+    "state": "idle",
+    "is_away_mode": false,
     "is_test_mode": false
   }
 }

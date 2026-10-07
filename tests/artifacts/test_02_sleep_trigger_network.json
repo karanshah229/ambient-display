@@ -4,14 +4,14 @@
     "reason": "e2e_live_trigger"
   },
   "response": {
-    "remaining_seconds": 26998.998667001724,
-    "is_away_mode": false,
-    "state": "sleeping",
-    "target_wake_time": "7:30\u202fPM",
-    "bedtime": "12:00\u202fPM",
-    "countdown_text": "7h 30m remaining",
-    "is_test_mode": false,
     "power_assertion_active": true,
-    "screens_count": 4
+    "is_test_mode": false,
+    "state": "sleeping",
+    "bedtime": "12:47\u202fPM",
+    "is_away_mode": false,
+    "countdown_text": "7h 30m remaining",
+    "remaining_seconds": 26998.998710989952,
+    "screens_count": 4,
+    "target_wake_time": "8:17\u202fPM"
   }
 }

@@ -1,4 +1,4 @@
-2026-10-07 12:00:34 +0530 
+2026-10-07 12:47:52 +0530 
 Assertion status system-wide:
    BackgroundTask                 0
    ApplePushServiceTask           0
@@ -12,17 +12,56 @@ Assertion status system-wide:
    PreventUserIdleSystemSleep     1
    NetworkClientActive            0
 Listed by owning process:
-   pid 428(WindowServer): [0x000000850009806c] 00:00:25 UserIsActive named: "com.apple.iohideventsystem.queue.tickle serviceID:100000b83 service:AppleHIDKeyboardEventDriverV2 product:Apple Internal Keyboard / Trackpad eventType:3"  
-   pid 9494(ChatGPT): [0x000009d800018770] 00:34:17 NoIdleSleepAssertion named: "Electron"  
-   pid 17092(WakeMeUp): [0x000011dc000989e8] 00:00:05 UserIsActive named: "WakeMeUp Remote Trigger"  
-   pid 17092(WakeMeUp): [0x000011d7000989e5] 00:00:10 UserIsActive named: "WakeMeUp Remote Trigger"  
-   pid 17092(WakeMeUp): [0x000011c7000989dc] 00:00:26 UserIsActive named: "WakeMeUp Remote Trigger"  
-   pid 17092(WakeMeUp): [0x00000d970009892d] 00:18:18 UserIsActive named: "WakeMeUp Remote Trigger"  
-   pid 421(bluetoothd): [0x0000009300098234] 01:13:49 UserIsActive named: "Bluetooth LE HID Activity"  
-   pid 372(powerd): [0x000000830001800c] 01:14:05 PreventUserIdleSystemSleep named: "Powerd - Prevent sleep while display is on"  
-   pid 372(powerd): [0x000000830009800d] 01:14:05 UserIsActive named: "com.apple.powerd.ws.initialize"  
-   pid 372(powerd): [0x000011e000108608] 00:00:01 InternalPreventDisplaySleep named: "com.apple.powermanagement.delayDisplayOff"  
+   pid 372(powerd): [0x000000830001800c] 02:01:23 PreventUserIdleSystemSleep named: "Powerd - Prevent sleep while display is on"  
+   pid 372(powerd): [0x000000830009800d] 02:01:23 UserIsActive named: "com.apple.powerd.ws.initialize"  
+   pid 372(powerd): [0x000016c300108608] 00:00:01 InternalPreventDisplaySleep named: "com.apple.powermanagement.delayDisplayOff"  
 	Timeout will fire in 299 secs Action=TimeoutActionTurnOff
+   pid 23493(WakeMeUp): [0x00001cf200098e19] 00:00:05 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001ced00098e17] 00:00:10 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001cdd00098e11] 00:00:26 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001c7700098deb] 00:02:07 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001c7600098de9] 00:02:09 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001c7400098de3] 00:02:10 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001c7200098dde] 00:02:12 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001c6900098dd9] 00:02:22 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001c6700098dd4] 00:02:24 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001c5800098dd1] 00:02:39 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001c5300098dce] 00:02:44 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001c4300098dc9] 00:02:59 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001bc700098dab] 00:05:04 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001bc500098da9] 00:05:06 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001bc400098da3] 00:05:07 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001bc200098d9e] 00:05:09 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001bb800098d99] 00:05:19 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001bb600098d94] 00:05:21 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001bab00098d91] 00:05:32 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001ba600098d8f] 00:05:37 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001b9400098d89] 00:05:55 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001b2800098d5c] 00:07:43 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001b2600098d56] 00:07:44 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001b2500098d46] 00:07:46 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001b2300098d41] 00:07:48 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001b1900098d3c] 00:07:58 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001b1700098d37] 00:08:00 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001b0c00098d33] 00:08:11 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001b0700098d30] 00:08:16 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001af600098d2b] 00:08:33 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001ae200098d25] 00:08:53 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001abb00098d0f] 00:09:32 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001a5f00098ced] 00:11:03 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x00001a1e00098cdd] 00:12:09 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x000019ba00098cbf] 00:13:48 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x0000198f00098cb7] 00:14:32 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x0000187c00098c9d] 00:19:07 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x000017ad00098c74] 00:22:34 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x000017a900098c71] 00:22:38 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x000017a600098c6c] 00:22:41 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x0000179d00098c59] 00:22:49 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x000016c200098c40] 00:26:29 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 23493(WakeMeUp): [0x000016b300098c2c] 00:26:44 UserIsActive named: "WakeMeUp Remote Trigger"  
+   pid 9494(ChatGPT): [0x000009d800018770] 01:21:34 NoIdleSleepAssertion named: "Electron"  
+   pid 428(WindowServer): [0x000000850009806c] 00:21:04 UserIsActive named: "com.apple.iohideventsystem.queue.tickle serviceID:100001377 service:AppleUserHIDEventService product:Toad 8 eventType:17"  
+   pid 421(bluetoothd): [0x0000009300098234] 02:01:07 UserIsActive named: "Bluetooth LE HID Activity"  
 Kernel Assertions: 0x104=USB,MAGICWAKE
    id=555  level=255 0x4=USB creat= description=com.apple.usb.externaldevice.00100000 owner=USB-C dongle
    id=564  level=255 0x100=MAGICWAKE creat= description=en0 owner=IOSkywalkNetworkBSDClient

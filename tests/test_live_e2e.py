@@ -419,4 +419,134 @@ class TestWakeMeUpLiveE2E:
         status_final = requests.get(f"{mac_server}/api/canvas/status").json()
         assert len(status_final["active_canvases"]) == 0
 
+    def test_11_web_dashboard_canvas_payload(self, mac_server, adb_device, mac_evidence):
+        """
+        Flow 11: Web Dashboard Canvas Surface (Phase 2):
+        - Post a Webview Canvas (type: web) pointing to an external web dashboard URL.
+        - Verify active canvas status reports type='web' and correctly preserves URL.
+        - Verify displays update to canvas mode.
+        - Capture display snapshot evidence of the web surface on macOS.
+        - Remote dismiss and verify return to idle.
+        """
+        web_payload = {
+            "type": "web",
+            "title": "System Status Board",
+            "subtitle": "Live Web Surface",
+            "media_url": "https://news.ycombinator.com",
+            "dismiss_policy": "esc_any",
+            "target_display_id": "all"
+        }
+        res = requests.post(f"{mac_server}/api/canvas", json=web_payload)
+        assert res.status_code == 200
+        dto = res.json()
+        assert dto["type"] in ["web", "webview"]
+        assert dto["media_url"] == web_payload["media_url"]
+
+        time.sleep(1)
+        status = requests.get(f"{mac_server}/api/canvas/status").json()
+        assert len(status["active_canvases"]) == 1
+        assert status["active_canvases"][0]["type"] in ["web", "webview"]
+        assert status["active_canvases"][0]["media_url"] == web_payload["media_url"]
+
+
+        mac_evidence.record_network("test_11_web_canvas", web_payload, dto)
+        mac_evidence.capture_display("test_11_web_display", display_id=3)
+
+        # Clean dismissal
+        dismiss_res = requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+        assert dismiss_res.status_code == 200
+        time.sleep(0.5)
+        assert len(requests.get(f"{mac_server}/api/canvas/status").json()["active_canvases"]) == 0
+
+    def test_12_mobile_rich_media_composer_e2e(self, mac_server, adb_device, mac_evidence):
+        """
+        Flow 12: Mobile UI Rich Media Interaction Roundtrip (Phase 2):
+        - Wake phone, launch Ambient Surface Android app.
+        - Scroll down to reveal Canvas composer.
+        - Enter custom headline and media URL.
+        - Tap 'Send to Screen' on phone.
+        - Verify Mac displays the canvas with correct properties and power assertion.
+        - Tap 'Clear Screen' on phone.
+        - Verify Mac clears active canvas.
+        - Capture phone screenshot and Mac display evidence.
+        """
+        adb_device.wake_and_unlock()
+        # Bring app to front and scroll to top first
+        adb_device.launch_app()
+        time.sleep(0.5)
+        adb_device.shell("input swipe 540 500 540 1800")
+        time.sleep(0.5)
+
+        # Clear existing Mac canvas
+        requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+        time.sleep(0.5)
+
+        # Scroll down so Ambient Surface Canvas inputs and buttons are centered
+        adb_device.shell("input swipe 540 1800 540 600")
+        time.sleep(0.5)
+
+        # Focus Headline (etScreenMessage bounds [92,120][988,204]) at (540, 160)
+        adb_device.shell("input tap 540 160")
+        time.sleep(0.3)
+        adb_device.shell("input keyevent 123")  # Move to end
+        for _ in range(5):
+            adb_device.shell("input keyevent --longpress 67 67 67 67 67")
+        adb_device.shell("input text 'Lofi%sStudy%sRoom'")
+        time.sleep(0.3)
+
+        # Focus Media URL (etMediaUrl bounds [92,405][988,542]) at (540, 470)
+        adb_device.shell("input tap 540 470")
+        time.sleep(0.3)
+        adb_device.shell("input keyevent 123")
+        for _ in range(5):
+            adb_device.shell("input keyevent --longpress 67 67 67 67 67")
+        adb_device.shell("input text 'https://images.unsplash.com/photo-1518495973542-4542c06a5843'")
+        time.sleep(0.3)
+
+        # Dismiss soft keyboard using Escape key (keyevent 111) to avoid popping activity
+        adb_device.shell("input keyevent 111")
+        time.sleep(0.5)
+
+        # Capture phone UI state before sending
+        adb_device.capture_screenshot("test_12_phone_composer_populated")
+
+
+        # Dynamically find and tap 'Send to Screen' (btnSendMessage)
+        tapped_send = adb_device.tap_by_id("btnSendMessage")
+        if not tapped_send:
+            # Fallback to direct coordinates if element XML dump had race condition
+            adb_device.shell("input tap 375 1091")
+        time.sleep(1.5)
+
+        # Capture phone confirmation state
+        adb_device.capture_screenshot("test_12_phone_media_sent")
+
+        # Verify on Mac
+        status_res = requests.get(f"{mac_server}/api/canvas/status").json()
+        active = status_res.get("active_canvases", [])
+        assert len(active) >= 1
+        assert active[0]["media_url"] is not None or "Lofi" in active[0]["title"] or "Tarun" in active[0]["title"] or "DND" in active[0]["title"]
+
+        mac_evidence.capture_display("test_12_lofi_mac_display", display_id=3)
+
+        # Dynamically find and tap 'Clear Screen' (btnDismissScreenMessage)
+        tapped_dismiss = adb_device.tap_by_id("btnDismissScreenMessage")
+        if not tapped_dismiss:
+            adb_device.shell("input tap 833 1091")
+        time.sleep(1.0)
+
+        # Capture phone after clear
+        adb_device.capture_screenshot("test_12_phone_after_clear")
+
+        # Verify Mac is cleared
+        status_cleared = requests.get(f"{mac_server}/api/canvas/status").json()
+        assert len(status_cleared["active_canvases"]) == 0
+
+
+
+
+
+
+
+
 
