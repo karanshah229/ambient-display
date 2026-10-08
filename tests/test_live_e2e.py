@@ -755,7 +755,7 @@ class TestWakeMeUpLiveE2E:
         # Poll for active canvas on Mac (allowing for cloud dispatch propagation)
         active = []
         status_res = {}
-        for _ in range(10):
+        for _ in range(15):
             status_res = requests.get(f"{mac_server}/api/canvas/status").json()
             active = status_res.get("active_canvases", [])
             if len(active) >= 1:
@@ -782,7 +782,7 @@ class TestWakeMeUpLiveE2E:
         # Verify macOS returned to idle (poll for clear propagation)
         cleared = False
         cleared_res = {}
-        for _ in range(10):
+        for _ in range(15):
             cleared_res = requests.get(f"{mac_server}/api/canvas/status").json()
             if len(cleared_res.get("active_canvases", [])) == 0:
                 cleared = True
