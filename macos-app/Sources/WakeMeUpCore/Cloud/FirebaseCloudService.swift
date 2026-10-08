@@ -2,6 +2,9 @@ import Foundation
 import AppKit
 import Combine
 import Network
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
 
 public struct CloudUserInfo: Codable {
     public let uid: String
@@ -83,17 +86,51 @@ public final class FirebaseCloudService: ObservableObject {
     public var googleClientId: String { config.googleClientId }
     public var isConfigured: Bool { !config.projectId.isEmpty && !config.apiKey.isEmpty }
 
-    private var pollTimer: Timer?
+    private var devicesListener: ListenerRegistration?
     private var heartbeatTimer: Timer?
     private var lastReceivedCanvasId: String? = nil
     private let urlSession = URLSession.shared
     private var oauthListener: NWListener?
 
     private init() {
+        ensureFirebaseConfigured()
         loadPersistedSession()
         setupDismissalHook()
         if currentUser != nil {
             startSync()
+        }
+    }
+
+    public func ensureFirebaseConfigured() {
+        if FirebaseApp.app() == nil {
+            let currentFileDir = URL(fileURLWithPath: #file)
+                .deletingLastPathComponent() // Cloud
+                .deletingLastPathComponent() // WakeMeUpCore
+                .deletingLastPathComponent() // Sources
+                .deletingLastPathComponent() // macos-app
+
+            let possiblePaths: [String] = [
+                Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") ?? "",
+                (Bundle.main.resourcePath ?? "") + "/GoogleService-Info.plist",
+                FileManager.default.currentDirectoryPath + "/GoogleService-Info.plist",
+                FileManager.default.currentDirectoryPath + "/macos-app/GoogleService-Info.plist",
+                currentFileDir.appendingPathComponent("GoogleService-Info.plist").path
+            ].filter { !$0.isEmpty }
+
+            for path in possiblePaths {
+                if FileManager.default.fileExists(atPath: path),
+                   let options = FirebaseOptions(contentsOfFile: path) {
+                    FirebaseApp.configure(options: options)
+                    break
+                }
+            }
+
+            if FirebaseApp.app() == nil && !projectId.isEmpty && !apiKey.isEmpty {
+                let options = FirebaseOptions(googleAppID: "1:229733401659:ios:0b7a7039cd42c6d3e6c81e", gcmSenderID: "229733401659")
+                options.projectID = projectId
+                options.apiKey = apiKey
+                FirebaseApp.configure(options: options)
+            }
         }
     }
 
@@ -160,6 +197,10 @@ public final class FirebaseCloudService: ObservableObject {
 
     // MARK: - Authentication
     public func signInWithGoogleIdToken(_ googleIdToken: String) async throws {
+        ensureFirebaseConfigured()
+        let credential = GoogleAuthProvider.credential(withIDToken: googleIdToken, accessToken: "")
+        _ = try? await Auth.auth().signIn(with: credential)
+
         let url = URL(string: "https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=\(apiKey)")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -207,6 +248,7 @@ public final class FirebaseCloudService: ObservableObject {
         clearPersistedSession()
         registeredDevices = []
         isConnected = false
+        try? Auth.auth().signOut()
     }
 
     public func refreshIdToken() async -> Bool {
@@ -241,34 +283,86 @@ public final class FirebaseCloudService: ObservableObject {
         return false
     }
 
-    // MARK: - Device Registration & Sync
+    // MARK: - Device Registration & Streaming Sync
     public func startSync() {
-        guard currentUser != nil else { return }
+        guard let user = currentUser else { return }
         stopSync()
         isConnected = true
+        ensureFirebaseConfigured()
 
         Task {
             await registerDevice()
-            await fetchDevices()
         }
 
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                await self?.pollDeviceDoc()
+        // Single persistent Firestore streaming connection:
+        // Listens to all devices in the user's fleet in real time.
+        // Pushes updates for fleet discovery AND the activeCanvas for this Mac.
+        // Costs 0 polling reads while idle.
+        let db = Firestore.firestore()
+        devicesListener = db.collection("users").document(user.uid).collection("devices")
+            .addSnapshotListener { [weak self] snapshot, error in
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+                    if let error = error {
+                        self.syncError = error.localizedDescription
+                        return
+                    }
+                    guard let snapshot = snapshot else { return }
+
+                    self.lastSyncTime = Date()
+                    var list: [CloudDeviceDTO] = []
+                    var currentDeviceDoc: DocumentSnapshot? = nil
+
+                    for doc in snapshot.documents {
+                        let data = doc.data()
+                        let dId = (data["deviceId"] as? String) ?? doc.documentID
+                        let dName = (data["deviceName"] as? String) ?? "Unnamed"
+                        let dType = (data["deviceType"] as? String) ?? "unknown"
+                        let dStatus = (data["status"] as? String) ?? "offline"
+                        let dLastSeen: String?
+                        if let ts = data["lastSeen"] as? Timestamp {
+                            dLastSeen = ISO8601DateFormatter().string(from: ts.dateValue())
+                        } else if let str = data["lastSeen"] as? String {
+                            dLastSeen = str
+                        } else {
+                            dLastSeen = nil
+                        }
+
+                        list.append(CloudDeviceDTO(
+                            deviceId: dId,
+                            deviceName: dName,
+                            deviceType: dType,
+                            status: dStatus,
+                            lastSeen: dLastSeen,
+                            activeCanvas: nil
+                        ))
+
+                        if dId == self.deviceId || doc.documentID == self.deviceId {
+                            currentDeviceDoc = doc
+                        }
+                    }
+                    self.registeredDevices = list
+
+                    if let currentDoc = currentDeviceDoc {
+                        let activeCanvas = currentDoc.data()?["activeCanvas"] as? [String: Any]
+                        self.handleActiveCanvas(activeCanvas)
+                    } else {
+                        self.handleActiveCanvas(nil)
+                    }
+                }
             }
-        }
 
-        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 45.0, repeats: true) { [weak self] _ in
+        // Heartbeat updates presence status every 60 seconds (writes only, no reads)
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 await self?.sendHeartbeat()
-                await self?.fetchDevices()
             }
         }
     }
 
     public func stopSync() {
-        pollTimer?.invalidate()
-        pollTimer = nil
+        devicesListener?.remove()
+        devicesListener = nil
         heartbeatTimer?.invalidate()
         heartbeatTimer = nil
         isConnected = false
@@ -276,65 +370,81 @@ public final class FirebaseCloudService: ObservableObject {
 
     public func registerDevice() async {
         guard let user = currentUser else { return }
-        let url = URL(string: "https://firestore.googleapis.com/v1/projects/\(projectId)/databases/(default)/documents/users/\(user.uid)/devices/\(deviceId)?updateMask.fieldPaths=deviceId&updateMask.fieldPaths=deviceName&updateMask.fieldPaths=deviceType&updateMask.fieldPaths=status&updateMask.fieldPaths=lastSeen")!
-
-        var req = URLRequest(url: url)
-        req.httpMethod = "PATCH"
-        req.setValue("Bearer \(user.idToken)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let nowIso = ISO8601DateFormatter().string(from: Date())
-        let body: [String: Any] = [
-            "fields": [
-                "deviceId": ["stringValue": deviceId],
-                "deviceName": ["stringValue": deviceName],
-                "deviceType": ["stringValue": "machine"],
-                "status": ["stringValue": "online"],
-                "lastSeen": ["timestampValue": nowIso]
-            ]
+        ensureFirebaseConfigured()
+        let db = Firestore.firestore()
+        let docRef = db.collection("users").document(user.uid).collection("devices").document(deviceId)
+        let data: [String: Any] = [
+            "deviceId": deviceId,
+            "deviceName": deviceName,
+            "deviceType": "machine",
+            "status": "online",
+            "lastSeen": FieldValue.serverTimestamp()
         ]
-
-
         do {
-            req.httpBody = try JSONSerialization.data(withJSONObject: body)
-            let (_, res) = try await urlSession.data(for: req)
-            if let http = res as? HTTPURLResponse, http.statusCode == 401 {
-                if await refreshIdToken() {
-                    await registerDevice()
-                }
-            }
+            try await docRef.setData(data, merge: true)
         } catch {
-            self.syncError = error.localizedDescription
+            let url = URL(string: "https://firestore.googleapis.com/v1/projects/\(projectId)/databases/(default)/documents/users/\(user.uid)/devices/\(deviceId)?updateMask.fieldPaths=deviceId&updateMask.fieldPaths=deviceName&updateMask.fieldPaths=deviceType&updateMask.fieldPaths=status&updateMask.fieldPaths=lastSeen")!
+            var req = URLRequest(url: url)
+            req.httpMethod = "PATCH"
+            req.setValue("Bearer \(user.idToken)", forHTTPHeaderField: "Authorization")
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            let nowIso = ISO8601DateFormatter().string(from: Date())
+            let body: [String: Any] = [
+                "fields": [
+                    "deviceId": ["stringValue": deviceId],
+                    "deviceName": ["stringValue": deviceName],
+                    "deviceType": ["stringValue": "machine"],
+                    "status": ["stringValue": "online"],
+                    "lastSeen": ["timestampValue": nowIso]
+                ]
+            ]
+            do {
+                req.httpBody = try JSONSerialization.data(withJSONObject: body)
+                let (_, res) = try await urlSession.data(for: req)
+                if let http = res as? HTTPURLResponse, http.statusCode == 401 {
+                    if await refreshIdToken() {
+                        await registerDevice()
+                    }
+                }
+            } catch {
+                self.syncError = error.localizedDescription
+            }
         }
     }
 
     public func sendHeartbeat() async {
         guard let user = currentUser else { return }
-        let url = URL(string: "https://firestore.googleapis.com/v1/projects/\(projectId)/databases/(default)/documents/users/\(user.uid)/devices/\(deviceId)?updateMask.fieldPaths=status&updateMask.fieldPaths=lastSeen")!
-
-        var req = URLRequest(url: url)
-        req.httpMethod = "PATCH"
-        req.setValue("Bearer \(user.idToken)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let nowIso = ISO8601DateFormatter().string(from: Date())
-        let body: [String: Any] = [
-            "fields": [
-                "status": ["stringValue": "online"],
-                "lastSeen": ["timestampValue": nowIso]
-            ]
-        ]
-
+        ensureFirebaseConfigured()
+        let db = Firestore.firestore()
+        let docRef = db.collection("users").document(user.uid).collection("devices").document(deviceId)
         do {
-            req.httpBody = try JSONSerialization.data(withJSONObject: body)
-            let _ = try await urlSession.data(for: req)
-        } catch {}
+            try await docRef.setData([
+                "status": "online",
+                "lastSeen": FieldValue.serverTimestamp()
+            ], merge: true)
+        } catch {
+            let url = URL(string: "https://firestore.googleapis.com/v1/projects/\(projectId)/databases/(default)/documents/users/\(user.uid)/devices/\(deviceId)?updateMask.fieldPaths=status&updateMask.fieldPaths=lastSeen")!
+            var req = URLRequest(url: url)
+            req.httpMethod = "PATCH"
+            req.setValue("Bearer \(user.idToken)", forHTTPHeaderField: "Authorization")
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            let nowIso = ISO8601DateFormatter().string(from: Date())
+            let body: [String: Any] = [
+                "fields": [
+                    "status": ["stringValue": "online"],
+                    "lastSeen": ["timestampValue": nowIso]
+                ]
+            ]
+            do {
+                req.httpBody = try JSONSerialization.data(withJSONObject: body)
+                let _ = try await urlSession.data(for: req)
+            } catch {}
+        }
     }
 
     public func pollDeviceDoc() async {
         guard let user = currentUser else { return }
         let url = URL(string: "https://firestore.googleapis.com/v1/projects/\(projectId)/databases/(default)/documents/users/\(user.uid)/devices/\(deviceId)")!
-
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
         req.setValue("Bearer \(user.idToken)", forHTTPHeaderField: "Authorization")
@@ -355,16 +465,18 @@ public final class FirebaseCloudService: ObservableObject {
             guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let fields = json["fields"] as? [String: Any] else { return }
 
-            handleActiveCanvasField(fields["activeCanvas"] as? [String: Any])
+            handleActiveCanvas(fields["activeCanvas"] as? [String: Any])
         } catch {
             self.syncError = error.localizedDescription
         }
     }
 
     private func handleActiveCanvasField(_ activeCanvasDict: [String: Any]?) {
-        guard let mapValue = activeCanvasDict?["mapValue"] as? [String: Any],
-              let canvasFields = mapValue["fields"] as? [String: Any] else {
-            // No active canvas in Firestore. If Mac is displaying one that was cloud-triggered, dismiss it.
+        handleActiveCanvas(activeCanvasDict)
+    }
+
+    private func handleActiveCanvas(_ activeCanvas: [String: Any]?) {
+        guard var dict = activeCanvas, !dict.isEmpty else {
             if lastReceivedCanvasId != nil && WindowManager.shared.hasActiveMessages() {
                 lastReceivedCanvasId = nil
                 WindowManager.shared.dismissCanvas(targetDisplayId: "all")
@@ -372,21 +484,32 @@ public final class FirebaseCloudService: ObservableObject {
             return
         }
 
-        let typeStr = (canvasFields["type"] as? [String: Any])?["stringValue"] as? String ?? "billboard"
-        let titleStr = (canvasFields["title"] as? [String: Any])?["stringValue"] as? String ?? "Ambient Display"
-        let subtitleStr = (canvasFields["subtitle"] as? [String: Any])?["stringValue"] as? String
-        let mediaUrlStr = (canvasFields["mediaUrl"] as? [String: Any])?["stringValue"] as? String
-            ?? (canvasFields["media_url"] as? [String: Any])?["stringValue"] as? String
-        let themeStr = (canvasFields["theme"] as? [String: Any])?["stringValue"] as? String
-        let dismissPolicyStr = (canvasFields["dismissPolicy"] as? [String: Any])?["stringValue"] as? String
-            ?? (canvasFields["dismiss_policy"] as? [String: Any])?["stringValue"] as? String ?? "esc_any"
-        let targetDisplayIdStr = (canvasFields["targetDisplayId"] as? [String: Any])?["stringValue"] as? String
-            ?? (canvasFields["target_display_id"] as? [String: Any])?["stringValue"] as? String ?? "all"
-        let durationSecondsInt = (canvasFields["durationSeconds"] as? [String: Any])?["integerValue"] as? Int
+        // Unwrap REST mapValue format if present
+        if let mapValue = dict["mapValue"] as? [String: Any],
+           let fields = mapValue["fields"] as? [String: Any] {
+            var extracted: [String: Any] = [:]
+            for (key, val) in fields {
+                if let vMap = val as? [String: Any] {
+                    if let s = vMap["stringValue"] { extracted[key] = s }
+                    else if let i = vMap["integerValue"] { extracted[key] = i }
+                    else if let b = vMap["booleanValue"] { extracted[key] = b }
+                }
+            }
+            dict = extracted
+        }
+
+        let typeStr = (dict["type"] as? String) ?? "billboard"
+        let titleStr = (dict["title"] as? String) ?? "Ambient Display"
+        let subtitleStr = dict["subtitle"] as? String
+        let mediaUrlStr = (dict["mediaUrl"] as? String) ?? (dict["media_url"] as? String)
+        let themeStr = dict["theme"] as? String
+        let dismissPolicyStr = (dict["dismissPolicy"] as? String) ?? (dict["dismiss_policy"] as? String) ?? "esc_any"
+        let targetDisplayIdStr = (dict["targetDisplayId"] as? String) ?? (dict["target_display_id"] as? String) ?? "all"
+        let durationSecondsInt = (dict["durationSeconds"] as? Int) ?? (dict["duration_seconds"] as? Int)
 
         let canvasIdentifier = "\(typeStr)|\(titleStr)|\(subtitleStr ?? "")|\(mediaUrlStr ?? "")"
         if lastReceivedCanvasId == canvasIdentifier {
-            return // Already rendered
+            return
         }
         lastReceivedCanvasId = canvasIdentifier
 
@@ -415,24 +538,31 @@ public final class FirebaseCloudService: ObservableObject {
 
     public func clearActiveCanvasInFirestore() async {
         guard let user = currentUser else { return }
-        let url = URL(string: "https://firestore.googleapis.com/v1/projects/\(projectId)/databases/(default)/documents/users/\(user.uid)/devices/\(deviceId)?updateMask.fieldPaths=activeCanvas")!
-
-        var req = URLRequest(url: url)
-        req.httpMethod = "PATCH"
-        req.setValue("Bearer \(user.idToken)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let body: [String: Any] = [
-            "fields": [
-                "activeCanvas": ["nullValue": NSNull()]
-            ]
-        ]
-
+        ensureFirebaseConfigured()
+        let db = Firestore.firestore()
+        let docRef = db.collection("users").document(user.uid).collection("devices").document(deviceId)
         do {
-            req.httpBody = try JSONSerialization.data(withJSONObject: body)
-            let _ = try await urlSession.data(for: req)
-            lastReceivedCanvasId = nil
-        } catch {}
+            try await docRef.updateData(["activeCanvas": FieldValue.delete()])
+            self.lastReceivedCanvasId = nil
+        } catch {
+            let url = URL(string: "https://firestore.googleapis.com/v1/projects/\(projectId)/databases/(default)/documents/users/\(user.uid)/devices/\(deviceId)?updateMask.fieldPaths=activeCanvas")!
+            var req = URLRequest(url: url)
+            req.httpMethod = "PATCH"
+            req.setValue("Bearer \(user.idToken)", forHTTPHeaderField: "Authorization")
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let body: [String: Any] = [
+                "fields": [
+                    "activeCanvas": ["nullValue": NSNull()]
+                ]
+            ]
+
+            do {
+                req.httpBody = try JSONSerialization.data(withJSONObject: body)
+                let _ = try await urlSession.data(for: req)
+                lastReceivedCanvasId = nil
+            } catch {}
+        }
     }
 
     public func fetchDevices() async {
