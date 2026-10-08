@@ -15,8 +15,18 @@ data class CloudDevice(
     val deviceName: String,
     val deviceType: String,
     val status: String,
-    val lastSeen: Timestamp? = null
-)
+    val lastSeen: Timestamp? = null,
+    val activeCanvasTitle: String? = null
+) {
+    val isOnline: Boolean
+        get() {
+            if (status != "online") return false
+            val seen = lastSeen?.toDate()?.time ?: return false
+            // Active if heartbeat within last 90 seconds
+            val now = System.currentTimeMillis()
+            return (now - seen) < 90_000L
+        }
+}
 
 class DeviceSyncManager(private val context: Context) {
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -57,8 +67,10 @@ class DeviceSyncManager(private val context: Context) {
                     val type = doc.getString("deviceType") ?: "unknown"
                     val status = doc.getString("status") ?: "offline"
                     val lastSeen = doc.getTimestamp("lastSeen")
+                    val activeCanvasMap = doc.get("activeCanvas") as? Map<*, *>
+                    val canvasTitle = activeCanvasMap?.get("title") as? String
                     android.util.Log.i("AmbientDisplay", "Discovered device: id=$id name=$name type=$type status=$status")
-                    CloudDevice(id, name, type, status, lastSeen)
+                    CloudDevice(id, name, type, status, lastSeen, canvasTitle)
                 }
                 onDevicesUpdated(devices)
             }
@@ -69,14 +81,18 @@ class DeviceSyncManager(private val context: Context) {
         devicesListener = null
     }
 
-    suspend fun sendCanvasToDevice(
-        targetDeviceId: String,
+    /**
+     * Send canvas payload to a list of target device IDs.
+     * If targets contains "all", dispatches to all machine/macos devices.
+     */
+    suspend fun sendCanvasToDevices(
+        targetDeviceIds: Collection<String>,
         canvasPayload: Map<String, Any>
     ): Boolean {
         val uid = auth.currentUser?.uid ?: return false
         val devicesColl = firestore.collection("users").document(uid).collection("devices")
         return try {
-            if (targetDeviceId == "all") {
+            if (targetDeviceIds.contains("all")) {
                 val snapshot = devicesColl.get().await()
                 for (doc in snapshot.documents) {
                     val dType = doc.getString("deviceType")
@@ -85,19 +101,22 @@ class DeviceSyncManager(private val context: Context) {
                     }
                 }
             } else {
-                devicesColl.document(targetDeviceId).update("activeCanvas", canvasPayload).await()
+                for (id in targetDeviceIds) {
+                    devicesColl.document(id).update("activeCanvas", canvasPayload).await()
+                }
             }
             true
         } catch (e: Exception) {
+            android.util.Log.e("AmbientDisplay", "Failed to send canvas to devices: ${e.message}", e)
             false
         }
     }
 
-    suspend fun clearCanvasOnDevice(targetDeviceId: String): Boolean {
+    suspend fun clearCanvasOnDevices(targetDeviceIds: Collection<String>): Boolean {
         val uid = auth.currentUser?.uid ?: return false
         val devicesColl = firestore.collection("users").document(uid).collection("devices")
         return try {
-            if (targetDeviceId == "all") {
+            if (targetDeviceIds.contains("all")) {
                 val snapshot = devicesColl.get().await()
                 for (doc in snapshot.documents) {
                     val dType = doc.getString("deviceType")
@@ -106,12 +125,14 @@ class DeviceSyncManager(private val context: Context) {
                     }
                 }
             } else {
-                devicesColl.document(targetDeviceId).update("activeCanvas", null).await()
+                for (id in targetDeviceIds) {
+                    devicesColl.document(id).update("activeCanvas", null).await()
+                }
             }
             true
         } catch (e: Exception) {
+            android.util.Log.e("AmbientDisplay", "Failed to clear canvas on devices: ${e.message}", e)
             false
         }
     }
-
 }

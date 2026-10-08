@@ -1,10 +1,13 @@
 {
   "request": {},
   "response": {
+    "is_signed_in": true,
+    "uid": "user_sample_uid_12345",
     "device_name": "MacBook Air",
-    "is_signed_in": false,
-    "is_connected": false,
-    "device_id": "mac_macbook_air",
-    "registered_devices_count": 0
+    "device_id": "machine_macbook_air",
+    "registered_devices_count": 2,
+    "email": "developer@example.com",
+    "is_connected": true,
+    "display_name": "Ambient User"
   }
 }

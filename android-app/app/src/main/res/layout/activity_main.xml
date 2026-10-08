@@ -287,21 +287,51 @@
                         android:visibility="gone" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tvCloudDevicesHeader"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/layoutFleetHeader"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Target Workstations (Cloud Devices):"
-                    android:textColor="#8E8E93"
-                    android:textSize="13sp" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <Spinner
-                    android:id="@+id/spCloudTargetDevice"
+                    <TextView
+                        android:id="@+id/tvCloudDevicesHeader"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Workstation Fleet Targets (0 machines):"
+                        android:textColor="#8E8E93"
+                        android:textSize="13sp" />
+
+                    <CheckBox
+                        android:id="@+id/cbSelectAllFleet"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="#0A84FF"
+                        android:checked="true"
+                        android:text="Select All"
+                        android:textColor="#0A84FF"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutFleetDeviceList"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:background="#2C2C2E" />
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/tvFleetEmptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:background="#242426"
+                    android:padding="12dp"
+                    android:text="Sign in with Google to discover and target workstation fleet machines."
+                    android:textColor="#636366"
+                    android:textSize="13sp" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

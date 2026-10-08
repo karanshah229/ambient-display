@@ -1,0 +1,22 @@
+{
+  "request": {
+    "type": "billboard",
+    "title": "Fleet Command: Target Machine Verification",
+    "subtitle": "Target: machine_macbook_air",
+    "dismiss_policy": "esc_any",
+    "target_display_id": "all"
+  },
+  "response": {
+    "active_canvases": [
+      {
+        "subtitle": "Target: machine_macbook_air",
+        "id": "299F6B36-D1FE-49CC-AC16-AF9044DED9B8",
+        "type": "billboard",
+        "target_display_id": "all",
+        "dismiss_policy": "esc_any",
+        "created_at": "2026-10-08T12:02:36Z",
+        "title": "Fleet Command: Target Machine Verification"
+      }
+    ]
+  }
+}

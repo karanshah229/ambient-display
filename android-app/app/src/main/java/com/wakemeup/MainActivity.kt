@@ -19,8 +19,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.ArrayAdapter
+import android.widget.CheckBox
+import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.Spinner
@@ -50,8 +53,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvCloudAuthStatus: TextView
     private lateinit var btnGoogleSignIn: Button
     private lateinit var btnSignOut: Button
-    private lateinit var spCloudTargetDevice: Spinner
+    private lateinit var layoutFleetHeader: LinearLayout
+    private lateinit var tvCloudDevicesHeader: TextView
+    private lateinit var cbSelectAllFleet: CheckBox
+    private lateinit var layoutFleetDeviceList: LinearLayout
+    private lateinit var tvFleetEmptyState: TextView
     private var cloudDevices: List<CloudDevice> = emptyList()
+    private val selectedFleetDeviceIds = mutableSetOf<String>()
 
     private lateinit var tvSleepStatus: TextView
     private lateinit var tvWakeTarget: TextView
@@ -175,7 +183,11 @@ class MainActivity : AppCompatActivity() {
         tvCloudAuthStatus = findViewById(R.id.tvCloudAuthStatus)
         btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn)
         btnSignOut = findViewById(R.id.btnSignOut)
-        spCloudTargetDevice = findViewById(R.id.spCloudTargetDevice)
+        layoutFleetHeader = findViewById(R.id.layoutFleetHeader)
+        tvCloudDevicesHeader = findViewById(R.id.tvCloudDevicesHeader)
+        cbSelectAllFleet = findViewById(R.id.cbSelectAllFleet)
+        layoutFleetDeviceList = findViewById(R.id.layoutFleetDeviceList)
+        tvFleetEmptyState = findViewById(R.id.tvFleetEmptyState)
 
         btnGoogleSignIn.setOnClickListener {
             googleSignInLauncher.launch(authManager.getSignInIntent())
@@ -427,13 +439,17 @@ class MainActivity : AppCompatActivity() {
                     "target_display_id" to targetDisplayId,
                     "created_at" to com.google.firebase.Timestamp.now()
                 )
-                val targetCloudId = if (spCloudTargetDevice.selectedItemPosition <= 0 || cloudDevices.isEmpty()) {
-                    "all"
+                val targetIds = if (cbSelectAllFleet.isChecked || selectedFleetDeviceIds.isEmpty()) {
+                    listOf("all")
                 } else {
-                    cloudDevices[spCloudTargetDevice.selectedItemPosition - 1].deviceId
+                    selectedFleetDeviceIds.toList()
                 }
                 lifecycleScope.launch {
-                    deviceSyncManager.sendCanvasToDevice(targetCloudId, cloudPayload)
+                    val count = if (targetIds.contains("all")) cloudDevices.size else targetIds.size
+                    val ok = deviceSyncManager.sendCanvasToDevices(targetIds, cloudPayload)
+                    if (ok) {
+                        Toast.makeText(this@MainActivity, "Cloud broadcast to $count device(s) dispatched!", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -458,13 +474,13 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (authManager.currentUser != null) {
-                val targetCloudId = if (spCloudTargetDevice.selectedItemPosition <= 0 || cloudDevices.isEmpty()) {
-                    "all"
+                val targetIds = if (cbSelectAllFleet.isChecked || selectedFleetDeviceIds.isEmpty()) {
+                    listOf("all")
                 } else {
-                    cloudDevices[spCloudTargetDevice.selectedItemPosition - 1].deviceId
+                    selectedFleetDeviceIds.toList()
                 }
                 lifecycleScope.launch {
-                    deviceSyncManager.clearCanvasOnDevice(targetCloudId)
+                    deviceSyncManager.clearCanvasOnDevices(targetIds)
                 }
             }
         }
@@ -661,26 +677,119 @@ class MainActivity : AppCompatActivity() {
             tvCloudAuthStatus.setTextColor(Color.parseColor("#30D158"))
             btnGoogleSignIn.visibility = View.GONE
             btnSignOut.visibility = View.VISIBLE
+            layoutFleetHeader.visibility = View.VISIBLE
 
             deviceSyncManager.registerCurrentDevice()
             deviceSyncManager.startListeningToDevices { devices ->
                 cloudDevices = devices.filter { it.deviceType in listOf("machine", "macos") }
-                val deviceOptions = mutableListOf("All Laptops / Machines (Cloud Broadcast)")
-                for (dev in cloudDevices) {
-                    val statusEmoji = if (dev.status == "online") "🟢" else "⚪"
-                    deviceOptions.add("$statusEmoji ${dev.deviceName} (${dev.deviceId})")
+                if (selectedFleetDeviceIds.isEmpty() && cbSelectAllFleet.isChecked) {
+                    selectedFleetDeviceIds.addAll(cloudDevices.map { it.deviceId })
+                } else {
+                    val validIds = cloudDevices.map { it.deviceId }.toSet()
+                    selectedFleetDeviceIds.retainAll(validIds)
                 }
-
-                val adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, deviceOptions)
-                spCloudTargetDevice.adapter = adapter
+                renderFleetDeviceList()
             }
         } else {
             tvCloudAuthStatus.text = "Sign in with Google to sync devices anywhere"
             tvCloudAuthStatus.setTextColor(Color.parseColor("#8E8E93"))
             btnGoogleSignIn.visibility = View.VISIBLE
             btnSignOut.visibility = View.GONE
-            val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Sign in to discover cloud devices"))
-            spCloudTargetDevice.adapter = adapter
+            layoutFleetHeader.visibility = View.GONE
+            layoutFleetDeviceList.removeAllViews()
+            tvFleetEmptyState.visibility = View.VISIBLE
+            tvFleetEmptyState.text = "Sign in with Google to discover and target workstation fleet machines."
+            cloudDevices = emptyList()
+            selectedFleetDeviceIds.clear()
+        }
+    }
+
+    private fun renderFleetDeviceList() {
+        val total = cloudDevices.size
+        val selectedCount = selectedFleetDeviceIds.size
+        tvCloudDevicesHeader.text = "Workstation Fleet Targets ($total machines):"
+
+        cbSelectAllFleet.setOnCheckedChangeListener(null)
+        cbSelectAllFleet.isChecked = total > 0 && selectedCount == total
+        cbSelectAllFleet.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                selectedFleetDeviceIds.clear()
+                selectedFleetDeviceIds.addAll(cloudDevices.map { it.deviceId })
+            } else {
+                selectedFleetDeviceIds.clear()
+            }
+            renderFleetDeviceList()
+        }
+
+        layoutFleetDeviceList.removeAllViews()
+        if (cloudDevices.isEmpty()) {
+            tvFleetEmptyState.visibility = View.VISIBLE
+            tvFleetEmptyState.text = "No workstation machines registered yet. Ensure Ambient Display is running on your Mac."
+            return
+        }
+
+        tvFleetEmptyState.visibility = View.GONE
+        val inflater = LayoutInflater.from(this)
+
+        for (device in cloudDevices) {
+            val itemView = inflater.inflate(R.layout.item_fleet_device, layoutFleetDeviceList, false)
+            val cbDeviceSelected = itemView.findViewById<CheckBox>(R.id.cbDeviceSelected)
+            val tvDeviceName = itemView.findViewById<TextView>(R.id.tvDeviceName)
+            val tvDeviceStatusPill = itemView.findViewById<TextView>(R.id.tvDeviceStatusPill)
+            val tvDeviceDetails = itemView.findViewById<TextView>(R.id.tvDeviceDetails)
+            val btnQuickClearDevice = itemView.findViewById<Button>(R.id.btnQuickClearDevice)
+
+            tvDeviceName.text = device.deviceName
+            val isOnline = device.isOnline
+            if (isOnline) {
+                tvDeviceStatusPill.text = "ONLINE"
+                tvDeviceStatusPill.setBackgroundResource(R.drawable.bg_status_pill_online)
+                tvDeviceStatusPill.setTextColor(Color.parseColor("#30D158"))
+            } else {
+                tvDeviceStatusPill.text = "OFFLINE"
+                tvDeviceStatusPill.setBackgroundResource(R.drawable.bg_status_pill_offline)
+                tvDeviceStatusPill.setTextColor(Color.parseColor("#8E8E93"))
+            }
+
+            val activeMsg = if (!device.activeCanvasTitle.isNullOrEmpty()) {
+                "Active: \"${device.activeCanvasTitle}\""
+            } else {
+                "Active: Idle"
+            }
+            tvDeviceDetails.text = "${device.deviceId} • $activeMsg"
+
+            cbDeviceSelected.isChecked = selectedFleetDeviceIds.contains(device.deviceId)
+            cbDeviceSelected.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    selectedFleetDeviceIds.add(device.deviceId)
+                } else {
+                    selectedFleetDeviceIds.remove(device.deviceId)
+                }
+                cbSelectAllFleet.setOnCheckedChangeListener(null)
+                cbSelectAllFleet.isChecked = selectedFleetDeviceIds.size == cloudDevices.size && cloudDevices.isNotEmpty()
+                cbSelectAllFleet.setOnCheckedChangeListener { _, allChecked ->
+                    if (allChecked) {
+                        selectedFleetDeviceIds.clear()
+                        selectedFleetDeviceIds.addAll(cloudDevices.map { it.deviceId })
+                    } else {
+                        selectedFleetDeviceIds.clear()
+                    }
+                    renderFleetDeviceList()
+                }
+            }
+
+            btnQuickClearDevice.setOnClickListener {
+                lifecycleScope.launch {
+                    val success = deviceSyncManager.clearCanvasOnDevices(listOf(device.deviceId))
+                    if (success) {
+                        Toast.makeText(this@MainActivity, "Cleared ${device.deviceName}", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this@MainActivity, "Failed to clear ${device.deviceName}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            layoutFleetDeviceList.addView(itemView)
         }
     }
 

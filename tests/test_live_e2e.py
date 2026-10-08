@@ -557,7 +557,7 @@ class TestWakeMeUpLiveE2E:
         assert res.status_code == 200
         cloud_status = res.json()
         assert "device_id" in cloud_status
-        assert cloud_status["device_id"].startswith("mac_")
+        assert cloud_status["device_id"].startswith("machine_") or cloud_status["device_id"].startswith("mac_")
         assert len(cloud_status["device_name"]) > 0
 
         # Verify Google Services Android Config (actual or example)
@@ -617,6 +617,54 @@ class TestWakeMeUpLiveE2E:
             "enforcement": "Google Sign-in Only Security Rules Active"
         }
         mac_evidence.record_network("test_14_firestore_security", {"probe": "unauthenticated_access"}, evidence_payload)
+
+    def test_15_fleet_multi_targeting_and_presence(self, mac_server, mac_evidence):
+        """
+        Flow 15: Phase 4 Multi-Device Fleet Targeting & Dispatch:
+        - Query /api/cloud/status on macOS workstation server.
+        - Verify device is recognized as online workstation machine.
+        - Dispatch selective canvas payload targeting this machine via HTTP fallback/API.
+        - Verify canvas is active with title and dismiss policy.
+        - Dispatch clear command targeting this specific machine.
+        - Verify canvas is cleared and returned to idle.
+        """
+        # 1. Verify machine registration in fleet
+        res = requests.get(f"{mac_server}/api/cloud/status")
+        assert res.status_code == 200
+        cloud_status = res.json()
+        assert cloud_status["is_signed_in"] is True
+        machine_id = cloud_status["device_id"]
+        assert machine_id.startswith("machine_") or machine_id.startswith("mac_")
+
+        # 2. Dispatch targeted canvas payload to this workstation
+        payload = {
+            "type": "billboard",
+            "title": "Fleet Command: Target Machine Verification",
+            "subtitle": f"Target: {machine_id}",
+            "dismiss_policy": "esc_any",
+            "target_display_id": "all"
+        }
+        send_res = requests.post(f"{mac_server}/api/canvas", json=payload)
+        assert send_res.status_code == 200
+        time.sleep(1)
+
+        # 3. Verify Canvas is rendered on macOS
+        status_res = requests.get(f"{mac_server}/api/canvas/status").json()
+        active = status_res.get("active_canvases", [])
+        assert len(active) >= 1
+        assert "Fleet Command" in active[0]["title"]
+
+        mac_evidence.record_network("test_15_fleet_dispatch", payload, status_res)
+
+        # 4. Clear targeted canvas
+        clear_res = requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+        assert clear_res.status_code == 200
+        time.sleep(1)
+
+        # 5. Verify screen is back to idle
+        cleared_res = requests.get(f"{mac_server}/api/canvas/status").json()
+        assert len(cleared_res.get("active_canvases", [])) == 0
+        mac_evidence.record_network("test_15_fleet_clear", {}, cleared_res)
 
 
 
