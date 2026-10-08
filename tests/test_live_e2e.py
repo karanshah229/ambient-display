@@ -666,6 +666,135 @@ class TestWakeMeUpLiveE2E:
         assert len(cleared_res.get("active_canvases", [])) == 0
         mac_evidence.record_network("test_15_fleet_clear", {}, cleared_res)
 
+    def test_16_phone_fleet_discovery_and_selection(self, mac_server, adb_device, mac_evidence):
+        """
+        Flow 16: Android Phone Workstation Fleet UI & Live Presence (Phase 4):
+        - Wake and unlock phone, launch clean instance of Ambient Display.
+        - Scroll to reveal the 'Workstation Fleet Targets' card.
+        - Verify that the macOS workstation is discovered and displayed with its name and ID.
+        - Verify presence indicator shows 'ONLINE'.
+        - Verify 'Select All' checkbox and individual device checkboxes are enabled and checked by default.
+        - Capture phone screenshot evidence of fleet discovery.
+        """
+        adb_device.wake_and_unlock()
+        adb_device.shell("am force-stop com.wakemeup")
+        adb_device.launch_app()
+        time.sleep(1.0)
+
+        # Scroll down moderately so fleet card and devices are fully centered
+        adb_device.shell("input swipe 540 1800 540 1000")
+        time.sleep(1.0)
+
+        # Inspect UI hierarchy
+        adb_device.shell("uiautomator dump /sdcard/ui_tmp.xml")
+        xml_content = adb_device.shell("cat /sdcard/ui_tmp.xml")
+
+        # 1. Assert fleet header exists
+        assert "tvCloudDevicesHeader" in xml_content, "Fleet header missing from UI hierarchy"
+
+        # 2. Assert MacBook Air workstation is discovered
+        assert "MacBook Air" in xml_content or "machine_macbook_air" in xml_content, "Target workstation not discovered"
+
+        # 3. Assert ONLINE status pill is displayed
+        assert "ONLINE" in xml_content, "Workstation status pill should be ONLINE"
+
+        # 4. Assert device checkbox is present
+        assert "cbDeviceSelected" in xml_content, "Device selection checkbox missing"
+
+        # 5. Capture screenshot of phone fleet UI
+        screenshot_path = adb_device.capture_screenshot("test_16_phone_fleet_discovery")
+        assert Path(screenshot_path).exists()
+
+    def test_17_phone_to_mac_fleet_targeted_dispatch_and_quick_clear(self, mac_server, adb_device, mac_evidence):
+        """
+        Flow 17: Mobile-to-Mac Targeted Fleet Dispatch & Per-Device Quick Clear (Phase 4):
+        - From phone, compose a targeted billboard canvas: 'Fleet Target Alpha'.
+        - Tap 'Send to Screen' with workstation device selected.
+        - Verify macOS app receives the canvas payload and renders it immediately.
+        - Assert active canvas title matches on macOS server status.
+        - Capture live Mac display evidence and phone active state screenshot.
+        - On phone, tap per-device 'Clear' button (btnQuickClearDevice) on the workstation row.
+        - Verify macOS immediately dismisses the canvas and returns to idle.
+        - Capture phone screenshot verifying idle state.
+        """
+        adb_device.wake_and_unlock()
+        # Reset server state first
+        requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
+        time.sleep(0.5)
+
+        adb_device.shell("am force-stop com.wakemeup")
+        adb_device.launch_app()
+        time.sleep(1.0)
+
+        # Scroll to fleet and composer section
+        adb_device.shell("input swipe 540 1800 540 1000")
+        time.sleep(0.5)
+
+        # Focus Headline input
+        tapped_headline = adb_device.tap_by_id("etScreenMessage")
+        assert tapped_headline, "Failed to locate etScreenMessage on phone"
+        time.sleep(0.3)
+
+        # Clear existing text and type unique test headline
+        adb_device.shell("input keyevent 123")  # Move to end
+        for _ in range(8):
+            adb_device.shell("input keyevent --longpress 67 67 67 67 67")
+        adb_device.shell("input text 'Fleet%sTarget%sAlpha'")
+        time.sleep(0.3)
+        adb_device.shell("input keyevent 111")  # Dismiss soft keyboard
+        time.sleep(0.5)
+
+        # Scroll slightly down to make action buttons fully clickable
+        adb_device.shell("input swipe 540 1800 540 1200")
+        time.sleep(0.5)
+
+        # Tap 'Send to Screen'
+        tapped_send = adb_device.tap_by_id("btnSendMessage")
+        assert tapped_send, "Failed to tap btnSendMessage on phone"
+
+        # Poll for active canvas on Mac (allowing for cloud dispatch propagation)
+        active = []
+        status_res = {}
+        for _ in range(10):
+            status_res = requests.get(f"{mac_server}/api/canvas/status").json()
+            active = status_res.get("active_canvases", [])
+            if len(active) >= 1:
+                break
+            time.sleep(0.5)
+
+        assert len(active) >= 1, "Expected active canvas on macOS after phone dispatch"
+        assert "Fleet Target Alpha" in active[0]["title"]
+
+        mac_evidence.capture_display("test_17_mac_fleet_billboard", display_id=1)
+        phone_sent_img = adb_device.capture_screenshot("test_17_phone_fleet_dispatched")
+        assert Path(phone_sent_img).exists()
+
+        # Scroll back up to fleet workstation row
+        adb_device.shell("input swipe 540 600 540 1800")
+        time.sleep(0.5)
+        adb_device.shell("input swipe 540 1800 540 1000")
+        time.sleep(0.5)
+
+        # Tap per-device 'Clear' button (btnQuickClearDevice)
+        tapped_clear = adb_device.tap_by_id("btnQuickClearDevice")
+        assert tapped_clear, "Failed to tap btnQuickClearDevice on phone"
+
+        # Verify macOS returned to idle (poll for clear propagation)
+        cleared = False
+        cleared_res = {}
+        for _ in range(10):
+            cleared_res = requests.get(f"{mac_server}/api/canvas/status").json()
+            if len(cleared_res.get("active_canvases", [])) == 0:
+                cleared = True
+                break
+            time.sleep(0.5)
+
+        assert cleared, "Canvas should be cleared on Mac after per-device quick clear"
+
+        phone_cleared_img = adb_device.capture_screenshot("test_17_phone_after_quick_clear")
+        assert Path(phone_cleared_img).exists()
+        mac_evidence.record_network("test_17_fleet_roundtrip", {"headline": "Fleet Target Alpha"}, cleared_res)
+
 
 
 

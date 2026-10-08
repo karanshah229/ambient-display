@@ -9,13 +9,13 @@
   "response": {
     "active_canvases": [
       {
-        "subtitle": "Target: machine_macbook_air",
-        "id": "299F6B36-D1FE-49CC-AC16-AF9044DED9B8",
-        "type": "billboard",
-        "target_display_id": "all",
+        "title": "Fleet Command: Target Machine Verification",
+        "created_at": "2026-10-08T12:14:07Z",
         "dismiss_policy": "esc_any",
-        "created_at": "2026-10-08T12:02:36Z",
-        "title": "Fleet Command: Target Machine Verification"
+        "type": "billboard",
+        "id": "86529CFA-B31A-4106-94C3-C79B27C4BA65",
+        "subtitle": "Target: machine_macbook_air",
+        "target_display_id": "all"
       }
     ]
   }

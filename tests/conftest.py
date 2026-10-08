@@ -79,7 +79,7 @@ def adb_device():
             out = subprocess.check_output(["adb", "devices"], text=True)
             lines = [l for l in out.strip().split("\n")[1:] if l.strip() and not l.startswith("*")]
             assert len(lines) > 0, "No ADB device connected!"
-            self.device_id = lines[0].split()[0]
+            self.device_id = lines[0].split("\t")[0].strip()
 
         def shell(self, cmd: str) -> str:
             res = subprocess.check_output(["adb", "-s", self.device_id, "shell", cmd], text=True)
