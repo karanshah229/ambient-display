@@ -178,7 +178,7 @@ public struct AmbientDisplayView: View {
                 .font(.system(size: 64))
                 .foregroundColor(theme.textSecondary)
 
-            Text("Wake Me Up is Idle")
+            Text("Ambient Display is Idle")
                 .font(.system(size: 36, weight: .bold, design: .rounded))
                 .foregroundColor(theme.textPrimary)
 

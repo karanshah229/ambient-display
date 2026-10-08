@@ -14,13 +14,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         // Start HTTP server
         LocalHTTPServer.shared.start()
 
-        print("[AppDelegate] Wake Me Up macOS application initialized successfully.")
+        print("[AppDelegate] Ambient Display macOS application initialized successfully.")
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
         AppState.shared.synchronize()
         PowerAssertionManager.shared.release()
         LocalHTTPServer.shared.stop()
-        print("[AppDelegate] Wake Me Up application terminated.")
+        print("[AppDelegate] Ambient Display application terminated.")
     }
 }

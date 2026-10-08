@@ -1,125 +1,128 @@
-# Wake Me Up ⏰💤
+# Ambient Display 🖥️✨
 
-> An intelligent, multi-monitor ambient sleep timer and automatic alarm system.
+> Intelligent Workstation Ambient Canvas & Screen Billboard System for multi-monitor desks and workstation fleets.
 
-When you fall asleep reading or streaming late at night, **Wake Me Up** detects when you actually fell asleep, compensates for screen timeouts, and broadcasts a high-visibility 7.5-hour countdown across your desk monitors (e.g. Dell P2722H & S2740L) so household members walking into the room know exactly when you've had a full night's rest (5 complete 90-minute sleep cycles).
-
-At target wake-up time, your monitors switch to an unmistakable **"Wake me up!"** visual cue, while your phone sounds the audible alarm. The Mac stays silent.
+**Ambient Display** turns your workstation displays (MacBook, external monitors, or multi-machine fleets) into intelligent ambient surfaces. It combines across-the-room typography billboards, ambient media loops, and circadian sunrise alarms with intelligent phone-to-workstation synchronization—operating both peer-to-peer over local Wi-Fi and globally via Google-authenticated Cloud Sync.
 
 ---
 
 ## Architecture Overview
 
 ```
-┌──────────────────────────────────────────────┐
-│           Android Phone (OnePlus)            │
-│  • Foreground Service (OOM killer immune)    │
-│  • Accessibility Watchdog (OxygenOS proof)   │
-│  • Inactivity Compensator (dynamic timeout)  │
-│  • Midnight Glance Filter (5-min threshold)  │
-│  • Hardware RTC AlarmManager (phone rings)   │
-└──────────────────────┬───────────────────────┘
-                       │ HTTP / Wi-Fi (:8321)
-                       ▼
-┌──────────────────────────────────────────────┐
-│             MacBook Air (macOS)              │
-│  • Native Menu Bar Utility (NSStatusItem)    │
-│  • Native REST Server (Network.framework)    │
-│  • Power Assertions (Prevents Display Sleep) │
-│  • Mirrored Fullscreen Across All Displays:  │
-│    - Dell P2722H                             │
-│    - Dell S2740L                             │
-│    - Built-in Retina Display                 │
-└──────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                 Android Companion App                       │
+│  • Workstation Fleet Picker (Selective & Broadcast targets) │
+│  • Real-Time Presence & Heartbeat Monitoring                │
+│  • Multi-Type Ambient Canvas Composer                       │
+│  • Inactivity Compensator (dynamic screen timeout credit)   │
+│  • Midnight Glance Filter (5-min threshold)                 │
+│  • Google Sign-In & Firebase Cloud Sync                     │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │ Local Wi-Fi (HTTP :8321)     │ Cloud Firestore
+               ▼                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 Workstation Fleet Machines                  │
+│  • Native macOS Menu Bar Utility (NSStatusItem)             │
+│  • Unified Multi-Monitor WindowManager                      │
+│  • Zero-OLED-Burn Pure Black Backdrop                       │
+│  • Power Assertions (Prevents Display Sleep during active)  │
+│  • Supported Renderers:                                     │
+│    - High-Visibility Typography Billboard                   │
+│    - Circadian Sunrise & Sleep Countdown                    │
+│    - Looping Ambient Video (AVPlayerLayer)                  │
+│    - Ambient Image Posters                                  │
+│    - Webview Dashboards                                     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Key Features
+## Key Capabilities
 
-### 1. Smart Inactivity Compensator (Netflix / Reading Gap)
-* If you fall asleep streaming or reading, OnePlus OS turns the screen off after your screen-off timeout (e.g. 30 minutes).
-* The compensator checks `Settings.System.SCREEN_OFF_TIMEOUT` dynamically (never hardcoded) and compares it with your last active touch event via `UsageStatsManager`.
-* If you locked the phone manually with the power button $\rightarrow$ **0 minutes deducted**.
-* If the screen turned off due to inactivity $\rightarrow$ **Deducts the 30-minute idle period** so you get full credit for when you actually fell asleep!
+### 1. Multi-Device Fleet Targeting (Phase 4)
+* **Fleet Discovery:** Discovers and lists all registered workstation machines associated with your Google account.
+* **Selective Dispatching:** Send messages and ambient art to specific machines (e.g. `MacBook Air`, `Mac mini`) or broadcast to the entire fleet simultaneously.
+* **Live Presence Pills:** Visual `ONLINE` / `OFFLINE` indicators powered by automated heartbeat timestamps (<90s window).
+* **Per-Machine Quick Clear:** Dismiss active canvases individually per machine or fleet-wide with a single tap.
 
-### 2. Midnight Glance Filter (5-Minute Threshold)
-* Waking up at 3 AM to check the time or drink water shouldn't reset your sleep timer.
-* Any unlock duration $< 5$ minutes is ignored as a quick glance.
-* If you stay active for $> 5$ minutes, an actionable notification appears: *"Still sleeping? [Keep Alarm] [Reset Bedtime to Now]"*.
+### 2. Multi-Type Ambient Canvas (Phase 1 & 2)
+* **Typography Billboard:** High-visibility across-the-room messaging with optional subtitle, duration toast, and `phone_only` lock policy.
+* **Circadian Sunrise & Sleep Countdown:** Real-time solar calculator and adaptive dawn lighting transitions.
+* **Looping Video Surface:** Seamless hardware-accelerated video loops via `AVPlayerLooper`.
+* **Image Posters:** Full-screen high-res ambient imagery with dynamic text overlays.
+* **Web Dashboards:** Embedded live web surfaces (monitoring boards, dashboards).
 
-### 3. MacBook Air Sleep Immunity
-* Solves the notorious macOS issue where background apps get throttled by **App Nap** or displays turn off.
-* Uses macOS kernel `IOPMAssertions` (`PreventUserIdleDisplaySleep` and `PreventUserIdleSystemSleep`) while an active session runs.
-* Released automatically when you wake up or when **Away Mode** is enabled.
+### 3. Dual-Tier Connectivity (Local First + Cloud)
+* **Instant LAN Peer-to-Peer:** Zero-configuration mDNS / Bonjour discovery with direct REST HTTP fallback on port 8321.
+* **Global Cloud Sync (Phase 3):** Powered by Firebase Cloud Firestore, enforcing strict Google OAuth 2.0 authentication security rules.
 
-### 4. Display UI Optimized for Across-the-Room Visibility
-* **Dual-mode countdown:**
-  * During the night ($> 5\text{ min}$ remaining): updates on a **minute basis** (`5h 42m remaining`) to avoid distracting second-ticking in a dark room.
-  * Final 5 minutes: dynamically switches to **seconds** (`04:59` $\rightarrow$ `00:00`).
-* **Deep night adaptive dimming:** Deep amber/ember low-luminescence typography on pure black background. Transitions smoothly to warm dawn light in the morning.
-* **Target reached:** Huge emerald/gold banner: **`WAKE ME UP`**.
-* **Mirroring:** Dynamically handles 1, 2, or laptop-only screens (`Dell P2722H`, `Dell S2740L`).
+### 4. Smart Inactivity Compensator & Sleep Watchdog
+* Checks `Settings.System.SCREEN_OFF_TIMEOUT` dynamically and calculates exact sleep onset by deducting inactivity gaps.
+* Midnight glance filter ignores brief $<5$-minute lockscreen checks.
+* macOS kernel power assertions (`PreventUserIdleDisplaySleep`) prevent machine and display sleep while an ambient session is active.
 
 ---
 
-## macOS App Setup
+## macOS Workstation App Setup
 
 ### Prerequisites
 * macOS 13.0+
-* Xcode or Command Line Tools (`swift`)
+* Xcode Command Line Tools (`swift`)
 
 ### Build & Run
 ```bash
 cd macos-app
 
-# 1. Run unit tests
-make test
+# 1. Build and test
+swift test
 
 # 2. Run app directly
-make run
-
-# 3. Create standalone .app bundle (build/WakeMeUp.app)
-make bundle
+swift run WakeMeUp
 ```
 
 ### Menu Bar Controls
-* **Status indicator:** Shows idle, current countdown, or target wake time in the menu bar.
-* **Manual Sleep:** One-click trigger for a manual 7.5h session.
-* **10s Test Preview:** Fast-forwards the entire experience so you can preview the multi-monitor display and transitions.
-* **Away Mode:** Master toggle to disable monitor displays when traveling or staying elsewhere.
+* **Status indicator:** Shows idle, current countdown, or active canvas state.
+* **Test Ambient (10s):** Fast-forwards the experience for multi-monitor preview.
+* **Cloud Sign-In:** One-click Google Sign-In with browser OAuth.
+* **Away Mode:** Suppresses displays when away or traveling.
+* **Preferences:** Configure display modes, custom themes, and default sleep durations.
 
 ---
 
-## Android App Setup (OnePlus / OxygenOS)
+## Android App Setup
 
 ### Prerequisites
 * Android 8.0+ (API 26+)
-* Android Studio / Gradle
+* Android SDK / Gradle
 
-### OnePlus Immunity Configuration
-OnePlus and ColorOS are notoriously aggressive with background apps. To guarantee 100% reliability, four quick toggles are provided directly in the app's setup card:
-1. **Battery Optimization:** Tap `1. Disable Battery Optimization` $\rightarrow$ select "Don't optimize" / "Unrestricted".
-2. **Usage Access:** Tap `2. Grant Usage Access` $\rightarrow$ enable "Wake Me Up" (allows calculating when Netflix stopped).
-3. **Accessibility Watchdog:** Tap `3. Enable Watchdog` $\rightarrow$ turn ON "Wake Me Up" (exempts the app from OxygenOS process killers).
-4. **Auto-Launch:** Tap `4. OnePlus Auto-Launch Manager` $\rightarrow$ enable "Allow auto-launch" and "Allow secondary launch".
-5. *(Optional)* In the OnePlus App Switcher, tap the three dots on the app card and select **Lock**.
+### Build & Install
+```bash
+cd android-app
+gradle assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+### OnePlus / OxygenOS Immunity Checklist
+Built-in setup buttons configure background immunity directly:
+1. **Disable Battery Optimization:** Unrestricted background execution.
+2. **Grant Usage Access:** Allows calculating inactivity gap when streaming stops.
+3. **Enable Watchdog:** Accessibility service prevents process killing.
+4. **Auto-Launch Manager:** Enables background secondary launch.
 
 ---
 
-## End-to-End (E2E) Testing
+## Live End-to-End (E2E) Test Suite
 
-An automated test suite is included in `scripts/test_e2e.py`:
+A complete pytest suite verifies all local and cloud workflows:
 ```bash
-python3 scripts/test_e2e.py
+.venv/bin/pytest tests/test_live_e2e.py -v
 ```
 
-This verifies:
-1. REST API contracts (`/api/status`, `/api/sleep`, `/api/test`, `/api/wake`, `/api/away`).
-2. macOS `pmset -g assertions` kernel power management locks.
-3. Multi-monitor mirror rendering.
-4. State transitions from idle $\rightarrow$ sleeping $\rightarrow$ final 5-minute seconds mode $\rightarrow$ wake up ready.
-5. Away Mode prevention logic.
+Tests include:
+* `test_01`–`test_09`: Circadian sleep cycles, display timeouts, power assertions, and glance filters.
+* `test_10`–`test_12`: Rich media canvas renderers (video loop, image poster, typography billboard).
+* `test_13`–`test_15`: Cloud authentication, Firestore security rules, and fleet targeting.
+* `test_16`–`test_17`: Live phone-to-Mac fleet presence discovery, targeted dispatch, and per-device quick clear.
 
 ---
 

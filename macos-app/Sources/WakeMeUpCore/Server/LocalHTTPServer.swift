@@ -313,7 +313,7 @@ public final class LocalHTTPServer {
         <html>
         <head>
             <meta charset="utf-8">
-            <title>Wake Me Up — macOS Node</title>
+            <title>Ambient Display — macOS Node</title>
             <style>
                 body { font-family: -apple-system, sans-serif; background: #121212; color: #f0f0f0; text-align: center; padding: 40px; }
                 .card { background: #1e1e1e; max-width: 500px; margin: 0 auto; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
@@ -325,7 +325,7 @@ public final class LocalHTTPServer {
         </head>
         <body>
             <div class="card">
-                <h1>Wake Me Up</h1>
+                <h1>Ambient Display</h1>
                 <p>Native macOS Server & Multi-Monitor Display Node</p>
                 <div>
                     <button onclick="fetch('/api/test', {method:'POST'}).then(load)">Test Preview (10s)</button>
