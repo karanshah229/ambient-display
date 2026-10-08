@@ -26,6 +26,7 @@ bundle: release
 	@rm -rf $(APP_BUNDLE)
 	@mkdir -p $(MACOS) $(RESOURCES)
 	@cp $(BUILD_DIR)/$(APP_NAME) $(MACOS)/$(APP_NAME)
+	@if [ -f GoogleService-Info.plist ]; then cp GoogleService-Info.plist $(RESOURCES)/GoogleService-Info.plist; fi
 	@printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n    <key>CFBundleExecutable</key>\n    <string>WakeMeUp</string>\n    <key>CFBundleIdentifier</key>\n    <string>com.wakemeup.mac</string>\n    <key>CFBundleName</key>\n    <string>WakeMeUp</string>\n    <key>CFBundlePackageType</key>\n    <string>APPL</string>\n    <key>CFBundleShortVersionString</key>\n    <string>1.0.0</string>\n    <key>LSMinimumSystemVersion</key>\n    <string>13.0</string>\n    <key>LSUIElement</key>\n    <true/>\n    <key>NSHighResolutionCapable</key>\n    <true/>\n</dict>\n</plist>\n' > $(CONTENTS)/Info.plist
 	@codesign --force --deep --sign - --identifier "com.wakemeup.mac" $(APP_BUNDLE)
 	@echo "Successfully packaged and signed $(APP_BUNDLE)!"

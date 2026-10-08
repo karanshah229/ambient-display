@@ -25,3 +25,11 @@ tests/artifacts/*.png
 tests/.pytest_cache/
 .pytest_cache/
 .venv/
+
+# Firebase Credentials & Local Configs
+**/google-services.json
+**/GoogleService-Info.plist
+!*.example
+.env
+.env.*
+

@@ -1,0 +1,11 @@
+{
+  "request": {
+    "probe": "unauthenticated_access"
+  },
+  "response": {
+    "target_url": "https://firestore.googleapis.com/v1/projects/your-firebase-project-id/databases/(default)/documents/users/attacker_user_id/devices",
+    "status_code": 403,
+    "response": "{\n  \"error\": {\n    \"code\": 403,\n    \"message\": \"Missing or insufficient permissions.\",\n    \"status\": \"PERMISSION_DENIED\"\n  }\n}\n",
+    "enforcement": "Google Sign-in Only Security Rules Active"
+  }
+}

@@ -1,50 +1,50 @@
-10-07 12:47:31.132  2226  2279 D BatteryStatsImplExtImpl: resumedUid:10409 resumedBatteryLevel:86  resumedPackage:com.wakemeup  resumedBatteryRealtimeCapacity:5589
-10-07 12:47:31.135  2226  3530 D OplusTransitionController:    ChangeInfo{5d4a5df container=ActivityRecord{30110935 u0 com.wakemeup/.MainActivity t1493} flags=0x0}
-10-07 12:47:31.135  2226  3530 D OplusTransitionController:    ChangeInfo{f8ec22c container=Task{2a658ad #1493 type=standard A=10409:com.wakemeup} flags=0x0}
-10-07 12:47:31.135  2226  3530 D OplusTransitionController:    ChangeInfo{8fa44f5 container=ActivityRecord{147333608 u0 com.wakemeup/.MainActivity t-1} flags=0x0}
-10-07 12:47:31.137  2226  3530 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 xflg=0x4 cmp=com.wakemeup/.MainActivity mCallingUid=2000} with LAUNCH_SINGLE_TOP from uid 2000 (BAL_ALLOW_PERMISSION (START_ACTIVITIES_FROM_BACKGROUND permission granted)) result code=3
-10-07 12:47:31.140  2982  3026 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{com.wakemeup/com.wakemeup.MainActivity}, wasVisible=false
-10-07 12:47:31.142 22283 22283 D ActivityThread: ComponentInfo{com.wakemeup/com.wakemeup.MainActivity} checkFinished=false 2
-10-07 12:47:31.160  2226  3530 V WindowManager: Relayout Window{7b88545 u0 com.wakemeup/com.wakemeup.MainActivity}: viewVisibility=0, oldvis=4, req=1080x2392 , apr = 0, vsysui=, x=0, y=0
-10-07 12:47:31.160  2226  3530 I WindowManager: Window{7b88545 u0 com.wakemeup/com.wakemeup.MainActivity} state from NO_SURFACE to DRAW_PENDING; reason: resetDrawState
-10-07 12:47:31.206  2226  3530 I WindowManager: Window{7b88545 u0 com.wakemeup/com.wakemeup.MainActivity} state from DRAW_PENDING to COMMIT_DRAW_PENDING; reason: finishDrawingLocked
-10-07 12:47:31.207  2226  2280 I WindowManager: Window{7b88545 u0 com.wakemeup/com.wakemeup.MainActivity} state from COMMIT_DRAW_PENDING to READY_TO_SHOW; reason: commitFinishDrawingLocked
-10-07 12:47:31.207  2226  2280 D ActivityTaskManager: Clearing startingData for activity=ActivityRecord{30110935 u0 com.wakemeup/.MainActivity t1493} mStartingData=null mStartingSurface=null
-10-07 12:47:31.215  2226  2280 D ActivityTaskManager: Clearing startingData for activity=ActivityRecord{30110935 u0 com.wakemeup/.MainActivity t1493} mStartingData=null mStartingSurface=null
-10-07 12:47:31.217  2226  3530 V WindowManager: Relayout Window{7b88545 u0 com.wakemeup/com.wakemeup.MainActivity}: viewVisibility=4, oldvis=0, req=1080x2392 , apr = 0, vsysui=, x=0, y=0
-10-07 12:47:31.218  2226  3530 D ActivityTaskManager: Clearing startingData for activity=ActivityRecord{30110935 u0 com.wakemeup/.MainActivity t1493} mStartingData=null mStartingSurface=null
-10-07 12:47:31.224  2226  2280 D ActivityTaskManager: Clearing startingData for activity=ActivityRecord{30110935 u0 com.wakemeup/.MainActivity t1493} mStartingData=null mStartingSurface=null
-10-07 12:47:31.226  2226  3530 D WindowManager: NFW_setClientVisible:ActivityRecord{30110935 u0 com.wakemeup/.MainActivity t1493} clientVisible:false
-10-07 12:47:31.227  2226  3530 I WindowManager: Window{7b88545 u0 com.wakemeup/com.wakemeup.MainActivity} state from READY_TO_SHOW to NO_SURFACE; reason: destroySurface
-10-07 12:47:31.227  2226  3530 D OplusStartingWindowManager: skip remove starting window for activity = ActivityRecord{30110935 u0 com.wakemeup/.MainActivity t1493} ,ar != topActivityContainsStartingWindow on activityStopped
-10-07 12:47:31.230  2226  2299 D NotificationService--OplusNotificationFixHelper: fixAppIcon: pkg=com.wakemeup
-10-07 12:47:31.231  2226  2299 D NotificationService--OplusNotificationFixHelper: fixAppIcon: appIcon = null, pkg = com.wakemeup
-10-07 12:47:31.234  2226  3530 D NotificationService--OplusNotificationFixHelper: fixAppIcon: pkg=com.wakemeup
-10-07 12:47:31.234  2226  3530 D NotificationService--OplusNotificationFixHelper: fixAppIcon: appIcon = null, pkg = com.wakemeup
-10-07 12:47:33.846  2226  3526 W NotificationService: Toast already killed. pkg=com.wakemeup token=android.os.BinderProxy@81e908
-10-07 12:47:35.477  2226  3240 D OplusBatteryServiceFeature: setSmartCoolDown: coolDown = 0, normalCoolDown = 0, pkgName = com.wakemeup
-10-07 12:47:35.495  3174  3715 W Battery : StateManager: getAppType com.wakemeup, last=1791357242235
-10-07 12:47:35.495  3174  3715 W Battery : ThermalControllHandler: tempLevel=[5],userMode=2,gameUserMode=-1,appType=-1,envTempType=0,appStates=[],appSwitchSafetyMode=false,split=[],float={},full=[com.wakemeup], tempGear=[5],configItemName=screen_off
-10-07 12:47:35.499  2922 14802 D DCSEX-AppLaunchEventRecorder: recordExitApp = com.wakemeup
-10-07 12:47:35.516  2226  3773 D OplusDisplayManagerServiceEnhance: setSpecBrightness gear = 0 reason = com.wakemeup@temperature@37@normal rate = -1
-10-07 12:47:35.521  2226  2339 D OplusFeatureTemperatureLimitBrightness: new parameter!ControlInfo:[ gear = 0 reason = com.wakemeup@temperature@37@normal gearNit = 9999.0 package = com.wakemeup type = temperature temperature = 37 priority = normal rate = -1] HadDragPoint = false mode = 1
-10-07 12:47:35.530  2226  2915 I GameManagerServiceExt-GameManagerServiceExt: top change IS NOT GAME [com.wakemeup]-[com.android.launcher]
-10-07 12:47:35.545  2226  4560 I OStatsManager_Calc: add screen power pkgName = com.wakemeup, uid = 10409, power = 2054.3681199997663, is Fg = true, fore size = 1, mScale = 1.0
-10-07 12:47:35.545  2226  4560 I OStatsManager_Calc: noteBeforePkgSwitch change = true, curTime = 577215076, com.wakemeup, fg = true
-10-07 12:47:35.545  2226  4560 I OStatsManager_OplusBatteryStatsManager: updateStateTime: PkgName = com.wakemeup, uid = 10409, state to bg, mForegroundCnt = 0, isFg = false
-10-07 12:47:35.549  2982  2982 D AodApk--Engine: NotificationView-->updateNotificationView: com.wakemeup
-10-07 12:47:35.549  2982  2982 D AodApk--Engine: NotificationView-->updateNotificationView icon packageName: com.wakemeup size: 1
-10-07 12:47:35.829  2982  2982 D AodApk--Engine: NotificationView-->updateNotificationView: com.wakemeup
-10-07 12:47:35.829  2982  2982 D AodApk--Engine: NotificationView-->updateNotificationView icon packageName: com.wakemeup size: 2
-10-07 12:47:36.117 22283 22283 D ViewRootImplExtImpl: wrapConfigInfoIntoFlags rotation=0, smallestScreenWidthDp=424, residentWS=false, scenario=0, bounds=Rect(0, 0 - 1080, 2392), relayoutAsync=false, flags=0, newFlags=1254110464, title=com.wakemeup/com.wakemeup.MainActivity
-10-07 12:47:36.120  2226  3732 V WindowManager: Relayout Window{7b88545 u0 com.wakemeup/com.wakemeup.MainActivity}: viewVisibility=8, oldvis=4, req=1080x2392 , apr = 0, vsysui=
-10-07 12:47:38.538  2226  4560 I OStatsManager_Calc: noteBeforePkgSwitch change = true, curTime = 577218094, com.wakemeup, fg = false
-10-07 12:47:38.538  2226  4560 I OStatsManager_OplusBatteryStatsManager: updateStateTime: PkgName = com.wakemeup, uid = 10409, state to fg, mForegroundCnt = 1, isFg = true
-10-07 12:47:38.541  3174  3715 W Battery : StateManager: getAppType com.wakemeup, last=1791357242235
-10-07 12:47:38.541  3174  3715 W Battery : ThermalControllHandler: tempLevel=[5],userMode=2,gameUserMode=-1,appType=-1,envTempType=0,appStates=[],appSwitchSafetyMode=false,split=[],float={},full=[com.wakemeup], tempGear=[5],configItemName=common_config
-10-07 12:47:38.541  3174  3715 W Battery : StateManager: getAppType com.wakemeup, last=1791357242235
-10-07 12:47:38.542  2226  3299 D OplusDisplayManagerServiceEnhance: setSpecBrightness gear = 2 reason = com.wakemeup@temperature@37@normal rate = -1
-10-07 12:47:38.650  2226  2339 D OplusFeatureTemperatureLimitBrightness: new parameter!ControlInfo:[ gear = 2 reason = com.wakemeup@temperature@37@normal gearNit = 600.0 package = com.wakemeup type = temperature temperature = 37 priority = normal rate = -1] HadDragPoint = false mode = 1
-10-07 12:47:38.650  2226  2915 I GameManagerServiceExt-GameManagerTopState: check top result: RunningState{zoomPkg='', topPkg='com.wakemeup', pid= 22283, isColdStart=false, isSplit=false, isTVListen=false, mTaskId=1493}
-10-07 12:47:38.650  2226  2915 I GameManagerServiceExt-GameManagerServiceExt: top change IS NOT GAME [com.android.launcher]-[com.wakemeup]
-10-07 12:47:40.573 14652 14652 I adbd    : adbd service requested 'shell,v2,TERM=dumb,raw:logcat -d | grep -i 'com.wakemeup' | tail -n 50'
+10-07 13:24:53.242  2226  2557 D ActivityTaskManager: setAppVisibility(Token{e0af0ab ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494}}, visible=false):  visible=true mVisibleRequested=true
+10-07 13:24:53.242  2226  2557 D ActivityTaskManager: setVisibility(Token{e0af0ab ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494}}, visible=false) defer commitVisibility for transition collecting
+10-07 13:24:53.252  2226  3093 D Transition: collectOrderChanges onTopTasksEnd: [Task{74892fa #1494 type=standard A=10409:com.wakemeup}], reportedOnTop:null, mOnTopTasksStart: [Task{74892fa #1494 type=standard A=10409:com.wakemeup}], TDA child: [Task{85d973b #2 type=undefined}, Task{24eb5f4 #1 type=home}, Task{74892fa #1494 type=standard A=10409:com.wakemeup}]
+10-07 13:24:53.253  2226  3093 D ContinuousTransitionController: cleanEndParentForChangeInfo, ChangeInfo{bfb6893 container=Task{74892fa #1494 type=standard A=10409:com.wakemeup} flags=0x10}
+10-07 13:24:53.253  2226  3093 D OplusFlexibleActivityTransitionManager: fixTransitType type result:3, targets: [ChangeInfo{bfb6893 container=Task{74892fa #1494 type=standard A=10409:com.wakemeup} flags=0x10}]
+10-07 13:24:53.256  2226  3093 D OplusTransitionController: onTransactionReady, transition: 3968, info: {id=3968 t=TO_FRONT f=0x840 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{778a19d Task{74892fa #1494 type=standard A=10409:com.wakemeup}}} m=TO_BACK f=NONE leash=Surface(name=Task=1494)/@0x7cdea74 sb=Rect(0, 0 - 1080, 2392) eb=Rect(0, 0 - 1080, 2392) epz=Point(1080, 2392) d=0 taskParent=-1}] 
+10-07 13:24:53.256  2226  3093 D OplusTransitionController: , mNeedCanvasExitAnim=false, mMergeSecondTaskAnimation=false, mIsLaunchUnityStart=false, mIsLaunchFromAssistantByDefault=false, mSkipRemoteTransitionfalse, mIsStartFromKeyguard=false flags=0x0, mWCT=null, mIsOpenMergeToInValidPredictive=false, mPromoteTaskWhenKeyguard-1, mRootLayerZOrderArray={}}]}, targets : [ChangeInfo{bfb6893 container=Task{74892fa #1494 type=standard A=10409:com.wakemeup} flags=0x10}], participants: {ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494}}
+10-07 13:24:53.259  2226  3093 W WindowManager: captureTaskSnapshot mSnapshotMode= 0 source=Task{74892fa #1494 type=standard A=10409:com.wakemeup}
+10-07 13:24:53.270  2226  3093 D TaskSnapshotCache: putSnapshot mRunningCache top= ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494}, mTaskId=1494, snapshot=TaskSnapshot{ mId=1791359693259 mCaptureTime=579452830233064 mTopActivityComponent=com.wakemeup/.MainActivity mSnapshot=android.hardware.HardwareBuffer@36ed9fc (1080x2392) mColorSpace=sRGB IEC61966-2.1 (id=0, model=RGB) mOrientation=1 mRotation=0 mTaskSize=Point(1080, 2392) mOplusCompatMode=false mTopActivityBounds=[0,120][1080,2351] mHasDimLayer=false mContentInsets=[0,120][0,41] mLetterboxInsets=[0,0][0,0] mIsLowResolution=false mIsRealSnapshot=true mWindowingMode=1 mAppearance=0 mIsTranslucent=false mHasImeSurface=false mInternalReferences=2 mUiMode=21, mAppIdMap size= 1
+10-07 13:24:53.284  2226  2293 I UserAwareMgr: handleAppChangedToBg, pkgName: com.wakemeup, pid: 24662
+10-07 13:24:53.290  2226  3732 D OplusDisplayManagerServiceEnhance: setSpecBrightness gear = 0 reason = com.wakemeup@temperature@37@normal rate = -1
+10-07 13:24:53.307  2226  2339 D OplusFeatureTemperatureLimitBrightness: new parameter!ControlInfo:[ gear = 0 reason = com.wakemeup@temperature@37@normal gearNit = 9999.0 package = com.wakemeup type = temperature temperature = 37 priority = normal rate = -1] HadDragPoint = false mode = 1
+10-07 13:24:53.321  2226  3093 D NotificationService--OplusNotificationFixHelper: fixAppIcon: pkg=com.wakemeup
+10-07 13:24:53.321  2226  3093 D NotificationService--OplusNotificationFixHelper: fixAppIcon: appIcon = null, pkg = com.wakemeup
+10-07 13:24:53.328  2226  3093 W NotificationService: Toast already killed. pkg=com.wakemeup token=android.os.BinderProxy@5b058e7
+10-07 13:24:53.350  2226  2276 V WindowManager:         {WCT{RemoteToken{778a19d Task{74892fa #1494 type=standard A=10409:com.wakemeup}}} m=TO_BACK f=NONE leash=Surface(name=Task=1494)/@0x7cdea74 sb=Rect(0, 0 - 1080, 2392) eb=Rect(0, 0 - 1080, 2392) epz=Point(1080, 2392) d=0 taskParent=-1}
+10-07 13:24:53.575  2226  3732 D Transition: finishTransition ar ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494}, isVisibleRequested=false, state=PAUSED, visibleAtTransitionEndTokens={}, this=TransitionRecord{3fd9006 id=3968 track=0 type=TO_FRONT flags=0x840 state=2 c=[
+10-07 13:24:53.575  2226  3732 D Transition:    ChangeInfo{bfb6893 container=Task{74892fa #1494 type=standard A=10409:com.wakemeup} flags=0x10}
+10-07 13:24:53.575  2226  3732 D Transition:    ChangeInfo{f4bc4f4 container=ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494} flags=0x0}
+10-07 13:24:53.576  2226  3732 D ActivityTaskManager: commitVisibility: ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494}: visible=false visibleRequested=false, isInTransition=false 
+10-07 13:24:53.576  2226  3732 D WindowManager: NFW_setClientVisible:ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494} clientVisible:false
+10-07 13:24:53.578  2226  3732 D OplusTransitionController:    ChangeInfo{bfb6893 container=Task{74892fa #1494 type=standard A=10409:com.wakemeup} flags=0x10}
+10-07 13:24:53.578  2226  3732 D OplusTransitionController:    ChangeInfo{f4bc4f4 container=ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494} flags=0x0}
+10-07 13:24:53.579  2226  3732 D FlexibleTaskTransitionController:    ChangeInfo{bfb6893 container=Task{74892fa #1494 type=standard A=10409:com.wakemeup} flags=0x10}
+10-07 13:24:53.579  2226  3732 D FlexibleTaskTransitionController:    ChangeInfo{f4bc4f4 container=ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494} flags=0x0}
+10-07 13:24:53.729  2982  2982 D AodApk--Engine: NotificationView-->updateNotificationView: com.wakemeup
+10-07 13:24:53.729  2982  2982 D AodApk--Engine: NotificationView-->updateNotificationView icon packageName: com.wakemeup size: 2
+10-07 13:24:53.769  2226  4560 I OStatsManager_Calc: add screen power pkgName = com.wakemeup, uid = 10409, power = 23423.406159996986, is Fg = true, fore size = 1, mScale = 1.0
+10-07 13:24:53.769  2226  4560 I OStatsManager_Calc: noteBeforePkgSwitch change = true, curTime = 579453252, com.wakemeup, fg = true
+10-07 13:24:53.769  2226  4560 I OStatsManager_OplusBatteryStatsManager: updateStateTime: PkgName = com.wakemeup, uid = 10409, state to bg, mForegroundCnt = 0, isFg = false
+10-07 13:24:53.797 24662 24662 D ViewRootImplExtImpl: wrapConfigInfoIntoFlags rotation=0, smallestScreenWidthDp=424, residentWS=false, scenario=0, bounds=Rect(0, 0 - 1080, 2392), relayoutAsync=false, flags=0, newFlags=1254110464, title=com.wakemeup/com.wakemeup.MainActivity
+10-07 13:24:53.798  2226  3773 V WindowManager: Relayout Window{ec858fe u0 com.wakemeup/com.wakemeup.MainActivity}: viewVisibility=8, oldvis=0, req=1080x2392 , apr = 0, vsysui=, x=0, y=0
+10-07 13:24:53.799  2226  3773 D WindowManager: tryStartExitingAnimation surface saved scuress, win:Window{ec858fe u0 com.wakemeup/com.wakemeup.MainActivity} for fast unLock!
+10-07 13:24:53.858  2226  3525 D OplusStartingWindowManager: skip remove starting window for activity = ActivityRecord{249835885 u0 com.wakemeup/.MainActivity t1494} ,ar != topActivityContainsStartingWindow on activityStopped
+10-07 13:24:54.244 24662 24681 D OplusScrollToTopManager: com.wakemeup/com.wakemeup.MainActivity,This com.android.internal.policy.DecorView{704fc02 I.E...... R......D 0,0-1080,2392 aid=0 alpha=1.0 viewInfo = }[MainActivity] change focus to false
+10-07 13:24:54.507  2226  4560 I OStatsManager_Calc: add wifi power pkgName = com.wakemeup, uid = 10409, fg = 56.628, total = 69.3108, deltaFg = 0.0, deltaTotal = 0.0, is Fg = false, isBatteryStatsAbnormal = false
+10-07 13:24:54.511  2226  4560 I OStatsManager_Calc: add modem power pkgName = com.wakemeup, uid = 10409, fg = 0.0, total = 0.0, deltaFg = 0.0, deltaTotal = 0.0, is Fg = false, isBatteryStatsAbnormal = false
+10-07 13:24:56.408  2226  4560 I OStatsManager_Calc: noteBeforePkgSwitch change = true, curTime = 579455963, com.wakemeup, fg = false
+10-07 13:24:56.409  2226  4560 I OStatsManager_OplusBatteryStatsManager: updateStateTime: PkgName = com.wakemeup, uid = 10409, state to fg, mForegroundCnt = 1, isFg = true
+10-07 13:24:56.496  3174  3715 W Battery : StateManager: getAppType com.wakemeup, last=1791359693204
+10-07 13:24:56.496  3174  3715 W Battery : ThermalControllHandler: tempLevel=[5],userMode=2,gameUserMode=-1,appType=-1,envTempType=0,appStates=[],appSwitchSafetyMode=false,split=[],float={},full=[com.wakemeup], tempGear=[5],configItemName=common_config
+10-07 13:24:56.497  3174  3715 W Battery : StateManager: getAppType com.wakemeup, last=1791359693204
+10-07 13:24:56.507  2226  2915 I GameManagerServiceExt-GameManagerTopState: check top result: RunningState{zoomPkg='', topPkg='com.wakemeup', pid= 24662, isColdStart=false, isSplit=false, isTVListen=false, mTaskId=1494}
+10-07 13:24:56.507  2226  2915 I GameManagerServiceExt-GameManagerServiceExt: top change IS NOT GAME [com.android.launcher]-[com.wakemeup]
+10-07 13:24:56.675  2226  3775 D OplusDisplayManagerServiceEnhance: setSpecBrightness gear = 2 reason = com.wakemeup@temperature@37@normal rate = -1
+10-07 13:24:56.691  2226  2339 D OplusFeatureTemperatureLimitBrightness: new parameter!ControlInfo:[ gear = 2 reason = com.wakemeup@temperature@37@normal gearNit = 600.0 package = com.wakemeup type = temperature temperature = 37 priority = normal rate = -1] HadDragPoint = false mode = 1
+10-07 13:24:57.162  2226  2809 D NotificationService--OplusNotificationFixHelper: fixAppIcon: pkg=com.wakemeup
+10-07 13:24:57.162  2226  2809 D NotificationService--OplusNotificationFixHelper: fixAppIcon: appIcon = null, pkg = com.wakemeup
+10-07 13:24:57.292  2982  2982 I PluginSeedling--Track: RequestHandler-->notificationUpdated 0|com.wakemeup|3001|null|10409 postTime: 1791359697162
+10-07 13:24:58.456 14652 14652 I adbd    : adbd service requested 'shell,v2,TERM=dumb,raw:logcat -d | grep -i 'com.wakemeup' | tail -n 50'

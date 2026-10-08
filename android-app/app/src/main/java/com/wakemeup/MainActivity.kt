@@ -36,9 +36,23 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import org.json.JSONArray
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.wakemeup.auth.AuthManager
+import com.wakemeup.cloud.DeviceSyncManager
+import com.wakemeup.cloud.CloudDevice
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var syncClient: MacSyncClient
+    private lateinit var authManager: AuthManager
+    private lateinit var deviceSyncManager: DeviceSyncManager
+
+    private lateinit var tvCloudAuthStatus: TextView
+    private lateinit var btnGoogleSignIn: Button
+    private lateinit var btnSignOut: Button
+    private lateinit var spCloudTargetDevice: Spinner
+    private var cloudDevices: List<CloudDevice> = emptyList()
+
     private lateinit var tvSleepStatus: TextView
     private lateinit var tvWakeTarget: TextView
     private lateinit var tvDisplayTimeout: TextView
@@ -82,11 +96,30 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    private val googleSignInLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data = result.data
+            if (data != null) {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+                lifecycleScope.launch {
+                    val authRes = authManager.handleSignInResult(task)
+                    if (authRes.isSuccess) {
+                        Toast.makeText(this@MainActivity, "Signed in with Google!", Toast.LENGTH_SHORT).show()
+                        updateCloudAuthUI()
+                    } else {
+                        Toast.makeText(this@MainActivity, "Google Sign-in failed: ${authRes.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         syncClient = MacSyncClient(this)
+        authManager = AuthManager(this)
+        deviceSyncManager = DeviceSyncManager(this)
 
         initViews()
         checkNotificationPermission()
@@ -95,6 +128,7 @@ class MainActivity : AppCompatActivity() {
         loadDisplays()
         handleIntent(intent)
     }
+
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
@@ -137,6 +171,25 @@ class MainActivity : AppCompatActivity() {
         tvAutoPushWindow = findViewById(R.id.tvAutoPushWindow)
         switchAwayMode = findViewById(R.id.switchAwayMode)
         etMacHost = findViewById(R.id.etMacHost)
+
+        tvCloudAuthStatus = findViewById(R.id.tvCloudAuthStatus)
+        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn)
+        btnSignOut = findViewById(R.id.btnSignOut)
+        spCloudTargetDevice = findViewById(R.id.spCloudTargetDevice)
+
+        btnGoogleSignIn.setOnClickListener {
+            googleSignInLauncher.launch(authManager.getSignInIntent())
+        }
+
+        btnSignOut.setOnClickListener {
+            authManager.signOut {
+                deviceSyncManager.stopListening()
+                updateCloudAuthUI()
+                Toast.makeText(this, "Signed out", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        updateCloudAuthUI()
 
         etMacHost.setText(syncClient.macHost)
 
@@ -362,6 +415,27 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this@MainActivity, "Failed: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
                 }
             }
+
+            // Cloud Sync if authenticated
+            if (authManager.currentUser != null) {
+                val cloudPayload = hashMapOf<String, Any>(
+                    "type" to canvasType,
+                    "title" to (if (text.isNotEmpty()) text else (mediaUrl ?: "Ambient Surface")),
+                    "subtitle" to (subtitle ?: ""),
+                    "media_url" to (mediaUrl ?: ""),
+                    "dismiss_policy" to dismissPolicy,
+                    "target_display_id" to targetDisplayId,
+                    "created_at" to com.google.firebase.Timestamp.now()
+                )
+                val targetCloudId = if (spCloudTargetDevice.selectedItemPosition <= 0 || cloudDevices.isEmpty()) {
+                    "all"
+                } else {
+                    cloudDevices[spCloudTargetDevice.selectedItemPosition - 1].deviceId
+                }
+                lifecycleScope.launch {
+                    deviceSyncManager.sendCanvasToDevice(targetCloudId, cloudPayload)
+                }
+            }
         }
 
         btnDismissScreenMessage.setOnClickListener {
@@ -382,7 +456,19 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this@MainActivity, "Failed to clear: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
                 }
             }
+
+            if (authManager.currentUser != null) {
+                val targetCloudId = if (spCloudTargetDevice.selectedItemPosition <= 0 || cloudDevices.isEmpty()) {
+                    "all"
+                } else {
+                    cloudDevices[spCloudTargetDevice.selectedItemPosition - 1].deviceId
+                }
+                lifecycleScope.launch {
+                    deviceSyncManager.clearCanvasOnDevice(targetCloudId)
+                }
+            }
         }
+
     }
 
     private fun getMessageHistory(): List<String> {
@@ -567,4 +653,39 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun updateCloudAuthUI() {
+        val user = authManager.currentUser
+        if (user != null) {
+            tvCloudAuthStatus.text = "Signed in as: ${user.email ?: user.displayName}"
+            tvCloudAuthStatus.setTextColor(Color.parseColor("#30D158"))
+            btnGoogleSignIn.visibility = View.GONE
+            btnSignOut.visibility = View.VISIBLE
+
+            deviceSyncManager.registerCurrentDevice()
+            deviceSyncManager.startListeningToDevices { devices ->
+                cloudDevices = devices.filter { it.deviceType == "macos" }
+                val deviceOptions = mutableListOf("All Workstations (Cloud Broadcast)")
+                for (dev in cloudDevices) {
+                    val statusEmoji = if (dev.status == "online") "🟢" else "⚪"
+                    deviceOptions.add("$statusEmoji ${dev.deviceName} (${dev.deviceId})")
+                }
+                val adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, deviceOptions)
+                spCloudTargetDevice.adapter = adapter
+            }
+        } else {
+            tvCloudAuthStatus.text = "Sign in with Google to sync devices anywhere"
+            tvCloudAuthStatus.setTextColor(Color.parseColor("#8E8E93"))
+            btnGoogleSignIn.visibility = View.VISIBLE
+            btnSignOut.visibility = View.GONE
+            val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Sign in to discover cloud devices"))
+            spCloudTargetDevice.adapter = adapter
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        deviceSyncManager.stopListening()
+    }
 }
+

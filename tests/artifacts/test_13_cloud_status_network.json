@@ -1,0 +1,10 @@
+{
+  "request": {},
+  "response": {
+    "device_name": "MacBook Air",
+    "is_signed_in": false,
+    "is_connected": false,
+    "device_id": "mac_macbook_air",
+    "registered_devices_count": 0
+  }
+}

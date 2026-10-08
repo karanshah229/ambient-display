@@ -8,13 +8,13 @@
     "target_display_id": "all"
   },
   "response": {
-    "title": "Minimal Architecture",
     "dismiss_policy": "esc_any",
-    "subtitle": "Ambient Poster Mode",
     "target_display_id": "all",
-    "id": "EDB8185E-4F3C-4757-8B1E-299423C2A3D6",
+    "media_url": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1920",
     "type": "image",
-    "created_at": "2026-10-07T07:18:15Z",
-    "media_url": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1920"
+    "created_at": "2026-10-07T07:55:34Z",
+    "id": "D21E9581-D0D3-4C21-B8DF-48B29508E9ED",
+    "title": "Minimal Architecture",
+    "subtitle": "Ambient Poster Mode"
   }
 }

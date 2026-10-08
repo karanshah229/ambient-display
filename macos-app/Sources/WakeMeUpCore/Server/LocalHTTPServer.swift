@@ -158,6 +158,15 @@ public final class LocalHTTPServer {
         case ("GET", "/api/canvas/status"):
             return handleGetCanvasStatus()
 
+        case ("GET", "/api/cloud/status"):
+            return handleGetCloudStatus()
+
+        case ("POST", "/api/cloud/auth"):
+            return handlePostCloudAuth(body: body)
+
+        case ("POST", "/api/cloud/signout"):
+            return handlePostCloudSignOut()
+
         case ("GET", "/"):
             return handleGetIndex()
 
@@ -462,6 +471,67 @@ public final class LocalHTTPServer {
         encoder.outputFormatting = .prettyPrinted
         let data = (try? encoder.encode(payload)) ?? Data()
         return (200, "application/json", data)
+    }
+
+    private func handleGetCloudStatus() -> (Int, String, Data) {
+        let (user, isConnected, deviceId, deviceName, devCount) = DispatchQueue.main.sync {
+            let cloud = FirebaseCloudService.shared
+            return (cloud.currentUser, cloud.isConnected, cloud.deviceId, cloud.deviceName, cloud.registeredDevices.count)
+        }
+
+        var dict: [String: Any] = [
+            "is_signed_in": user != nil,
+            "device_id": deviceId,
+            "device_name": deviceName,
+            "is_connected": isConnected,
+            "registered_devices_count": devCount
+        ]
+        if let u = user {
+            dict["uid"] = u.uid
+            dict["email"] = u.email ?? ""
+            dict["display_name"] = u.displayName ?? ""
+        }
+
+        let data = (try? JSONSerialization.data(withJSONObject: dict)) ?? Data()
+        return (200, "application/json", data)
+    }
+
+    private func handlePostCloudAuth(body: Data?) -> (Int, String, Data) {
+        guard let body = body,
+              let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+              let idToken = json["id_token"] as? String else {
+            return (400, "application/json", "{\"error\": \"Missing id_token\"}".data(using: .utf8)!)
+        }
+
+        let semaphore = DispatchSemaphore(value: 0)
+        var success = false
+        var errMsg = ""
+
+        Task { @MainActor in
+            do {
+                try await FirebaseCloudService.shared.signInWithGoogleIdToken(idToken)
+                success = true
+            } catch {
+                errMsg = error.localizedDescription
+            }
+            semaphore.signal()
+        }
+
+        _ = semaphore.wait(timeout: .now() + 5.0)
+
+        if success {
+            return (200, "application/json", "{\"status\": \"authenticated\"}".data(using: .utf8)!)
+        } else {
+            let errJson = "{\"status\": \"error\", \"message\": \"\(errMsg)\"}".data(using: .utf8)!
+            return (401, "application/json", errJson)
+        }
+    }
+
+    private func handlePostCloudSignOut() -> (Int, String, Data) {
+        DispatchQueue.main.sync {
+            FirebaseCloudService.shared.signOut()
+        }
+        return (200, "application/json", "{\"status\": \"signed_out\"}".data(using: .utf8)!)
     }
 
 

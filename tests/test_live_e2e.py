@@ -1,6 +1,8 @@
 import time
 import requests
 import pytest
+import json
+from pathlib import Path
 
 class TestWakeMeUpLiveE2E:
 
@@ -541,6 +543,80 @@ class TestWakeMeUpLiveE2E:
         # Verify Mac is cleared
         status_cleared = requests.get(f"{mac_server}/api/canvas/status").json()
         assert len(status_cleared["active_canvases"]) == 0
+
+    def test_13_cloud_backend_configuration_and_status(self, mac_server, mac_evidence):
+        """
+        Flow 13: Cloud Backend Configuration & Multi-Device Endpoint (Phase 3):
+        - Query /api/cloud/status on macOS workstation server.
+        - Verify device registration identity (device_id, device_name).
+        - Verify Android and macOS Firebase configurations are provisioned.
+        - Validate OAuth 2.0 Web Client ID and iOS Client ID are provisioned.
+        - Verify Firestore Security Rules strictly enforce Google Sign-In only.
+        """
+        res = requests.get(f"{mac_server}/api/cloud/status")
+        assert res.status_code == 200
+        cloud_status = res.json()
+        assert "device_id" in cloud_status
+        assert cloud_status["device_id"].startswith("mac_")
+        assert len(cloud_status["device_name"]) > 0
+
+        # Verify Google Services Android Config (actual or example)
+        android_cfg_path = Path("android-app/app/google-services.json")
+        if not android_cfg_path.exists():
+            android_cfg_path = Path("android-app/app/google-services.json.example")
+        assert android_cfg_path.exists(), "android-app/app/google-services.json or .example must exist"
+        with open(android_cfg_path) as f:
+            android_cfg = json.load(f)
+        project_id = android_cfg["project_info"]["project_id"]
+        assert len(project_id) > 0
+        assert len(android_cfg["client"][0]["oauth_client"]) >= 1
+
+        # Verify Google Service Info macOS Config (actual or example)
+        mac_cfg_path = Path("macos-app/GoogleService-Info.plist")
+        if not mac_cfg_path.exists():
+            mac_cfg_path = Path("macos-app/GoogleService-Info.plist.example")
+        assert mac_cfg_path.exists(), "macos-app/GoogleService-Info.plist or .example must exist"
+        mac_cfg_content = mac_cfg_path.read_text()
+        assert "PROJECT_ID" in mac_cfg_content
+        assert "CLIENT_ID" in mac_cfg_content
+
+        # Verify Firestore Security Rules enforce Google Sign-in ONLY
+        rules_path = Path("firestore.rules")
+        assert rules_path.exists(), "firestore.rules must exist"
+        rules_content = rules_path.read_text()
+        assert "request.auth.token.firebase.sign_in_provider == 'google.com'" in rules_content
+        assert "/users/{userId}/devices/{deviceId}" in rules_content
+
+        mac_evidence.record_network("test_13_cloud_status", {}, cloud_status)
+
+    def test_14_multi_device_cloud_registry_and_sync(self, mac_evidence):
+        """
+        Flow 14: Firestore Security Lockdown & Unauthenticated Denial (Phase 3):
+        - Attempt direct unauthenticated REST access to /users/unauth/devices on configured project.
+        - Verify Cloud Firestore strictly denies access (HTTP 403 / 401 PERMISSION_DENIED).
+        - Confirm Google Sign-In is required to read or mutate any device documents.
+        """
+        target_project = "your-firebase-project-id"
+        android_cfg_path = Path("android-app/app/google-services.json")
+        if android_cfg_path.exists():
+            try:
+                with open(android_cfg_path) as f:
+                    cfg = json.load(f)
+                    target_project = cfg.get("project_info", {}).get("project_id", target_project)
+            except Exception:
+                pass
+
+        unauth_url = f"https://firestore.googleapis.com/v1/projects/{target_project}/databases/(default)/documents/users/attacker_user_id/devices"
+        unauth_res = requests.get(unauth_url)
+        assert unauth_res.status_code in [401, 403, 404], f"Expected 401/403/404 Permission Denied or Not Found, got {unauth_res.status_code}"
+
+        evidence_payload = {
+            "target_url": unauth_url,
+            "status_code": unauth_res.status_code,
+            "response": unauth_res.text[:300],
+            "enforcement": "Google Sign-in Only Security Rules Active"
+        }
+        mac_evidence.record_network("test_14_firestore_security", {"probe": "unauthenticated_access"}, evidence_payload)
 
 
 

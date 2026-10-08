@@ -1,0 +1,354 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// This security rules file assumes the following data structures for the
+// Ambient Screen ('Ambient Surface') application:
+//
+// Collection: /users/{userId}
+// Document ID: {userId} (Must match request.auth.uid)
+// Fields:
+//   - userId: string (optional, must match {userId} if provided, immutable)
+//   - uid: string (optional, legacy alias for userId, must match {userId}, immutable)
+//   - email: string (optional, valid email format, max 254 chars)
+//   - displayName: string (optional, 1-100 chars)
+//   - photoUrl / photoURL: string (optional, valid HTTP/HTTPS URL, max 1000 chars)
+//   - theme: string (optional, max 50 chars)
+//   - preferences: map (optional, user configuration settings, max 30 keys)
+//   - createdAt: timestamp (optional, immutable)
+//   - updatedAt: timestamp (optional)
+//
+// Subcollection: /users/{userId}/devices/{deviceId}
+// Document ID: {deviceId}
+// Fields:
+//   - deviceId: string (required, must match {deviceId}, immutable, max 128 chars)
+//   - deviceName: string (required, 1-100 chars)
+//   - deviceType: string (required, 'macos', 'android', 'ios', 'web', 'display', 'other', max 30 chars)
+//   - lastSeen: timestamp (required)
+//   - status: string (required, 'online', 'offline', 'active', 'idle', 'sleeping', 'standby', 'disconnected', max 30 chars)
+//   - activeCanvas: map or null (optional, active canvas descriptor)
+//   - fcmToken: string (optional, max 500 chars)
+//   - ipAddress: string (optional, max 50 chars)
+//   - appVersion: string (optional, max 50 chars)
+//   - createdAt: timestamp (optional, immutable)
+//   - updatedAt: timestamp (optional)
+//
+// Subcollection: /users/{userId}/devices/{deviceId}/commands/{commandId}
+// Document ID: {commandId}
+// Fields:
+//   - commandId: string (optional, must match {commandId} if provided, immutable, max 128 chars)
+//   - command / type / action: string (at least one required, command type name, max 64 chars, immutable)
+//   - payload: map (optional, command payload parameters, max 30 keys)
+//   - status: string (required, 'pending', 'processing', 'completed', 'failed', 'cancelled')
+//   - targetDisplayId / target_display_id: string (optional, max 64 chars)
+//   - error: string (optional, max 1000 chars)
+//   - result: map (optional, execution response data, max 30 keys)
+//   - createdAt: timestamp (required, immutable)
+//   - updatedAt: timestamp (optional)
+//   - executedAt: timestamp (optional)
+//
+// Subcollection: /users/{userId}/presets/{presetId}
+// Document ID: {presetId}
+// Fields:
+//   - presetId / id: string (optional, must match {presetId} if provided, immutable, max 128 chars)
+//   - title: string (required, 1-100 chars)
+//   - subtitle: string (optional, max 300 chars)
+//   - type: string (optional, 'billboard', 'sunrise', 'image', 'video', 'webview', max 30 chars)
+//   - mediaUrl / media_url: string (optional, valid HTTP/HTTPS URL, max 2000 chars)
+//   - theme: string (optional, max 50 chars)
+//   - dismissPolicy / dismiss_policy: string (optional, 'esc_any', 'phone_only', 'pin', 'escAny', 'phoneOnly', max 30 chars)
+//   - targetDisplayId / target_display_id: string (optional, max 64 chars)
+//   - durationSeconds / duration_seconds: int (optional, 0 to 86400 seconds)
+//   - createdAt: timestamp (required, immutable)
+//   - updatedAt: timestamp (optional)
+//
+// Authentication Requirement:
+//   - Google Sign-in ONLY: request.auth.token.firebase.sign_in_provider == 'google.com'
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if the user is authenticated specifically via Google Sign-In
+    function isAuthenticated() {
+      return request.auth != null &&
+             request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
+    // Check if authenticated user owns the resource path
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Ensure UID field matches caller on create
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) ||
+             request.resource.data.uid == request.auth.uid;
+    }
+
+    // Ensure UID field is not modified on update
+    function uidNotModified() {
+      return !('uid' in request.resource.data) ||
+             request.resource.data.uid == resource.data.uid;
+    }
+
+    // Validate presence of required fields
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Validate that document contains only allowed fields (Strict Schema)
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Ensure immutable fields are not modified during update
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // Validate URL format (http:// or https://)
+    function isValidUrl(url) {
+      return url is string &&
+             (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // Validate email format
+    function isValidEmail(email) {
+      return email is string &&
+             email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Validate optional string field constraints
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+             request.resource.data[field] == null ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() >= minLen &&
+              request.resource.data[field].size() <= maxLen);
+    }
+
+    // Validate optional URL field constraints
+    function isValidOptionalUrl(field, maxLen) {
+      return !(field in request.resource.data) ||
+             request.resource.data[field] == null ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() <= maxLen &&
+              (request.resource.data[field].size() == 0 || isValidUrl(request.resource.data[field])));
+    }
+
+    // Validate optional email field constraints
+    function isValidOptionalEmail(field) {
+      return !(field in request.resource.data) ||
+             request.resource.data[field] == null ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() <= 254 &&
+              isValidEmail(request.resource.data[field]));
+    }
+
+    // ===============================================================
+    // Domain Validator: Active Canvas Map
+    // ===============================================================
+
+    function isValidActiveCanvas(data) {
+      let allowedCanvasKeys = [
+        'id', 'type', 'title', 'subtitle', 'mediaUrl', 'media_url',
+        'theme', 'dismissPolicy', 'dismiss_policy', 'targetDisplayId',
+        'target_display_id', 'durationSeconds', 'duration_seconds',
+        'createdAt', 'created_at', 'remainingSeconds', 'remaining_seconds'
+      ];
+      return data is map &&
+             data.keys().hasOnly(allowedCanvasKeys) &&
+             (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+             (!('type' in data) || (data.type is string && data.type in ['billboard', 'sunrise', 'image', 'video', 'webview'])) &&
+             (!('title' in data) || (data.title == null || (data.title is string && data.title.size() <= 200))) &&
+             (!('subtitle' in data) || (data.subtitle == null || (data.subtitle is string && data.subtitle.size() <= 500))) &&
+             (!('mediaUrl' in data) || (data.mediaUrl == null || (data.mediaUrl is string && data.mediaUrl.size() <= 2000 && (data.mediaUrl.size() == 0 || isValidUrl(data.mediaUrl))))) &&
+             (!('media_url' in data) || (data.media_url == null || (data.media_url is string && data.media_url.size() <= 2000 && (data.media_url.size() == 0 || isValidUrl(data.media_url))))) &&
+             (!('theme' in data) || (data.theme == null || (data.theme is string && data.theme.size() <= 50))) &&
+             (!('dismissPolicy' in data) || (data.dismissPolicy is string && data.dismissPolicy in ['esc_any', 'phone_only', 'pin', 'escAny', 'phoneOnly'])) &&
+             (!('dismiss_policy' in data) || (data.dismiss_policy is string && data.dismiss_policy in ['esc_any', 'phone_only', 'pin', 'escAny', 'phoneOnly'])) &&
+             (!('targetDisplayId' in data) || (data.targetDisplayId is string && data.targetDisplayId.size() <= 64)) &&
+             (!('target_display_id' in data) || (data.target_display_id is string && data.target_display_id.size() <= 64)) &&
+             (!('durationSeconds' in data) || (data.durationSeconds == null || (data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 86400))) &&
+             (!('duration_seconds' in data) || (data.duration_seconds == null || (data.duration_seconds is int && data.duration_seconds >= 0 && data.duration_seconds <= 86400)));
+    }
+
+    // ===============================================================
+    // Domain Validator: User Profile & Preferences
+    // ===============================================================
+
+    function isValidUser(data, userId) {
+      let allowedUserKeys = [
+        'userId', 'uid', 'email', 'displayName', 'photoUrl', 'photoURL',
+        'theme', 'preferences', 'createdAt', 'updatedAt'
+      ];
+      return hasOnlyAllowedFields(allowedUserKeys) &&
+             data.keys().size() > 0 &&
+             (!('userId' in data) || data.userId == userId) &&
+             (!('uid' in data) || data.uid == userId) &&
+             isValidOptionalEmail('email') &&
+             isValidOptionalString('displayName', 1, 100) &&
+             isValidOptionalUrl('photoUrl', 1000) &&
+             isValidOptionalUrl('photoURL', 1000) &&
+             isValidOptionalString('theme', 1, 50) &&
+             (!('preferences' in data) || (data.preferences is map && data.preferences.size() <= 30)) &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    // ===============================================================
+    // Domain Validator: Device
+    // ===============================================================
+
+    function isValidDevice(data, deviceId) {
+      let allowedDeviceKeys = [
+        'deviceId', 'deviceName', 'deviceType', 'lastSeen', 'status',
+        'activeCanvas', 'fcmToken', 'ipAddress', 'appVersion', 'createdAt', 'updatedAt'
+      ];
+      return hasOnlyAllowedFields(allowedDeviceKeys) &&
+             hasRequiredFields(['deviceId', 'deviceName', 'deviceType', 'status', 'lastSeen']) &&
+             data.deviceId == deviceId &&
+             data.deviceName is string && data.deviceName.size() >= 1 && data.deviceName.size() <= 100 &&
+             data.deviceType is string && data.deviceType in ['macos', 'android', 'ios', 'web', 'display', 'other', 'macOS', 'Android', 'iOS'] &&
+             data.status is string && data.status in ['online', 'offline', 'active', 'idle', 'sleeping', 'standby', 'disconnected'] &&
+             data.lastSeen is timestamp &&
+             (!('activeCanvas' in data) || data.activeCanvas == null || isValidActiveCanvas(data.activeCanvas)) &&
+             (!('fcmToken' in data) || data.fcmToken == null || (data.fcmToken is string && data.fcmToken.size() <= 500)) &&
+             (!('ipAddress' in data) || data.ipAddress == null || (data.ipAddress is string && data.ipAddress.size() <= 50)) &&
+             (!('appVersion' in data) || data.appVersion == null || (data.appVersion is string && data.appVersion.size() <= 50)) &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    // ===============================================================
+    // Domain Validator: Remote Command
+    // ===============================================================
+
+    function isValidCommand(data, commandId) {
+      let allowedCommandKeys = [
+        'commandId', 'command', 'type', 'action', 'payload', 'status',
+        'targetDisplayId', 'target_display_id', 'createdAt', 'updatedAt',
+        'executedAt', 'error', 'result'
+      ];
+      return hasOnlyAllowedFields(allowedCommandKeys) &&
+             hasRequiredFields(['status', 'createdAt']) &&
+             ('command' in data || 'type' in data || 'action' in data) &&
+             (!('commandId' in data) || data.commandId == commandId) &&
+             (!('command' in data) || (data.command is string && data.command.size() >= 1 && data.command.size() <= 64)) &&
+             (!('type' in data) || (data.type is string && data.type.size() >= 1 && data.type.size() <= 64)) &&
+             (!('action' in data) || (data.action is string && data.action.size() >= 1 && data.action.size() <= 64)) &&
+             (!('payload' in data) || (data.payload is map && data.payload.size() <= 30)) &&
+             data.status is string && data.status in ['pending', 'processing', 'completed', 'failed', 'cancelled'] &&
+             (!('targetDisplayId' in data) || (data.targetDisplayId is string && data.targetDisplayId.size() <= 64)) &&
+             (!('target_display_id' in data) || (data.target_display_id is string && data.target_display_id.size() <= 64)) &&
+             (!('error' in data) || (data.error == null || (data.error is string && data.error.size() <= 1000))) &&
+             (!('result' in data) || (data.result == null || (data.result is map && data.result.size() <= 30))) &&
+             data.createdAt is timestamp &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp) &&
+             (!('executedAt' in data) || data.executedAt is timestamp);
+    }
+
+    function validCommandStatusTransition() {
+      let prev = resource.data.status;
+      let next = request.resource.data.status;
+      return prev == next ||
+             (prev == 'pending' && next in ['processing', 'completed', 'failed', 'cancelled']) ||
+             (prev == 'processing' && next in ['completed', 'failed', 'cancelled']);
+    }
+
+    // ===============================================================
+    // Domain Validator: Canvas Preset
+    // ===============================================================
+
+    function isValidPreset(data, presetId) {
+      let allowedPresetKeys = [
+        'presetId', 'id', 'title', 'subtitle', 'type', 'mediaUrl', 'media_url',
+        'theme', 'dismissPolicy', 'dismiss_policy', 'targetDisplayId', 'target_display_id',
+        'durationSeconds', 'duration_seconds', 'createdAt', 'updatedAt'
+      ];
+      return hasOnlyAllowedFields(allowedPresetKeys) &&
+             hasRequiredFields(['title', 'createdAt']) &&
+             (!('presetId' in data) || data.presetId == presetId) &&
+             (!('id' in data) || data.id == presetId) &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             (!('subtitle' in data) || (data.subtitle == null || (data.subtitle is string && data.subtitle.size() <= 300))) &&
+             (!('type' in data) || (data.type is string && data.type in ['billboard', 'sunrise', 'image', 'video', 'webview'])) &&
+             (!('mediaUrl' in data) || (data.mediaUrl == null || (data.mediaUrl is string && data.mediaUrl.size() <= 2000 && (data.mediaUrl.size() == 0 || isValidUrl(data.mediaUrl))))) &&
+             (!('media_url' in data) || (data.media_url == null || (data.media_url is string && data.media_url.size() <= 2000 && (data.media_url.size() == 0 || isValidUrl(data.media_url))))) &&
+             (!('theme' in data) || (data.theme == null || (data.theme is string && data.theme.size() <= 50))) &&
+             (!('dismissPolicy' in data) || (data.dismissPolicy is string && data.dismissPolicy in ['esc_any', 'phone_only', 'pin', 'escAny', 'phoneOnly'])) &&
+             (!('dismiss_policy' in data) || (data.dismiss_policy is string && data.dismiss_policy in ['esc_any', 'phone_only', 'pin', 'escAny', 'phoneOnly'])) &&
+             (!('targetDisplayId' in data) || (data.targetDisplayId is string && data.targetDisplayId.size() <= 64)) &&
+             (!('target_display_id' in data) || (data.target_display_id is string && data.target_display_id.size() <= 64)) &&
+             (!('durationSeconds' in data) || (data.durationSeconds == null || (data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 86400))) &&
+             (!('duration_seconds' in data) || (data.duration_seconds == null || (data.duration_seconds is int && data.duration_seconds >= 0 && data.duration_seconds <= 86400))) &&
+             data.createdAt is timestamp &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // Root-level default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User Profile & Preferences
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) &&
+                       isValidUser(request.resource.data, userId) &&
+                       uidUnchanged();
+      allow update: if isOwner(userId) &&
+                       isValidUser(request.resource.data, userId) &&
+                       uidNotModified() &&
+                       areImmutableFieldsUnchanged(['userId', 'uid', 'createdAt']);
+      allow delete: if isOwner(userId);
+
+      // Registered Devices Subcollection
+      match /devices/{deviceId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidDevice(request.resource.data, deviceId);
+        allow update: if isOwner(userId) &&
+                         isValidDevice(request.resource.data, deviceId) &&
+                         areImmutableFieldsUnchanged(['deviceId', 'createdAt']);
+        allow delete: if isOwner(userId);
+
+        // Remote Commands Subcollection
+        match /commands/{commandId} {
+          allow read: if isOwner(userId);
+          allow create: if isOwner(userId) &&
+                           isValidCommand(request.resource.data, commandId) &&
+                           request.resource.data.status in ['pending', 'processing'];
+          allow update: if isOwner(userId) &&
+                           isValidCommand(request.resource.data, commandId) &&
+                           areImmutableFieldsUnchanged(['commandId', 'command', 'type', 'action', 'createdAt']) &&
+                           validCommandStatusTransition();
+          allow delete: if isOwner(userId);
+        }
+      }
+
+      // Presets Subcollection
+      match /presets/{presetId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidPreset(request.resource.data, presetId);
+        allow update: if isOwner(userId) &&
+                         isValidPreset(request.resource.data, presetId) &&
+                         areImmutableFieldsUnchanged(['presetId', 'id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

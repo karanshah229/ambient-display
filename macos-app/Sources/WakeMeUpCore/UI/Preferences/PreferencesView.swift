@@ -5,6 +5,7 @@ import AppKit
 public struct PreferencesView: View {
     @ObservedObject var appState = AppState.shared
     @ObservedObject var launchAtLogin = LaunchAtLoginManager.shared
+    @ObservedObject var cloudService = FirebaseCloudService.shared
 
     @State private var sleepHoursText: String = ""
     @State private var inactivityOffsetText: String = ""
@@ -41,6 +42,11 @@ public struct PreferencesView: View {
             networkTab
                 .tabItem {
                     Label("Network", systemImage: "network")
+                }
+
+            cloudTab
+                .tabItem {
+                    Label("Cloud & Devices", systemImage: "icloud")
                 }
         }
         .frame(width: 530, height: 580)
@@ -374,6 +380,89 @@ public struct PreferencesView: View {
                 Text("Your Android companion app connects to this Mac over your local Wi-Fi network. If DHCP assigns a new IP, Bonjour automatically updates.")
                     .font(.caption)
                     .foregroundColor(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    // MARK: - Cloud & Devices Tab
+    private var cloudTab: some View {
+        Form {
+            Section(header: Text("Google Account").font(.headline)) {
+                if let user = cloudService.currentUser {
+                    HStack(spacing: 12) {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 36))
+                            .foregroundColor(.accentColor)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(user.displayName ?? "Google User")
+                                .font(.headline)
+                            Text(user.email ?? "Signed in")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Button("Sign Out") {
+                            cloudService.signOut()
+                        }
+                        .buttonStyle(.bordered)
+                    }
+
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text("Connected to Firebase (\(cloudService.projectId.isEmpty ? "Cloud" : cloudService.projectId))")
+                            .font(.caption)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Sign in with Google to sync ambient messages and canvases across all your devices anywhere in the world.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        Text("Google Sign-In is enforced. Sign in from your mobile companion app or use authenticated device pairing.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+
+            Section(header: Text("Ambient Device Identity").font(.headline)) {
+                LabeledContent("Device ID", value: cloudService.deviceId)
+                LabeledContent("Device Name", value: cloudService.deviceName)
+                LabeledContent("Cloud Sync Status", value: cloudService.isConnected ? "Online & Synchronizing" : "Offline")
+
+                if let err = cloudService.syncError {
+                    Text("Sync error: \(err)")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+            }
+
+            Section(header: Text("Paired Devices in Account (\(cloudService.registeredDevices.count))").font(.headline)) {
+                if cloudService.registeredDevices.isEmpty {
+                    Text(cloudService.currentUser == nil ? "Sign in to see paired devices." : "No other devices detected yet.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else {
+                    ForEach(cloudService.registeredDevices) { dev in
+                        HStack {
+                            Image(systemName: dev.deviceType == "macos" ? "desktopcomputer" : "iphone")
+                                .foregroundColor(.secondary)
+                            VStack(alignment: .leading) {
+                                Text(dev.deviceName)
+                                    .font(.body)
+                                Text("\(dev.deviceId) • \(dev.deviceType.uppercased())")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Text(dev.status.capitalized)
+                                .font(.caption)
+                                .foregroundColor(dev.status == "online" ? .green : .secondary)
+                        }
+                    }
+                }
             }
         }
         .formStyle(.grouped)

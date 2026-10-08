@@ -89,6 +89,7 @@ public final class WindowManager: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
     private let appState = AppState.shared
+    public var onCanvasDismissed: ((String) -> Void)?
 
     private init() {
         setupStateSubscription()
@@ -463,6 +464,8 @@ public final class WindowManager: ObservableObject {
         if !hasActiveMessages() && appState.state == .idle {
             PowerAssertionManager.shared.release()
         }
+
+        onCanvasDismissed?(targetId)
     }
 
     public func dismissCanvas(onScreenId screenId: String) {

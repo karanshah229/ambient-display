@@ -8,13 +8,13 @@
     "target_display_id": "all"
   },
   "response": {
+    "media_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
     "title": "Ambient Loop",
-    "dismiss_policy": "phone_only",
-    "subtitle": "Continuous Looping Surface",
     "target_display_id": "all",
+    "created_at": "2026-10-07T07:55:35Z",
+    "dismiss_policy": "phone_only",
+    "id": "EFB6A0FC-AFCD-4BF9-B49D-6E07D98E5740",
     "type": "video",
-    "id": "08F9DB87-F28C-4EC0-95EB-8924F383E15B",
-    "created_at": "2026-10-07T07:18:17Z",
-    "media_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+    "subtitle": "Continuous Looping Surface"
   }
 }
