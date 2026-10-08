@@ -4,6 +4,15 @@
 
 **Ambient Display** turns your workstation displays (MacBook, external monitors, or multi-machine fleets) into intelligent ambient surfaces. It combines across-the-room typography billboards, ambient media loops, and circadian sunrise alarms with intelligent phone-to-workstation synchronization—operating both peer-to-peer over local Wi-Fi and globally via Google-authenticated Cloud Sync.
 
+> [!IMPORTANT]
+> **Build & Deploy It Yourself (No Pre-Built Binaries)**  
+> Ambient Display is completely open-source, private, and self-hosted:
+> - **No pre-compiled `.apk` or `.dmg` files are distributed.** You build both apps directly from source.
+> - **No shared cloud backend.** The app works **100% locally out-of-the-box** over local Wi-Fi with zero accounts or setup required.
+> - If you want global remote sync and multi-machine fleet targeting, you can optionally connect your own free [Firebase](https://firebase.google.com/) project.
+> 
+> 📖 **Complete Step-by-Step Instructions:** [**Deployment & Setup Guide**](docs/DEPLOYMENT_GUIDE.md)
+
 ---
 
 ## Architecture Overview
@@ -87,6 +96,12 @@ swift run WakeMeUp
 * **Away Mode:** Suppresses displays when away or traveling.
 * **Preferences:** Configure display modes, custom themes, and default sleep durations.
 
+### Cloud Configuration (Optional)
+To enable cloud synchronization across networks:
+* Copy your Firebase `GoogleService-Info.plist` into `macos-app/GoogleService-Info.plist` (see [GoogleService-Info.plist.example](macos-app/GoogleService-Info.plist.example)), or
+* Export environment variables: `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `FIREBASE_CLIENT_ID`.
+* See [Deployment & Setup Guide](docs/DEPLOYMENT_GUIDE.md#step-6-configure-macos-app) for detailed steps.
+
 ---
 
 ## Android App Setup
@@ -101,6 +116,12 @@ cd android-app
 gradle assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+### Cloud Configuration (Optional)
+To enable cloud synchronization and fleet targeting:
+* Place your Firebase `google-services.json` into `android-app/app/google-services.json` (see [google-services.json.example](android-app/app/google-services.json.example)).
+* Add your debug SHA-1 fingerprint (`gradle signingReport`) to your Firebase Android app settings.
+* See [Deployment & Setup Guide](docs/DEPLOYMENT_GUIDE.md#step-5-configure-android-app) for detailed steps.
 
 ### OnePlus / OxygenOS Immunity Checklist
 Built-in setup buttons configure background immunity directly:

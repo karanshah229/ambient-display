@@ -81,6 +81,7 @@ public final class FirebaseCloudService: ObservableObject {
     public var projectId: String { config.projectId }
     public var apiKey: String { config.apiKey }
     public var googleClientId: String { config.googleClientId }
+    public var isConfigured: Bool { !config.projectId.isEmpty && !config.apiKey.isEmpty }
 
     private var pollTimer: Timer?
     private var heartbeatTimer: Timer?
