@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- === BACK MONITOR (Larger, Left) === -->
+    <!-- Screen Outer Frame (Stroke) -->
+    <!-- Top-left at (24, 28), width 46, height 32, radius 4 -->
+    <path
+        android:fillColor="#161822"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.2"
+        android:strokeLineJoin="round"
+        android:pathData="M 28,28 L 66,28 A 4,4 0 0 1 70,32 L 70,56 A 4,4 0 0 1 66,60 L 28,60 A 4,4 0 0 1 24,56 L 24,32 A 4,4 0 0 1 28,28 Z" />
+
+    <!-- Back Monitor Stand Neck -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 44.5,60 L 49.5,60 L 49.5,67 L 44.5,67 Z" />
+
+    <!-- Back Monitor Stand Foot -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M 37,67 L 57,67" />
+
+    <!-- === CUTOUT GAP TO SEPARATE FRONT MONITOR FROM BACK MONITOR === -->
+    <path
+        android:fillColor="#161822"
+        android:pathData="M 46,40 L 84,40 A 6,6 0 0 1 90,46 L 90,70 A 6,6 0 0 1 84,76 L 46,76 A 6,6 0 0 1 40,70 L 40,46 A 6,6 0 0 1 46,40 Z" />
+
+    <!-- === FRONT MONITOR (Smaller, Right - Overlapping display.2) === -->
+    <!-- Screen Outer Frame (Stroke) -->
+    <!-- Top-left at (46, 44), width 40, height 28, radius 4 -->
+    <path
+        android:fillColor="#161822"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.2"
+        android:strokeLineJoin="round"
+        android:pathData="M 50,44 L 82,44 A 4,4 0 0 1 86,48 L 86,68 A 4,4 0 0 1 82,72 L 50,72 A 4,4 0 0 1 46,68 L 46,48 A 4,4 0 0 1 50,44 Z" />
+
+    <!-- Front Monitor Stand Neck -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 63.5,72 L 68.5,72 L 68.5,79 L 63.5,79 Z" />
+
+    <!-- Front Monitor Stand Foot -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M 56,79 L 76,79" />
+
+</vector>

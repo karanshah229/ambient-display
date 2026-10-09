@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-E2E Automated Test Suite for Wake Me Up macOS Server & Display Node
+E2E Automated Test Suite for Ambient Display macOS Server & Display Node
 Verifies:
 1. HTTP REST API endpoints (/api/status, /api/sleep, /api/test, /api/away, /api/wake)
 2. macOS Power Assertions (pmset -g assertions) for PreventUserIdleDisplaySleep & SystemSleep
@@ -20,7 +20,7 @@ import signal
 PORT = 8321
 BASE_URL = f"http://127.0.0.1:{PORT}"
 MAC_BINARY = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../macos-app/.build/debug/WakeMeUp")
+    os.path.join(os.path.dirname(__file__), "../macos-app/.build/debug/AmbientDisplay")
 )
 
 def log(msg):
@@ -28,7 +28,7 @@ def log(msg):
 
 def http_get(path):
     url = f"{BASE_URL}{path}"
-    req = urllib.request.Request(url, headers={"User-Agent": "WakeMeUp-E2E"})
+    req = urllib.request.Request(url, headers={"User-Agent": "AmbientDisplay-E2E"})
     with urllib.request.urlopen(req, timeout=5) as res:
         return res.status, json.loads(res.read().decode("utf-8"))
 
@@ -38,7 +38,7 @@ def http_post(path, data=None):
     req = urllib.request.Request(
         url,
         data=body,
-        headers={"Content-Type": "application/json", "User-Agent": "WakeMeUp-E2E"},
+        headers={"Content-Type": "application/json", "User-Agent": "AmbientDisplay-E2E"},
         method="POST"
     )
     with urllib.request.urlopen(req, timeout=5) as res:
@@ -49,7 +49,7 @@ def check_pmset_assertions():
         out = subprocess.check_output(["pmset", "-g", "assertions"], text=True)
         has_display = "PreventUserIdleDisplaySleep" in out
         has_system = "PreventUserIdleSystemSleep" in out
-        has_app = "WakeMeUp" in out
+        has_app = "AmbientDisplay" in out
         return {
             "display_sleep_prevented": has_display,
             "system_sleep_prevented": has_system,
@@ -66,7 +66,7 @@ def run_tests():
         subprocess.check_call(["swift", "build"], cwd=os.path.dirname(MAC_BINARY) + "/../../")
 
     # Start app in background
-    log("Starting WakeMeUp macOS background process...")
+    log("Starting AmbientDisplay macOS background process...")
     proc = subprocess.Popen([MAC_BINARY], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1.5)
 
@@ -95,7 +95,7 @@ def run_tests():
         log("Step 3: Inspecting macOS kernel power assertions (pmset)...")
         pmset = check_pmset_assertions()
         assert pmset.get("display_sleep_prevented", False), "PreventUserIdleDisplaySleep is not active!"
-        assert pmset.get("wake_me_up_asserting", False), "WakeMeUp is not listed in power assertions!"
+        assert pmset.get("wake_me_up_asserting", False), "AmbientDisplay is not listed in power assertions!"
         log("✓ Kernel power assertions verified: MacBook Air and Dell monitors will NOT sleep.")
 
         # Step 4: Test Fast-Forward 3-Second Simulation
@@ -112,7 +112,7 @@ def run_tests():
         status, data = http_get("/api/status")
         assert data["state"] == "wakeUpReady", f"Expected wakeUpReady, got {data['state']}"
         assert data["countdown_text"] == "00:00"
-        log("✓ Wake-up transition reached: Fullscreen shows 'WAKE ME UP'!")
+        log("✓ Wake-up transition reached: Fullscreen shows 'AMBIENT DISPLAY'!")
 
         # Step 5: Test Stop / Wake Up Dismissal
         log("Step 5: Dismissing wake-up state (POST /api/wake)...")

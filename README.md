@@ -86,7 +86,7 @@ cd macos-app
 swift test
 
 # 2. Run app directly
-swift run WakeMeUp
+swift run AmbientDisplay
 ```
 
 ### Menu Bar Controls

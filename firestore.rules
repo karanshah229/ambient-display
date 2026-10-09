@@ -111,7 +111,7 @@ service cloud.firestore {
 
     // Ensure immutable fields are not modified during update
     function areImmutableFieldsUnchanged(fields) {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+      return !request.resource.data.diff(resource.data).changedKeys().hasAny(fields);
     }
 
     // Validate URL format (http:// or https://)
@@ -214,18 +214,27 @@ service cloud.firestore {
         'activeCanvas', 'fcmToken', 'ipAddress', 'appVersion', 'createdAt', 'updatedAt'
       ];
       return hasOnlyAllowedFields(allowedDeviceKeys) &&
-             hasRequiredFields(['deviceId', 'deviceName', 'deviceType', 'status', 'lastSeen']) &&
-             data.deviceId == deviceId &&
-             data.deviceName is string && data.deviceName.size() >= 1 && data.deviceName.size() <= 100 &&
-             data.deviceType is string && data.deviceType in ['mobile', 'machine', 'macos', 'android', 'ios', 'web', 'display', 'other', 'Mobile', 'Machine'] &&
-             data.status is string && data.status in ['online', 'offline', 'active', 'idle', 'sleeping', 'standby', 'disconnected'] &&
-             data.lastSeen is timestamp &&
+             data.keys().size() > 0 &&
+             (!('deviceId' in data) || data.deviceId == deviceId) &&
+             (!('deviceName' in data) || (data.deviceName is string && data.deviceName.size() >= 1 && data.deviceName.size() <= 100)) &&
+             (!('deviceType' in data) || (data.deviceType is string && data.deviceType in ['mobile', 'machine', 'macos', 'android', 'ios', 'web', 'display', 'other', 'Mobile', 'Machine'])) &&
+             (!('status' in data) || (data.status is string && data.status in ['online', 'offline', 'active', 'idle', 'sleeping', 'standby', 'disconnected'])) &&
+             (!('lastSeen' in data) || data.lastSeen is timestamp) &&
              (!('activeCanvas' in data) || data.activeCanvas == null || isValidActiveCanvas(data.activeCanvas)) &&
              (!('fcmToken' in data) || data.fcmToken == null || (data.fcmToken is string && data.fcmToken.size() <= 500)) &&
              (!('ipAddress' in data) || data.ipAddress == null || (data.ipAddress is string && data.ipAddress.size() <= 50)) &&
              (!('appVersion' in data) || data.appVersion == null || (data.appVersion is string && data.appVersion.size() <= 50)) &&
              (!('createdAt' in data) || data.createdAt is timestamp) &&
              (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidDeviceCreate(data, deviceId) {
+      return isValidDevice(data, deviceId) &&
+             hasRequiredFields(['deviceId', 'deviceName', 'deviceType', 'status', 'lastSeen']);
+    }
+
+    function isValidDeviceUpdate(data, deviceId) {
+      return isValidDevice(data, deviceId);
     }
 
     // ===============================================================
@@ -239,29 +248,38 @@ service cloud.firestore {
         'executedAt', 'error', 'result'
       ];
       return hasOnlyAllowedFields(allowedCommandKeys) &&
-             hasRequiredFields(['status', 'createdAt']) &&
-             ('command' in data || 'type' in data || 'action' in data) &&
+             data.keys().size() > 0 &&
              (!('commandId' in data) || data.commandId == commandId) &&
              (!('command' in data) || (data.command is string && data.command.size() >= 1 && data.command.size() <= 64)) &&
              (!('type' in data) || (data.type is string && data.type.size() >= 1 && data.type.size() <= 64)) &&
              (!('action' in data) || (data.action is string && data.action.size() >= 1 && data.action.size() <= 64)) &&
              (!('payload' in data) || (data.payload is map && data.payload.size() <= 30)) &&
-             data.status is string && data.status in ['pending', 'processing', 'completed', 'failed', 'cancelled'] &&
+             (!('status' in data) || (data.status is string && data.status in ['pending', 'processing', 'completed', 'failed', 'cancelled'])) &&
              (!('targetDisplayId' in data) || (data.targetDisplayId is string && data.targetDisplayId.size() <= 64)) &&
              (!('target_display_id' in data) || (data.target_display_id is string && data.target_display_id.size() <= 64)) &&
              (!('error' in data) || (data.error == null || (data.error is string && data.error.size() <= 1000))) &&
              (!('result' in data) || (data.result == null || (data.result is map && data.result.size() <= 30))) &&
-             data.createdAt is timestamp &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
              (!('updatedAt' in data) || data.updatedAt is timestamp) &&
              (!('executedAt' in data) || data.executedAt is timestamp);
     }
 
+    function isValidCommandCreate(data, commandId) {
+      return isValidCommand(data, commandId) &&
+             hasRequiredFields(['status', 'createdAt']) &&
+             ('command' in data || 'type' in data || 'action' in data);
+    }
+
+    function isValidCommandUpdate(data, commandId) {
+      return isValidCommand(data, commandId);
+    }
+
     function validCommandStatusTransition() {
       let prev = resource.data.status;
-      let next = request.resource.data.status;
-      return prev == next ||
-             (prev == 'pending' && next in ['processing', 'completed', 'failed', 'cancelled']) ||
-             (prev == 'processing' && next in ['completed', 'failed', 'cancelled']);
+      return !('status' in request.resource.data) ||
+             request.resource.data.status == prev ||
+             (prev == 'pending' && request.resource.data.status in ['processing', 'completed', 'failed', 'cancelled']) ||
+             (prev == 'processing' && request.resource.data.status in ['completed', 'failed', 'cancelled']);
     }
 
     // ===============================================================
@@ -275,10 +293,10 @@ service cloud.firestore {
         'durationSeconds', 'duration_seconds', 'createdAt', 'updatedAt'
       ];
       return hasOnlyAllowedFields(allowedPresetKeys) &&
-             hasRequiredFields(['title', 'createdAt']) &&
+             data.keys().size() > 0 &&
              (!('presetId' in data) || data.presetId == presetId) &&
              (!('id' in data) || data.id == presetId) &&
-             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             (!('title' in data) || (data.title is string && data.title.size() >= 1 && data.title.size() <= 100)) &&
              (!('subtitle' in data) || (data.subtitle == null || (data.subtitle is string && data.subtitle.size() <= 300))) &&
              (!('type' in data) || (data.type is string && data.type in ['billboard', 'sunrise', 'image', 'video', 'webview'])) &&
              (!('mediaUrl' in data) || (data.mediaUrl == null || (data.mediaUrl is string && data.mediaUrl.size() <= 2000 && (data.mediaUrl.size() == 0 || isValidUrl(data.mediaUrl))))) &&
@@ -290,8 +308,17 @@ service cloud.firestore {
              (!('target_display_id' in data) || (data.target_display_id is string && data.target_display_id.size() <= 64)) &&
              (!('durationSeconds' in data) || (data.durationSeconds == null || (data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 86400))) &&
              (!('duration_seconds' in data) || (data.duration_seconds == null || (data.duration_seconds is int && data.duration_seconds >= 0 && data.duration_seconds <= 86400))) &&
-             data.createdAt is timestamp &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
              (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidPresetCreate(data, presetId) {
+      return isValidPreset(data, presetId) &&
+             hasRequiredFields(['title', 'createdAt']);
+    }
+
+    function isValidPresetUpdate(data, presetId) {
+      return isValidPreset(data, presetId);
     }
 
     // ===============================================================
@@ -319,9 +346,9 @@ service cloud.firestore {
       match /devices/{deviceId} {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId) &&
-                         isValidDevice(request.resource.data, deviceId);
+                         isValidDeviceCreate(request.resource.data, deviceId);
         allow update: if isOwner(userId) &&
-                         isValidDevice(request.resource.data, deviceId) &&
+                         isValidDeviceUpdate(request.resource.data, deviceId) &&
                          areImmutableFieldsUnchanged(['deviceId', 'createdAt']);
         allow delete: if isOwner(userId);
 
@@ -329,10 +356,10 @@ service cloud.firestore {
         match /commands/{commandId} {
           allow read: if isOwner(userId);
           allow create: if isOwner(userId) &&
-                           isValidCommand(request.resource.data, commandId) &&
+                           isValidCommandCreate(request.resource.data, commandId) &&
                            request.resource.data.status in ['pending', 'processing'];
           allow update: if isOwner(userId) &&
-                           isValidCommand(request.resource.data, commandId) &&
+                           isValidCommandUpdate(request.resource.data, commandId) &&
                            areImmutableFieldsUnchanged(['commandId', 'command', 'type', 'action', 'createdAt']) &&
                            validCommandStatusTransition();
           allow delete: if isOwner(userId);
@@ -343,9 +370,9 @@ service cloud.firestore {
       match /presets/{presetId} {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId) &&
-                         isValidPreset(request.resource.data, presetId);
+                         isValidPresetCreate(request.resource.data, presetId);
         allow update: if isOwner(userId) &&
-                         isValidPreset(request.resource.data, presetId) &&
+                         isValidPresetUpdate(request.resource.data, presetId) &&
                          areImmutableFieldsUnchanged(['presetId', 'id', 'createdAt']);
         allow delete: if isOwner(userId);
       }

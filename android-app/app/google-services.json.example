@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:YOUR_PROJECT_NUMBER:android:YOUR_APP_ID",
         "android_client_info": {
-          "package_name": "com.wakemeup"
+          "package_name": "com.ambientdisplay"
         }
       },
       "oauth_client": [
@@ -17,7 +17,7 @@
           "client_id": "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.wakemeup",
+            "package_name": "com.ambientdisplay",
             "certificate_hash": "YOUR_SHA1_CERTIFICATE_HASH"
           }
         },

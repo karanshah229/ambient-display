@@ -1,7 +1,7 @@
 com.myairtelapp
         com.teqtic.lockmeout
         com.jio.myjio
-        com.wakemeup
+        com.ambientdisplay
     
     Restricted packages:
     Stats:
@@ -9,12 +9,12 @@ com.myairtelapp
       policyWhenElapsed: requester=-3s534ms app_standby=-39s578ms device_idle=-- battery_saver=-- adjustment=--
       whenElapsed=-3s534ms maxWhenElapsed=+23s500ms
       listener=android.app.AlarmManager$ListenerWrapper@5482fc3
-    RTC_WAKEUP #4: Alarm{a5cc77 type 0 origWhen 1791359695420 whenElapsed 579454982 com.wakemeup} uid 10409 whenElapsed 579454982 windowLength 0 maxWhenElapsed 579454982 repeatInterval 0 action null component ComponentInfo{com.wakemeup/com.wakemeup.receiver.AlarmTriggerReceiver} flags 0x8 procName com.wakemeup
-      tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver
+    RTC_WAKEUP #4: Alarm{a5cc77 type 0 origWhen 1791359695420 whenElapsed 579454982 com.ambientdisplay} uid 10409 whenElapsed 579454982 windowLength 0 maxWhenElapsed 579454982 repeatInterval 0 action null component ComponentInfo{com.ambientdisplay/com.ambientdisplay.receiver.AlarmTriggerReceiver} flags 0x8 procName com.ambientdisplay
+      tag=*walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver
       type=RTC_WAKEUP origWhen=2026-10-07 13:24:55.420 window=0 exactAllowReason=policy_permission repeatInterval=0 count=0 flags=0x8
       policyWhenElapsed: requester=+2s766ms app_standby=-2s232ms device_idle=-- battery_saver=-2s232ms adjustment=--
       whenElapsed=+2s766ms maxWhenElapsed=+2s766ms
-      operation=PendingIntent{5ee80e4: PendingIntentRecord{e6a9ae6 com.wakemeup broadcastIntent}}
+      operation=PendingIntent{5ee80e4: PendingIntentRecord{e6a9ae6 com.ambientdisplay broadcastIntent}}
       idle-options=Bundle[{android.pendingIntent.backgroundActivityAllowed=2, android:broadcast.temporaryAppAllowlistReasonCode=302, android:broadcast.temporaryAppAllowlistDuration=10000, android:broadcast.temporaryAppAllowlistReason=, android:broadcast.temporaryAppAllowlistType=0, android:broadcast.flags=8}]
     ELAPSED #5: Alarm{62a894d type 3 origWhen 579457755 whenElapsed 579457755 com.oplus.obrain} uid 1000 whenElapsed 579457755 windowLength 225000 maxWhenElapsed 579682755 repeatInterval 300000 action MIDAS FIVE MINUTE CLOCK ACTION component null flags 0x8 procName com.oplus.midas
       tag=*alarm*:MIDAS FIVE MINUTE CLOCK ACTION
@@ -22,12 +22,12 @@ com.myairtelapp
       policyWhenElapsed: requester=+7h32m29s392ms app_standby=-3h7m27s488ms device_idle=-3m18s126ms battery_saver=-3h23m56s475ms adjustment=+7h32m27s784ms
       whenElapsed=+7h32m27s784ms maxWhenElapsed=+7h32m27s784ms
       operation=PendingIntent{e3b70a2: PendingIntentRecord{226ac32 com.oplus.deepthinker broadcastIntent}}
-    RTC #95: Alarm{9c6197b type 1 origWhen 1791387000000 whenElapsed 606759560 com.wakemeup} uid 10409 whenElapsed 606759560 windowLength 3600000 maxWhenElapsed 610359560 repeatInterval 0 action com.wakemeup.ACTION_UPDATE_STATUS component ComponentInfo{com.wakemeup/com.wakemeup.service.SleepDetectionService} flags 0x8 procName com.wakemeup
-      tag=*alarm*:com.wakemeup.ACTION_UPDATE_STATUS
+    RTC #95: Alarm{9c6197b type 1 origWhen 1791387000000 whenElapsed 606759560 com.ambientdisplay} uid 10409 whenElapsed 606759560 windowLength 3600000 maxWhenElapsed 610359560 repeatInterval 0 action com.ambientdisplay.ACTION_UPDATE_STATUS component ComponentInfo{com.ambientdisplay/com.ambientdisplay.service.SleepDetectionService} flags 0x8 procName com.ambientdisplay
+      tag=*alarm*:com.ambientdisplay.ACTION_UPDATE_STATUS
       type=RTC origWhen=2026-10-07 21:00:00.000 window=+1h0m0s0ms repeatInterval=0 count=0 flags=0x8
       policyWhenElapsed: requester=+7h35m7s344ms app_standby=-3s844ms device_idle=-- battery_saver=-- adjustment=--
       whenElapsed=+7h35m7s344ms maxWhenElapsed=+8h35m7s344ms
-      operation=PendingIntent{53e8398: PendingIntentRecord{cdbc269 com.wakemeup startForegroundService}}
+      operation=PendingIntent{53e8398: PendingIntentRecord{cdbc269 com.ambientdisplay startForegroundService}}
     ELAPSED_WAKEUP #96: Alarm{503f4ee type 2 origWhen 607388205 whenElapsed 607388205 com.google.android.networkstack} uid 1073 whenElapsed 607388205 windowLength 0 maxWhenElapsed 607388205 repeatInterval 0 action null component null tag DhcpClient.wlan0.RENEW flags 0x9 procName com.android.networkstack.process
       tag=*walarm*:DhcpClient.wlan0.RENEW
       type=ELAPSED_WAKEUP origWhen=+7h45m35s989ms window=0 exactAllowReason=listener repeatInterval=0 count=0 flags=0x9
@@ -35,43 +35,43 @@ com.myairtelapp
     u0a409:
       #1: Reason=alarm_cancelled elapsed=-32m55s15ms rtc=2026-10-07 12:51:57.640
         Snapshot:
-          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          type=RTC_WAKEUP tag=*walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver 
           policyWhenElapsed: requester=+6h30m19s950ms app_standby=-59m40s29ms device_idle=-40m48s896ms battery_saver=-59m40s29ms adjustment=+6h32m27s784ms
       #2: Reason=alarm_cancelled elapsed=-1d16h20m35s383ms rtc=2026-10-05 21:04:18.722
         Snapshot:
-          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          type=RTC_WAKEUP tag=*walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver 
           policyWhenElapsed: requester=-1d8h50m57s771ms app_standby=-1d16h20m57s756ms device_idle=-- battery_saver=-1d16h20m57s756ms adjustment=-1d8h52m32s216ms
       #3: Reason=alarm_cancelled elapsed=-1d23h15m44s209ms rtc=2026-10-05 14:09:09.897
         Snapshot:
-          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          type=RTC_WAKEUP tag=*walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver 
           policyWhenElapsed: requester=-1d23h15m16s26ms app_standby=-1d23h16m16s15ms device_idle=-- battery_saver=-1d23h16m16s15ms adjustment=--
       #4: Reason=alarm_cancelled elapsed=-1d23h16m48s628ms rtc=2026-10-05 14:08:05.478
         Snapshot:
-          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          type=RTC_WAKEUP tag=*walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver 
           policyWhenElapsed: requester=-1d15h46m57s19ms app_standby=-1d23h16m56s996ms device_idle=-- battery_saver=-1d23h16m56s996ms adjustment=--
       #5: Reason=pi_cancelled elapsed=-2d0h35m30s164ms rtc=2026-10-05 12:49:23.941
         Snapshot:
-          type=RTC tag=*alarm*:com.wakemeup.ACTION_UPDATE_STATUS 
+          type=RTC tag=*alarm*:com.ambientdisplay.ACTION_UPDATE_STATUS 
           policyWhenElapsed: requester=-1d16h24m54s105ms app_standby=-2d0h37m18s176ms device_idle=-- battery_saver=-- adjustment=--
       #6: Reason=alarm_cancelled elapsed=-2d5h33m21s810ms rtc=2026-10-05 07:51:32.295
         Snapshot:
-          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          type=RTC_WAKEUP tag=*walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver 
           policyWhenElapsed: requester=-2d4h24m15s540ms app_standby=-2d11h54m15s501ms device_idle=-2d5h33m22s823ms battery_saver=-2d11h54m15s501ms adjustment=-2d4h22m32s216ms
       #7: Reason=alarm_cancelled elapsed=-2d11h54m16s926ms rtc=2026-10-05 01:30:37.180
         Snapshot:
-          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          type=RTC_WAKEUP tag=*walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver 
           policyWhenElapsed: requester=-2d4h24m26s640ms app_standby=-2d11h54m26s627ms device_idle=-- battery_saver=-2d11h54m26s627ms adjustment=--
       #8: Reason=alarm_cancelled elapsed=-3d2h40m3s211ms rtc=2026-10-04 10:44:50.894
         Snapshot:
-          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          type=RTC_WAKEUP tag=*walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver 
           policyWhenElapsed: requester=-2d19h10m36s861ms app_standby=-3d2h40m36s837ms device_idle=-- battery_saver=-3d2h40m36s837ms adjustment=--
       #9: Reason=alarm_cancelled elapsed=-3d2h53m3s885ms rtc=2026-10-04 10:31:50.221
         Snapshot:
-          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          type=RTC_WAKEUP tag=*walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver 
           policyWhenElapsed: requester=-3d2h52m7s728ms app_standby=-3d2h53m7s720ms device_idle=-- battery_saver=-3d2h53m7s720ms adjustment=--
       #10: Reason=alarm_cancelled elapsed=-3d2h53m9s841ms rtc=2026-10-04 10:31:44.265
         Snapshot:
-          type=RTC_WAKEUP tag=*walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver 
+          type=RTC_WAKEUP tag=*walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver 
           policyWhenElapsed: requester=-2d19h23m16s853ms app_standby=-3d2h53m16s835ms device_idle=-- battery_saver=-3d2h53m16s835ms adjustment=--
     u0a436:
       #1: Reason=alarm_cancelled elapsed=-52m44s429ms rtc=2026-10-07 12:32:08.226
@@ -79,11 +79,11 @@ com.myairtelapp
       *walarm*:org.thoughtcrime.securesms/.service.RotateSenderCertificateListener
     +19s949ms 2 wakes 2 alarms, last -3h28m42s78ms:
       *walarm*:org.thoughtcrime.securesms/.service.RotateSignedPreKeyListener
-  u0a409:com.wakemeup +2s24ms running, 5 wakeups:
+  u0a409:com.ambientdisplay +2s24ms running, 5 wakeups:
     +1s363ms 5 wakes 5 alarms, last -2m32s216ms:
-      *walarm*:com.wakemeup/.receiver.AlarmTriggerReceiver
+      *walarm*:com.ambientdisplay/.receiver.AlarmTriggerReceiver
     +661ms 0 wakes 4 alarms, last -7h22m31s850ms:
-      *alarm*:com.wakemeup.ACTION_UPDATE_STATUS
+      *alarm*:com.ambientdisplay.ACTION_UPDATE_STATUS
   u0a415:com.microsoft.office.onenote +5s452ms running, 7 wakeups:
     +4s539ms 7 wakes 7 alarms, last -11h37m32s214ms:
       *walarm*:com.microsoft.office.action.OFF_PEAK_HOURS_DAILY

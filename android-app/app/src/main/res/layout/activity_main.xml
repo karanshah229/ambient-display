@@ -1,690 +1,1357 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212"
-    android:padding="20dp">
+    android:background="#121212">
 
+    <!-- Top App Bar / Brand Header -->
     <LinearLayout
+        android:id="@+id/layoutTopHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_alignParentTop="true"
+        android:background="#1C1C1E"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="14dp">
 
-        <!-- Title -->
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:contentDescription="Ambient Display Icon"
+            android:src="@drawable/ic_launcher" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ambient Display"
+                android:textColor="#FF9F0A"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Workstation Canvas &amp; Alarm Companion"
+                android:textColor="#8E8E93"
+                android:textSize="11sp" />
+        </LinearLayout>
+
         <TextView
+            android:id="@+id/tvHeaderSyncIndicator"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ambient Display"
-            android:textColor="#FF9F0A"
-            android:textSize="28sp"
+            android:background="@drawable/bg_status_pill_online"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:text="ONLINE"
+            android:textColor="#30D158"
+            android:textSize="10sp"
             android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Workstation Ambient Canvas &amp; Screen Billboard Companion"
-            android:textColor="#8E8E93"
-            android:textSize="14sp" />
-
-
-        <!-- Status Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            app:cardBackgroundColor="#1C1C1E"
-            app:cardCornerRadius="16dp"
-            app:strokeColor="#2C2C2E"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/tvSleepStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Status: Monitoring Lock Events"
-                    android:textColor="#30D158"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvWakeTarget"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Target: Standby"
-                    android:textColor="#EBEBF5"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tvDisplayTimeout"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Live Display Sleep Timeout: 30 mins"
-                    android:textColor="#8E8E93"
-                    android:textSize="12sp" />
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Sleep Schedule & Windows Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#1C1C1E"
-            app:cardCornerRadius="16dp"
-            app:strokeColor="#2C2C2E"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Sleep Windows &amp; Duration"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvSleepDuration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="Target Duration: 7.5 hours"
-                    android:textColor="#EBEBF5"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tvSleepWindow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Eligible Sleep Window: 9:00 PM – 6:00 AM"
-                    android:textColor="#30D158"
-                    android:textSize="13sp" />
-
-                <TextView
-                    android:id="@+id/tvAutoPushWindow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Auto-Push Window: 9:00 PM – 11:00 PM"
-                    android:textColor="#FF9F0A"
-                    android:textSize="13sp" />
-
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchAwayMode"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="Away Mode (Suppress Monitors)"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp" />
-
-                <Button
-                    android:id="@+id/btnSyncConfig"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:backgroundTint="#2C2C2E"
-                    android:text="🔄 Sync Settings with Mac"
-                    android:textColor="#FFFFFF" />
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Mac Server Connection Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#1C1C1E"
-            app:cardCornerRadius="16dp"
-            app:strokeColor="#2C2C2E"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="MacBook Air Server"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:hint="Mac IP Address (e.g. 192.168.1.100)"
-                    app:boxBackgroundColor="#2C2C2E"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etMacHost"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textUri"
-                        android:textColor="#FFFFFF" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btnSaveHost"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:backgroundTint="#2C2C2E"
-                        android:text="Save IP"
-                        android:textColor="#FFFFFF" />
-
-                    <Button
-                        android:id="@+id/btnTestConnection"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:backgroundTint="#FF9F0A"
-                        android:text="Test Ping"
-                        android:textColor="#000000" />
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnAutoDiscover"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:backgroundTint="#0A84FF"
-                    android:text="🔍 Auto-Discover Mac (mDNS / Scan)"
-                    android:textColor="#FFFFFF" />
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Google Account & Multi-Device Cloud Sync Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#1C1C1E"
-            app:cardCornerRadius="16dp"
-            app:strokeColor="#2C2C2E"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="☁️ Cloud Sync"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvCloudAuthStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Sign in with Google to sync devices anywhere"
-                    android:textColor="#8E8E93"
-                    android:textSize="13sp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btnGoogleSignIn"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:backgroundTint="#4285F4"
-                        android:text="Sign in with Google"
-                        android:textColor="#FFFFFF" />
-
-                    <Button
-                        android:id="@+id/btnSignOut"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:backgroundTint="#2C2C2E"
-                        android:text="Sign Out"
-                        android:textColor="#E0E0E6"
-                        android:visibility="gone" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/layoutFleetHeader"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/tvCloudDevicesHeader"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Workstation Fleet Targets (0 machines):"
-                        android:textColor="#8E8E93"
-                        android:textSize="13sp" />
-
-                    <CheckBox
-                        android:id="@+id/cbSelectAllFleet"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:buttonTint="#0A84FF"
-                        android:checked="true"
-                        android:text="Select All"
-                        android:textColor="#0A84FF"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/layoutFleetDeviceList"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:orientation="vertical" />
-
-                <TextView
-                    android:id="@+id/tvFleetEmptyState"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:background="#242426"
-                    android:padding="12dp"
-                    android:text="Sign in with Google to discover and target workstation fleet machines."
-                    android:textColor="#636366"
-                    android:textSize="13sp" />
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Screen Message Billboard Card -->
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#1C1C1E"
-            app:cardCornerRadius="16dp"
-            app:strokeColor="#2C2C2E"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🖥️ Ambient Display Canvas"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Broadcast billboard message or privacy lock across displays"
-                    android:textColor="#8E8E93"
-                    android:textSize="12sp" />
-
-                <!-- Canvas Type Selector -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Canvas Mode:"
-                    android:textColor="#8E8E93"
-                    android:textSize="12sp" />
-
-                <Spinner
-                    android:id="@+id/spCanvasType"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="4dp"
-                    android:background="#2C2C2E" />
-
-                <!-- Message Headline Input -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:hint="Headline / Message (e.g. At the Gym / BRB)"
-                    app:boxBackgroundColor="#2C2C2E"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etScreenMessage"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textMultiLine"
-                        android:minLines="1"
-                        android:maxLines="3"
-                        android:textColor="#FFFFFF" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Subtitle / Note Input -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:hint="Subtitle (optional, e.g. Back at 5:30. Do not touch.)"
-                    app:boxBackgroundColor="#2C2C2E"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etCanvasSubtitle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="text"
-                        android:textColor="#FFFFFF" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Media URL Input (Image / Video Loop / Webview) -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilMediaUrl"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:hint="Media URL (Image, MP4 loop, or Web URL)"
-                    app:boxBackgroundColor="#2C2C2E"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etMediaUrl"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textUri"
-                        android:textColor="#FFFFFF" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Recent & Saved Messages Chips -->
-                <TextView
-                    android:id="@+id/tvRecentMessagesLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Recent presets (tap to use):"
-                    android:textColor="#8E8E93"
-                    android:textSize="12sp" />
-
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:scrollbars="none">
-
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chipGroupRecentMessages"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:singleLine="true" />
-                </HorizontalScrollView>
-
-                <!-- Target Display Selector -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="Target Display:"
-                    android:textColor="#8E8E93"
-                    android:textSize="12sp" />
-
-                <Spinner
-                    android:id="@+id/spTargetDisplay"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="4dp"
-                    android:background="#2C2C2E" />
-
-                <!-- Duration & Policy Radio Group -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="Dismiss Policy &amp; Duration:"
-                    android:textColor="#8E8E93"
-                    android:textSize="12sp" />
-
-                <RadioGroup
-                    android:id="@+id/rgMessageDuration"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:orientation="horizontal">
-
-                    <RadioButton
-                        android:id="@+id/rbPersistent"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        android:text="ESC (Any)"
-                        android:textColor="#EBEBF5"
-                        android:textSize="13sp" />
-
-                    <RadioButton
-                        android:id="@+id/rbLockPhoneOnly"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="🔒 Locked"
-                        android:textColor="#FF453A"
-                        android:textSize="13sp" />
-
-                    <RadioButton
-                        android:id="@+id/rbToast15s"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="15s"
-                        android:textColor="#EBEBF5"
-                        android:textSize="13sp" />
-
-                    <RadioButton
-                        android:id="@+id/rbToast30s"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="30s"
-                        android:textColor="#EBEBF5"
-                        android:textSize="13sp" />
-                </RadioGroup>
-
-                <!-- Action Buttons -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btnSendMessage"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:backgroundTint="#0A84FF"
-                        android:text="📤 Send to Screen"
-                        android:textColor="#FFFFFF"
-                        android:textStyle="bold" />
-
-                    <Button
-                        android:id="@+id/btnDismissScreenMessage"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:backgroundTint="#3A1C1C"
-                        android:text="Clear Screen"
-                        android:textColor="#FF453A" />
-                </LinearLayout>
-
-                <!-- Active message status indicator -->
-                <TextView
-                    android:id="@+id/tvActiveMessageStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text=""
-                    android:textColor="#30D158"
-                    android:textSize="12sp"
-                    android:visibility="gone" />
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Actions -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Actions &amp; Overrides"
-            android:textColor="#8E8E93"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnManualSleep"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#30D158"
-            android:text="Start Sleep Now (Manual 7.5h)"
-            android:textColor="#000000"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnTestMode"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#2C2C2E"
-            android:text="Preview Display (10s Test Mode)"
-            android:textColor="#FFFFFF" />
-
-        <Button
-            android:id="@+id/btnTestPhoneAlarm"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#FF9F0A"
-            android:text="🔔 Test Phone Alarm (Ring in 5s)"
-            android:textColor="#000000"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnTest1MinSleep"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#32D74B"
-            android:text="⏱️ Test 1-Min Sleep &amp; Alarm Flow"
-            android:textColor="#000000"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnStopSleep"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#3A1C1C"
-            android:text="Stop Sleep / I'm Awake"
-            android:textColor="#FF453A" />
-
-        <!-- OnePlus Setup Checklist -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="OnePlus / OxygenOS Setup Checklist"
-            android:textColor="#FF9F0A"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnBatteryOpt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#2C2C2E"
-            android:text="1. Disable Battery Optimization"
-            android:textColor="#FFFFFF" />
-
-        <Button
-            android:id="@+id/btnUsageAccess"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:backgroundTint="#2C2C2E"
-            android:text="2. Grant Usage Access (Inactivity Check)"
-            android:textColor="#FFFFFF" />
-
-        <Button
-            android:id="@+id/btnAccessibility"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:backgroundTint="#2C2C2E"
-            android:text="3. Enable Watchdog (Accessibility)"
-            android:textColor="#FFFFFF" />
-
-        <Button
-            android:id="@+id/btnAutoLaunch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:backgroundTint="#2C2C2E"
-            android:text="4. OnePlus Auto-Launch Manager"
-            android:textColor="#FFFFFF" />
-
     </LinearLayout>
-</ScrollView>
+
+    <!-- Main Content Tabs Container -->
+    <FrameLayout
+        android:id="@+id/tabContentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomNavigation"
+        android:layout_below="@id/layoutTopHeader">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: Sleep & Alarm Clock -->
+        <!-- ========================================== -->
+        <ScrollView
+            android:id="@+id/tabSleep"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Sleep Status Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/tvSleepStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Status: Monitoring Lock Events"
+                            android:textColor="#30D158"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvWakeTarget"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Target: Standby"
+                            android:textColor="#EBEBF5"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvDisplayTimeout"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Live Display Sleep Timeout: 30 mins"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Start Sleep Session Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🌙 Sleep Session &amp; Alarm"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Select duration and begin tracking sleep cycle"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+
+                        <!-- Quick duration presets -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Session Duration Preset:"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:scrollbars="none">
+
+                            <com.google.android.material.chip.ChipGroup
+                                android:id="@+id/chipGroupSleepDuration"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:singleLine="true"
+                                app:singleSelection="true">
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipDuration6"
+                                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="6.0h"
+                                    android:textColor="#EBEBF5"
+                                    app:chipBackgroundColor="#2C2C2E" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipDuration7"
+                                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="7.0h"
+                                    android:textColor="#EBEBF5"
+                                    app:chipBackgroundColor="#2C2C2E" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipDuration75"
+                                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:checked="true"
+                                    android:text="7.5h (5 cycles)"
+                                    android:textColor="#EBEBF5"
+                                    app:chipBackgroundColor="#2C2C2E" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipDuration8"
+                                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="8.0h"
+                                    android:textColor="#EBEBF5"
+                                    app:chipBackgroundColor="#2C2C2E" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipDuration9"
+                                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="9.0h"
+                                    android:textColor="#EBEBF5"
+                                    app:chipBackgroundColor="#2C2C2E" />
+                            </com.google.android.material.chip.ChipGroup>
+                        </HorizontalScrollView>
+
+                        <Button
+                            android:id="@+id/btnManualSleep"
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
+                            android:layout_marginTop="12dp"
+                            android:backgroundTint="#30D158"
+                            android:text="🌙 Start Sleep Session"
+                            android:textColor="#000000"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/btnStopSleep"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:layout_marginTop="8dp"
+                            android:backgroundTint="#3A1C1C"
+                            android:text="⏹️ Stop Sleep / I'm Awake"
+                            android:textColor="#FF453A"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Away Mode Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switchAwayMode"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Away Mode (Suppress Monitors)"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="When enabled, sleep detection is paused and displays will not turn on while traveling or away from your workstation."
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Test & Verification Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="24dp"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Diagnostics &amp; Verification"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/btnTestPhoneAlarm"
+                            android:layout_width="match_parent"
+                            android:layout_height="46dp"
+                            android:layout_marginTop="10dp"
+                            android:backgroundTint="#FF9F0A"
+                            android:text="🔔 Test Phone Alarm (Ring in 5s)"
+                            android:textColor="#000000"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/btnTest1MinSleep"
+                            android:layout_width="match_parent"
+                            android:layout_height="46dp"
+                            android:layout_marginTop="8dp"
+                            android:backgroundTint="#2C2C2E"
+                            android:text="⏱️ Test 1-Min Sleep &amp; Alarm Flow"
+                            android:textColor="#30D158" />
+
+                        <Button
+                            android:id="@+id/btnTestMode"
+                            android:layout_width="match_parent"
+                            android:layout_height="46dp"
+                            android:layout_marginTop="8dp"
+                            android:backgroundTint="#2C2C2E"
+                            android:text="🖥️ Preview Display (10s Glow Test)"
+                            android:textColor="#FFFFFF" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: Ambient Canvas & Billboard -->
+        <!-- ========================================== -->
+        <ScrollView
+            android:id="@+id/tabCanvas"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🖥️ Ambient Display Canvas"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Broadcast billboard message or privacy lock across displays"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+
+                        <!-- Canvas Type Selector -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Canvas Mode:"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+
+                        <Spinner
+                            android:id="@+id/spCanvasType"
+                            android:layout_width="match_parent"
+                            android:layout_height="44dp"
+                            android:layout_marginTop="4dp"
+                            android:background="#2C2C2E" />
+
+                        <!-- Headline Input -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:hint="Headline / Message (e.g. At the Gym / BRB)"
+                            app:boxBackgroundColor="#2C2C2E"
+                            app:boxCornerRadiusBottomEnd="8dp"
+                            app:boxCornerRadiusBottomStart="8dp"
+                            app:boxCornerRadiusTopEnd="8dp"
+                            app:boxCornerRadiusTopStart="8dp">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etScreenMessage"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textMultiLine"
+                                android:maxLines="3"
+                                android:minLines="1"
+                                android:textColor="#FFFFFF" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- Subtitle Input -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:hint="Subtitle (optional, e.g. Back at 5:30. Do not touch.)"
+                            app:boxBackgroundColor="#2C2C2E"
+                            app:boxCornerRadiusBottomEnd="8dp"
+                            app:boxCornerRadiusBottomStart="8dp"
+                            app:boxCornerRadiusTopEnd="8dp"
+                            app:boxCornerRadiusTopStart="8dp">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etCanvasSubtitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="text"
+                                android:textColor="#FFFFFF" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- Media URL Input -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilMediaUrl"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:hint="Media URL (Image, MP4 loop, or Web URL)"
+                            app:boxBackgroundColor="#2C2C2E"
+                            app:boxCornerRadiusBottomEnd="8dp"
+                            app:boxCornerRadiusBottomStart="8dp"
+                            app:boxCornerRadiusTopEnd="8dp"
+                            app:boxCornerRadiusTopStart="8dp">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etMediaUrl"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textUri"
+                                android:textColor="#FFFFFF" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- Recent Presets -->
+                        <TextView
+                            android:id="@+id/tvRecentMessagesLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Quick presets (tap to use):"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:scrollbars="none">
+
+                            <com.google.android.material.chip.ChipGroup
+                                android:id="@+id/chipGroupRecentMessages"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:singleLine="true" />
+                        </HorizontalScrollView>
+
+                        <!-- Target Display Selector -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Target Display:"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+
+                        <Spinner
+                            android:id="@+id/spTargetDisplay"
+                            android:layout_width="match_parent"
+                            android:layout_height="44dp"
+                            android:layout_marginTop="4dp"
+                            android:background="#2C2C2E" />
+
+                        <!-- Dismiss Policy -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Dismiss Policy &amp; Duration:"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+
+                        <RadioGroup
+                            android:id="@+id/rgMessageDuration"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:orientation="horizontal">
+
+                            <RadioButton
+                                android:id="@+id/rbPersistent"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true"
+                                android:text="ESC (Any)"
+                                android:textColor="#EBEBF5"
+                                android:textSize="13sp" />
+
+                            <RadioButton
+                                android:id="@+id/rbLockPhoneOnly"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="🔒 Locked"
+                                android:textColor="#FF453A"
+                                android:textSize="13sp" />
+
+                            <RadioButton
+                                android:id="@+id/rbToast15s"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="15s"
+                                android:textColor="#EBEBF5"
+                                android:textSize="13sp" />
+
+                            <RadioButton
+                                android:id="@+id/rbToast30s"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="30s"
+                                android:textColor="#EBEBF5"
+                                android:textSize="13sp" />
+                        </RadioGroup>
+
+                        <!-- Action Buttons -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnSendMessage"
+                                android:layout_width="0dp"
+                                android:layout_height="48dp"
+                                android:layout_weight="1"
+                                android:backgroundTint="#0A84FF"
+                                android:text="📤 Send to Screen"
+                                android:textColor="#FFFFFF"
+                                android:textStyle="bold" />
+
+                            <Button
+                                android:id="@+id/btnDismissScreenMessage"
+                                android:layout_width="wrap_content"
+                                android:layout_height="48dp"
+                                android:layout_marginStart="8dp"
+                                android:backgroundTint="#3A1C1C"
+                                android:text="Clear Screen"
+                                android:textColor="#FF453A" />
+                        </LinearLayout>
+
+                        <!-- Active status -->
+                        <TextView
+                            android:id="@+id/tvActiveMessageStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text=""
+                            android:textColor="#30D158"
+                            android:textSize="12sp"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: Connected Devices & Fleet -->
+        <!-- ========================================== -->
+        <ScrollView
+            android:id="@+id/tabDevices"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Google Account Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="☁️ Google Cloud Account"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvCloudAuthStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Sign in with Google to sync devices anywhere"
+                            android:textColor="#8E8E93"
+                            android:textSize="13sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnGoogleSignIn"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:backgroundTint="#4285F4"
+                                android:text="Sign in with Google"
+                                android:textColor="#FFFFFF" />
+
+                            <Button
+                                android:id="@+id/btnSignOut"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:backgroundTint="#2C2C2E"
+                                android:text="Sign Out"
+                                android:textColor="#E0E0E6"
+                                android:visibility="gone" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Workstation Fleet Targets Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:id="@+id/layoutFleetHeader"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvCloudDevicesHeader"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Workstation Fleet Targets (0 machines):"
+                                android:textColor="#FFFFFF"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <CheckBox
+                                android:id="@+id/cbSelectAllFleet"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:buttonTint="#0A84FF"
+                                android:checked="true"
+                                android:text="Select All"
+                                android:textColor="#0A84FF"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/layoutFleetDeviceList"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:orientation="vertical" />
+
+                        <TextView
+                            android:id="@+id/tvFleetEmptyState"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:background="#242426"
+                            android:padding="12dp"
+                            android:text="Sign in with Google to discover and target workstation fleet machines."
+                            android:textColor="#636366"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Local LAN Connection Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="24dp"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Local Network Fallback (Mac Server)"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:hint="Mac IP Address (e.g. 192.168.1.100)"
+                            app:boxBackgroundColor="#2C2C2E"
+                            app:boxCornerRadiusBottomEnd="8dp"
+                            app:boxCornerRadiusBottomStart="8dp"
+                            app:boxCornerRadiusTopEnd="8dp"
+                            app:boxCornerRadiusTopStart="8dp">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etMacHost"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textUri"
+                                android:textColor="#FFFFFF" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnSaveHost"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:backgroundTint="#2C2C2E"
+                                android:text="Save IP"
+                                android:textColor="#FFFFFF" />
+
+                            <Button
+                                android:id="@+id/btnTestConnection"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:backgroundTint="#FF9F0A"
+                                android:text="Test Ping"
+                                android:textColor="#000000" />
+                        </LinearLayout>
+
+                        <Button
+                            android:id="@+id/btnAutoDiscover"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:backgroundTint="#0A84FF"
+                            android:text="🔍 Auto-Discover Mac (mDNS / Scan)"
+                            android:textColor="#FFFFFF" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: Settings & Preferences (Menu Bar App Parity) -->
+        <!-- ========================================== -->
+        <ScrollView
+            android:id="@+id/tabSettings"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Sleep Schedule Section -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⏱️ Sleep Schedule &amp; Windows"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <!-- 1. Target Duration -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="Target Sleep Duration:"
+                            android:textColor="#8E8E93"
+                            android:textSize="13sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnSleepMinus"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:backgroundTint="#2C2C2E"
+                                android:padding="0dp"
+                                android:text="-"
+                                android:textColor="#FFFFFF"
+                                android:textSize="18sp" />
+
+                            <EditText
+                                android:id="@+id/etSettingSleepHours"
+                                android:layout_width="70dp"
+                                android:layout_height="44dp"
+                                android:layout_marginHorizontal="8dp"
+                                android:background="#2C2C2E"
+                                android:gravity="center"
+                                android:inputType="numberDecimal"
+                                android:text="7.5"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <Button
+                                android:id="@+id/btnSleepPlus"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:backgroundTint="#2C2C2E"
+                                android:padding="0dp"
+                                android:text="+"
+                                android:textColor="#FFFFFF"
+                                android:textSize="18sp" />
+
+                            <TextView
+                                android:id="@+id/tvSleepDuration"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:text="Target Duration: 7.5 hours"
+                                android:textColor="#EBEBF5"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Default is 7.5 hours (5 × 90-minute sleep cycles). Can be set 1.0 to 16.0 hours."
+                            android:textColor="#636366"
+                            android:textSize="11sp" />
+
+                        <!-- 2. Eligible Sleep Window -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:text="Eligible Sleep Window:"
+                            android:textColor="#8E8E93"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvSleepWindow"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Eligible Sleep Window: 9:00 PM – 6:00 AM"
+                            android:textColor="#30D158"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <Spinner
+                                android:id="@+id/spSleepStartHour"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_weight="1"
+                                android:background="#2C2C2E" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginHorizontal="10dp"
+                                android:text="to"
+                                android:textColor="#8E8E93"
+                                android:textSize="14sp" />
+
+                            <Spinner
+                                android:id="@+id/spSleepEndHour"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_weight="1"
+                                android:background="#2C2C2E" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Phone inactivity outside this window (e.g. at 3 PM) is completely ignored."
+                            android:textColor="#636366"
+                            android:textSize="11sp" />
+
+                        <!-- 3. Auto-Push Window -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:text="Auto-Push Bedtime Target Window:"
+                            android:textColor="#8E8E93"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvAutoPushWindow"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Auto-Push Window: 9:00 PM – 11:00 PM"
+                            android:textColor="#FF9F0A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <Spinner
+                                android:id="@+id/spAutoPushStartHour"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_weight="1"
+                                android:background="#2C2C2E" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginHorizontal="10dp"
+                                android:text="to"
+                                android:textColor="#8E8E93"
+                                android:textSize="14sp" />
+
+                            <Spinner
+                                android:id="@+id/spAutoPushEndHour"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_weight="1"
+                                android:background="#2C2C2E" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Using phone automatically pushes target bedtime back without prompting."
+                            android:textColor="#636366"
+                            android:textSize="11sp" />
+
+                        <!-- 4. Inactivity Compensation -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:text="Inactivity Compensation:"
+                            android:textColor="#8E8E93"
+                            android:textSize="13sp" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switchAutoDetectInactivity"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:checked="true"
+                            android:text="Auto-detect from phone display sleep settings"
+                            android:textColor="#FFFFFF"
+                            android:textSize="13sp" />
+
+                        <LinearLayout
+                            android:id="@+id/layoutCustomOffset"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:visibility="gone">
+
+                            <Button
+                                android:id="@+id/btnOffsetMinus"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:backgroundTint="#2C2C2E"
+                                android:padding="0dp"
+                                android:text="-"
+                                android:textColor="#FFFFFF"
+                                android:textSize="18sp" />
+
+                            <EditText
+                                android:id="@+id/etInactivityOffset"
+                                android:layout_width="70dp"
+                                android:layout_height="44dp"
+                                android:layout_marginHorizontal="8dp"
+                                android:background="#2C2C2E"
+                                android:gravity="center"
+                                android:inputType="number"
+                                android:text="30"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <Button
+                                android:id="@+id/btnOffsetPlus"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:backgroundTint="#2C2C2E"
+                                android:padding="0dp"
+                                android:text="+"
+                                android:textColor="#FFFFFF"
+                                android:textSize="18sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="minutes offset"
+                                android:textColor="#8E8E93"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Ambient Theme & Presentation Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🎨 Ambient Theme Presentation"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Glow palettes for night, dawn, and morning wakeup on workstation monitors"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+
+                        <!-- Night Color Row -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <View
+                                android:id="@+id/viewNightColorPreview"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:background="@drawable/bg_color_circle" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:text="Deep Night Glow:"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp" />
+
+                            <EditText
+                                android:id="@+id/etNightColorHex"
+                                android:layout_width="95dp"
+                                android:layout_height="38dp"
+                                android:background="#2C2C2E"
+                                android:gravity="center"
+                                android:inputType="textCapCharacters"
+                                android:text="#D95926"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <!-- Dawn Color Row -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <View
+                                android:id="@+id/viewDawnColorPreview"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:background="@drawable/bg_color_circle" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:text="Dawn Warm Glow:"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp" />
+
+                            <EditText
+                                android:id="@+id/etDawnColorHex"
+                                android:layout_width="95dp"
+                                android:layout_height="38dp"
+                                android:background="#2C2C2E"
+                                android:gravity="center"
+                                android:inputType="textCapCharacters"
+                                android:text="#FA7268"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <!-- Wake Color Row -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <View
+                                android:id="@+id/viewWakeColorPreview"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:background="@drawable/bg_color_circle" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:text="Morning Wake Glow:"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp" />
+
+                            <EditText
+                                android:id="@+id/etWakeColorHex"
+                                android:layout_width="95dp"
+                                android:layout_height="38dp"
+                                android:background="#2C2C2E"
+                                android:gravity="center"
+                                android:inputType="textCapCharacters"
+                                android:text="#FFD000"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <Button
+                            android:id="@+id/btnResetAmbientDefaults"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:backgroundTint="#2C2C2E"
+                            android:text="Reset Theme Defaults"
+                            android:textColor="#8E8E93"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Background Protection Checklist Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#2C2C2E"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/tvChecklistHeader"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Background Protection Checklist"
+                            android:textColor="#FF9F0A"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/btnBatteryOpt"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:backgroundTint="#2C2C2E"
+                            android:text="1. Disable Battery Optimization"
+                            android:textColor="#FFFFFF" />
+
+                        <Button
+                            android:id="@+id/btnUsageAccess"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:backgroundTint="#2C2C2E"
+                            android:text="2. Grant Usage Access (Inactivity Check)"
+                            android:textColor="#FFFFFF" />
+
+                        <Button
+                            android:id="@+id/btnAccessibility"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:backgroundTint="#2C2C2E"
+                            android:text="3. Enable Watchdog (Accessibility)"
+                            android:textColor="#FFFFFF" />
+
+                        <Button
+                            android:id="@+id/btnAutoLaunch"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:backgroundTint="#2C2C2E"
+                            android:text="4. Auto-Launch &amp; Background Settings"
+                            android:textColor="#FFFFFF" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </ScrollView>
+
+    </FrameLayout>
+
+    <!-- Bottom Navigation Bar (Unlabeled with centered clean icons) -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:layout_alignParentBottom="true"
+        android:background="#1C1C1E"
+        app:itemIconSize="26dp"
+        app:itemIconTint="@color/nav_item_selector"
+        app:itemRippleColor="#33FF9F0A"
+        app:itemTextColor="@color/nav_item_selector"
+        app:labelVisibilityMode="unlabeled"
+        app:menu="@menu/bottom_nav_menu" />
+
+</RelativeLayout>

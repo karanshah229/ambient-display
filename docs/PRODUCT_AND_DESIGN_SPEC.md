@@ -1,4 +1,4 @@
-# Wake Me Up: Comprehensive Product Specification & Design Architecture Guide
+# Ambient Display: Comprehensive Product Specification & Design Architecture Guide
 
 > **Audience**: UI/UX Designers, Product Architects, and Mobile/Desktop Engineers.  
 > **Purpose**: Convey the complete conceptual model, end-to-end user journeys, deep technical architecture, and design specifications required to build a world-class, premium modern mobile and desktop experience.
@@ -10,8 +10,8 @@
 ### The Core Problem
 Conventional alarm clocks require intentional friction: you must decide when you go to sleep, set a fixed wake time, and manually adjust it if you stay awake scrolling on your phone or working late. If you plan to sleep for 7.5 hours but stay up an extra 45 minutes watching YouTube or answering messages in bed, your alarm doesn't adapt—it rings prematurely, cutting your sleep cycle short and causing morning grogginess. Furthermore, typical alarm sounds jar you awake in a pitch-black room with adrenaline-spiking blares.
 
-### The Solution: "Wake Me Up"
-**Wake Me Up** is an intelligent, zero-friction sleep detection and sunrise alarm ecosystem spanning **Android (mobile companion)** and **macOS (ambient display & desktop utility)**.
+### The Solution: "Ambient Display"
+**Ambient Display** is an intelligent, zero-friction sleep detection and sunrise alarm ecosystem spanning **Android (mobile companion)** and **macOS (ambient display & desktop utility)**.
 
 Instead of demanding manual alarm setting:
 1. **It silently detects when you actually fall asleep** using phone screen events and Android usage history compensation.
@@ -24,7 +24,7 @@ Instead of demanding manual alarm setting:
 
 ```
 +---------------------------------------------------------------------------------------+
-|                                    WAKE ME UP ECOSYSTEM                               |
+|                                AMBIENT DISPLAY ECOSYSTEM                              |
 |                                                                                       |
 |   [ Android Phone Companion ]                          [ macOS Multi-Monitor Hub ]     |
 |   - Screen Lock / Unlock Detection                     - Local HTTP Server (:8321)    |
@@ -41,7 +41,7 @@ Instead of demanding manual alarm setting:
 
 ### 2.1 Intelligent Sleep Detection & Inactivity Compensation
 * **Screen Lock Trigger**: When the user locks their phone inside the configurable sleep window (e.g. 9:00 PM – 6:00 AM), the service initiates sleep tracking.
-* **Pre-Lock Inactivity Compensation**: If a user watches a 40-minute movie or leaves their phone untouched on the nightstand for 30 minutes before locking it, they may have actually been asleep earlier. Wake Me Up uses Android's `UsageStatsManager` to query the true last app touch event. If inactivity exceeds a threshold (default 30 mins), it back-dates the bedtime timestamp accordingly so the user isn't over-slept or under-slept.
+* **Pre-Lock Inactivity Compensation**: If a user watches a 40-minute movie or leaves their phone untouched on the nightstand for 30 minutes before locking it, they may have actually been asleep earlier. Ambient Display uses Android's `UsageStatsManager` to query the true last app touch event. If inactivity exceeds a threshold (default 30 mins), it back-dates the bedtime timestamp accordingly so the user isn't over-slept or under-slept.
 * **Eligible Sleep Window (Default: 9:00 PM – 6:00 AM)**: Sleep detection only activates during nocturnal hours. Putting the phone face down at 2:00 PM on a workday will **not** mistakenly trigger an overnight sleep session.
 
 ### 2.2 Dynamic Target Auto-Push Window (Default: 9:00 PM – 11:00 PM)
@@ -50,7 +50,7 @@ Instead of demanding manual alarm setting:
 * Outside this window (e.g., past 11:00 PM or in the middle of the night), the app does not silently push the alarm without consent.
 
 ### 2.3 Midnight Glance Filter & Intelligent Interactive Prompting
-* **Sub-60s Brief Glance**: If you wake up at 3:15 AM, unlock your phone to check the clock or flashlight, and lock it back within 60 seconds, Wake Me Up detects a **brief glance**. The alarm and Mac displays remain completely undisturbed.
+* **Sub-60s Brief Glance**: If you wake up at 3:15 AM, unlock your phone to check the clock or flashlight, and lock it back within 60 seconds, Ambient Display detects a **brief glance**. The alarm and Mac displays remain completely undisturbed.
 * **Prolonged Nighttime Activity (> 3 minutes)**: If the phone remains unlocked and active past 3 minutes in the middle of the night, a high-priority heads-up notification appears with two interactive actions:
   - **Keep Original Alarm**: Retain the current morning schedule.
   - **Reset Bedtime to Now**: Recalculate 7.5 hours from the current moment.
@@ -69,26 +69,35 @@ Instead of demanding manual alarm setting:
 
 ### 2.6 Local Wi-Fi Sync & Network Auto-Discovery
 * **Zero Cloud Dependency**: Operates entirely over local Wi-Fi without third-party servers, accounts, or telemetry.
-* **Bonjour / mDNS (`_wakemeup._tcp`)**: The Mac advertises its availability. The Android phone automatically discovers the Mac's IP.
+* **Bonjour / mDNS (`_ambientdisplay._tcp`)**: The Mac advertises its availability. The Android phone automatically discovers the Mac's IP.
 * **Subnet Concurrent Probing**: Fallback network scanner that scans all subnet IPs (`/24`) in under 200ms to instantly locate the Mac even if Bonjour is blocked by router isolation.
 * **Two-Way Setting Synchronization**: Modifying sleep windows, default hours, or away mode on either the phone or the Mac automatically syncs across both devices.
 
-### 2.8 Screen Message Billboard (Remote Manual Display Broadcast)
-* **Ad-hoc Custom Messaging**: Allows the user to type a custom text message on the phone and manually broadcast it to connected Mac workstation displays (e.g., "Taking a quick walk. Back in 15m!", "BRB in 10m", or meeting reminders).
-* **Display Selection & Targeting**: Phone dynamically queries connected displays (`GET /api/displays`) and allows targeting either "All Displays (Mirrored)" or an individual monitor.
-* **Duration Modes**:
-  - *Persistent Billboard*: Stays on the screen until explicitly dismissed.
-  - *Timed Toast (15s / 30s)*: Automatically counts down with a visible pill badge and reverts without user interaction.
-* **Dismissal Flexibility**: Dismissable on Mac via physical `ESC` key, mouse click, or tap on the "Dismiss" button; or remotely from the phone via the "Clear Screen" button.
-* **Mutual Exclusion & State Reversion**: On any single display, only one mode can be active: Sleep Timer OR Message. If a message is sent while a sleep session is running, the targeted monitor displays the message; when dismissed or expired, it automatically reverts back to the ongoing sleep countdown. If the system was idle, it restores the normal desktop.
-* **Visual Styling**: Pure blackout canvas (`#000000`) to prevent IPS/OLED glow bleed, with soft off-white typography (`#E0E0E6`) dynamically auto-scaled based on string length (massive billboard size for short phrases, scaling down for paragraphs).
+### 2.8 Remote Multi-Type Ambient Canvas Studio
+* **Ad-hoc Custom Messaging & Art**: Allows the user to broadcast custom content from the phone to Mac workstation displays.
+* **Canvas Renderers Supported**:
+  - *Typography Billboard*: Large-font across-the-room messaging (80pt dynamic scaling) with optional subtitle.
+  - *Looping Video Surface*: Seamless hardware-accelerated video loops via `AVPlayerLooper`.
+  - *Image Posters*: High-resolution photo/art displays with gradient text overlay.
+  - *Web Dashboards*: Live interactive web apps or metric dashboards via `WKWebView`.
+* **Display Selection & Targeting**: Query connected monitors (`GET /api/displays`) to target "All Displays (Mirrored)" or specific screens.
+* **Duration & Lock Policies**:
+  - *Persistent Canvas*: Remains until explicitly dismissed.
+  - *Timed Toast (15s / 30s)*: Automatically counts down with a visible pill badge and reverts to previous screen state.
+  - *Lock Policy*: `esc_any` (dismissible via physical keyboard/mouse on Mac) or `phone_only` (locked on display; must be dismissed from phone).
+* **Mutual Exclusion & State Reversion**: On any single display, only one mode can be active: Sleep Timer OR Canvas. When dismissed, the display seamlessly reverts back to ongoing sleep countdown or normal desktop.
+
+### 2.9 Multi-Device Fleet Targeting & Cloud Sync
+* **Google OAuth 2.0 & Firestore**: Enables global synchronization across networks with strict user data security.
+* **Fleet Discovery & Presence**: Lists all registered workstation machines with real-time heartbeat pills (`ONLINE` / `OFFLINE`).
+* **Selective or Broadcast Dispatch**: Send messages/media to a single machine or broadcast across the entire fleet.
+* **Per-Machine Quick Clear**: Dismiss active canvases individually per machine or fleet-wide with a single tap.
 
 ---
 
 ## 3. Visual Gallery: Current Implementation Screenshots
 
-### 3.1 Mobile Companion App (Fresh Live Screenshots from Device)
-Captured directly from OnePlus 12 running the latest installed build:
+### 3.1 Mobile Companion App (Live Device Screenshots)
 
 | 1. Live Home Dashboard (Top) | 2. Live Controls & System Checklist (Bottom) | 3. Active Sleep Tracking State |
 | :---: | :---: | :---: |
@@ -98,7 +107,11 @@ Captured directly from OnePlus 12 running the latest installed build:
 | :---: | :---: | :---: |
 | ![Standby Shade](screenshots/phone_03_notification_shade_live.png) | ![Sleeping Shade](screenshots/phone_05_sleeping_notification_live.png) | ![Midnight Activity Prompt](screenshots/phone_flow_06_midnight_prompt_live.png) |
 
-### 3.2 macOS Menu Bar App & Preferences Window (Fresh Live Captures)
+| 7. Canvas Billboard Composer | 8. Fleet Target Discovery & Presence | 9. Hardware Alarm Ringing |
+| :---: | :---: | :---: |
+| ![Phone Screen Message Card](screenshots/phone_screen_message_card.png) | ![Fleet Discovery](screenshots/test_16_phone_fleet_discovery.png) | ![Alarm Ringing](screenshots/phone_alarm_ringing_live.png) |
+
+### 3.2 macOS Menu Bar App & Preferences Window
 Captured directly from macOS Sequoia on MacBook Air:
 
 | Sleep Schedule Settings | Display Selection Manager | Ambient Colors & Test | Network & Pairing Status |
@@ -106,20 +119,19 @@ Captured directly from macOS Sequoia on MacBook Air:
 | ![Sleep Tab](screenshots/mac_pref_sleep_live.png) | ![Displays Tab](screenshots/mac_pref_displays_live.png) | ![Ambient Tab](screenshots/mac_pref_ambient_live.png) | ![Network Tab](screenshots/mac_pref_network_live.png) |
 
 ### 3.3 External Monitor Ambient Display Modes (Authentic 3-Stage Natural Sunrise)
-Full-screen mirrored experience rendered on connected workstation displays:
 
 | 1. Deep Night: Midnight Ember (#D95926) | 2. Dawn: Sunrise Coral (#FA7268) | 3. Wake-Up: Radiant Solar Gold (#FFD000) |
 | :---: | :---: | :---: |
 | ![Night Ambient Display](screenshots/mac_flow_02_night_active.png) | ![Dawn Coral Display](screenshots/mac_flow_dawn_coral.png) | ![Morning Solar Gold Banner](screenshots/mac_flow_05_wakeup_banner.png) |
 
-### 3.4 Remote Screen Message Billboard (Live Mobile & Monitor Pairing)
-Custom manual messaging between phone and workstation displays:
+### 3.4 Workstation Canvas Surfaces & Billboard Pairing
 
-| 1. Mobile Remote Controller (OnePlus 12) | 2. Mac Workstation Billboard Display (DELL Monitor) |
-| :---: | :---: |
-| ![Phone Screen Message Card](screenshots/phone_screen_message_card.png) | ![Mac Billboard Display](screenshots/mac_screen_message_billboard.png) |
+| 1. Screen Billboard ("Gym") | 2. Looping Ambient Video | 3. Ambient Image Poster |
+| :---: | :---: | :---: |
+| ![Gym Billboard](screenshots/test_09_gym_billboard_mac.png) | ![Video Display](screenshots/test_10_video_display.png) | ![Image Display](screenshots/test_10_image_display.png) |
 
 ---
+
 
 ## 4. Technical Architecture & Communication Protocols
 
@@ -127,7 +139,7 @@ Custom manual messaging between phone and workstation displays:
 sequenceDiagram
     autonumber
     actor User as User (Bedroom)
-    participant Phone as Android App (WakeMeUp)
+    participant Phone as Android App (AmbientDisplay)
     participant Mac as MacBook Air (HTTP Server :8321)
     participant Display as Workstation Monitors (Dell x2)
 

@@ -4,7 +4,7 @@ import pytest
 import json
 from pathlib import Path
 
-class TestWakeMeUpLiveE2E:
+class TestAmbientDisplayLiveE2E:
 
     def test_01_baseline_and_connectivity(self, mac_server, adb_device, mac_evidence):
         """
@@ -70,7 +70,7 @@ class TestWakeMeUpLiveE2E:
         # Verify macOS kernel assertions via pmset
         pmset = mac_evidence.dump_pmset("test_02_sleep_active")
         assert pmset["PreventUserIdleDisplaySleep"] is True, "Display sleep assertion missing!"
-        assert pmset["WakeMeUpActive"] is True, "WakeMeUp not asserting powerd lock!"
+        assert pmset["AmbientDisplayActive"] is True, "AmbientDisplay not asserting powerd lock!"
 
         # Trigger Android service to schedule RTC alarm
         adb_device.wake_and_unlock()
@@ -122,7 +122,7 @@ class TestWakeMeUpLiveE2E:
         """
         Flow 4: Fast-forward 5-second preview:
         - Ticking seconds activate in final countdown (00:04 -> 00:00).
-        - Reaches zero: displays transition to prominent 'WAKE ME UP' screen.
+        - Reaches zero: displays transition to prominent 'AMBIENT DISPLAY' morning screen.
         """
         # Trigger 5-second preview
         payload = {"duration_seconds": 5}
@@ -152,7 +152,7 @@ class TestWakeMeUpLiveE2E:
 
         mac_evidence.record_network("test_04_morning_ready", payload, ready_status)
         mac_evidence.capture_display("test_04_dell_monitor_morning", display_id=3)
-        # Give user 4 seconds to view the emerald WAKE ME UP banner live on the screens
+        # Give user 4 seconds to view the emerald AMBIENT DISPLAY banner live on the screens
         time.sleep(4)
 
     def test_05_wake_up_dismissal_and_power_release(self, mac_server, adb_device, mac_evidence):
@@ -677,7 +677,7 @@ class TestWakeMeUpLiveE2E:
         - Capture phone screenshot evidence of fleet discovery.
         """
         adb_device.wake_and_unlock()
-        adb_device.shell("am force-stop com.wakemeup")
+        adb_device.shell("am force-stop com.ambientdisplay")
         adb_device.launch_app()
         time.sleep(1.0)
 
@@ -722,7 +722,7 @@ class TestWakeMeUpLiveE2E:
         requests.post(f"{mac_server}/api/canvas/dismiss", json={"target_display_id": "all"})
         time.sleep(0.5)
 
-        adb_device.shell("am force-stop com.wakemeup")
+        adb_device.shell("am force-stop com.ambientdisplay")
         adb_device.launch_app()
         time.sleep(1.0)
 

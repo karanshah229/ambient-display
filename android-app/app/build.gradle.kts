@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.wakemeup"
+    namespace = "com.ambientdisplay"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.wakemeup"
+        applicationId = "com.ambientdisplay"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

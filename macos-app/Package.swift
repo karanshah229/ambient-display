@@ -2,18 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "WakeMeUp",
+    name: "AmbientDisplay",
     platforms: [
         .macOS(.v13)
     ],
     products: [
         .executable(
-            name: "WakeMeUp",
-            targets: ["WakeMeUp"]
+            name: "AmbientDisplay",
+            targets: ["AmbientDisplay"]
         ),
         .library(
-            name: "WakeMeUpCore",
-            targets: ["WakeMeUpCore"]
+            name: "AmbientDisplayCore",
+            targets: ["AmbientDisplayCore"]
         )
     ],
     dependencies: [
@@ -21,12 +21,12 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "WakeMeUpCore",
+            name: "AmbientDisplayCore",
             dependencies: [
                 .product(name: "FirebaseFirestore", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseAuth", package: "firebase-ios-sdk")
             ],
-            path: "Sources/WakeMeUpCore",
+            path: "Sources/AmbientDisplayCore",
             linkerSettings: [
                 .linkedFramework("Network"),
                 .linkedFramework("AppKit"),
@@ -37,19 +37,19 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "WakeMeUp",
-            dependencies: ["WakeMeUpCore"],
-            path: "Sources/WakeMeUp"
+            name: "AmbientDisplay",
+            dependencies: ["AmbientDisplayCore"],
+            path: "Sources/AmbientDisplay"
         ),
         .executableTarget(
             name: "RenderSnapshots",
-            dependencies: ["WakeMeUpCore"],
+            dependencies: ["AmbientDisplayCore"],
             path: "Sources/RenderSnapshots"
         ),
         .testTarget(
-            name: "WakeMeUpTests",
-            dependencies: ["WakeMeUpCore"],
-            path: "Tests/WakeMeUpTests"
+            name: "AmbientDisplayTests",
+            dependencies: ["AmbientDisplayCore"],
+            path: "Tests/AmbientDisplayTests"
         )
     ]
 )

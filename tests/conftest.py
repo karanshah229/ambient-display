@@ -9,7 +9,7 @@ MAC_PORT = 8321
 MAC_BASE_URL = f"http://127.0.0.1:{MAC_PORT}"
 ARTIFACTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "artifacts"))
 MAC_BINARY = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../macos-app/.build/debug/WakeMeUp")
+    os.path.join(os.path.dirname(__file__), "../macos-app/.build/debug/AmbientDisplay")
 )
 
 @pytest.fixture(scope="session", autouse=True)
@@ -54,7 +54,7 @@ def mac_server():
     if not healthy:
         if proc:
             proc.kill()
-        pytest.fail("Failed to boot macOS WakeMeUp server on port 8321")
+        pytest.fail("Failed to boot macOS AmbientDisplay server on port 8321")
 
     yield MAC_BASE_URL
 
@@ -118,7 +118,7 @@ def adb_device():
 
         def launch_app(self):
             # Bring activity reliably to foreground without exiting if back pressed
-            self.shell("am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.wakemeup/.MainActivity")
+            self.shell("am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.ambientdisplay/.MainActivity")
             time.sleep(1)
             # Dismiss soft keyboard if visible using ESC / 111
             self.shell("input keyevent 111")
@@ -149,14 +149,14 @@ def adb_device():
         def dump_alarms(self, name: str) -> str:
 
             target_path = os.path.join(ARTIFACTS_DIR, f"{name}_alarms.txt")
-            out = self.shell("dumpsys alarm | grep -C 3 'com.wakemeup'")
+            out = self.shell("dumpsys alarm | grep -C 3 'com.ambientdisplay'")
             with open(target_path, "w") as f:
                 f.write(out)
             return out
 
         def dump_logcat(self, name: str) -> str:
             target_path = os.path.join(ARTIFACTS_DIR, f"{name}_logcat.txt")
-            out = self.shell("logcat -d | grep -i 'com.wakemeup' | tail -n 50")
+            out = self.shell("logcat -d | grep -i 'com.ambientdisplay' | tail -n 50")
             with open(target_path, "w") as f:
                 f.write(out)
             return out
@@ -175,7 +175,7 @@ def mac_evidence():
             return {
                 "PreventUserIdleDisplaySleep": "PreventUserIdleDisplaySleep" in out,
                 "PreventUserIdleSystemSleep": "PreventUserIdleSystemSleep" in out,
-                "WakeMeUpActive": "WakeMeUp" in out
+                "AmbientDisplayActive": "AmbientDisplay" in out
             }
 
         def record_network(self, name: str, request_data: dict, response_data: dict):

@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 import AppKit
-import WakeMeUpCore
+import AmbientDisplayCore
 
 @main
 struct SnapshotApp {
@@ -111,7 +111,7 @@ struct SnapshotApp {
             outputPath: "\(outputDir)/mac_flow_04_countdown_seconds.png"
         )
 
-        // 5. Morning WAKE ME UP Banner (06:45 AM, sunrise gold/emerald banner)
+        // 5. Morning GOOD MORNING Banner (06:45 AM, sunrise gold/emerald banner)
         dateComponents.hour = 6
         dateComponents.minute = 45
         dateComponents.second = 0

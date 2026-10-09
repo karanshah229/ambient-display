@@ -57,7 +57,7 @@ If your phone and Mac are connected to the same Wi-Fi network, **you do not need
    ```
 2. Build and run the app:
    ```bash
-   swift run WakeMeUp
+   swift run AmbientDisplay
    ```
 3. A menu bar icon (`🖥️`) will appear. The workstation starts an embedded HTTP server listening on port `8321` and announces itself via Bonjour.
 
@@ -128,7 +128,7 @@ The repository includes production-hardened rules in [`firestore.rules`](../fire
 2. In the **Your apps** section, click **Add app** and select **Android** (`</>`).
 3. Set the package name to:
    ```
-   com.wakemeup
+   com.ambientdisplay
    ```
 4. **Important — Add Debug SHA-1 Signing Certificate:**
    To allow Google Sign-In on Android, Firebase requires your debug certificate fingerprint.
@@ -153,7 +153,7 @@ You can configure the macOS app either via a configuration file or environment v
 1. In Firebase Console under **Project settings > Your apps**, click **Add app** and select **Apple** (iOS).
 2. Set the Apple bundle ID to:
    ```
-   com.wakemeup.mac
+   com.ambientdisplay.mac
    ```
 3. Click **Register app** and download `GoogleService-Info.plist`.
 4. Place `GoogleService-Info.plist` into:
@@ -168,14 +168,14 @@ Alternatively, export the credentials before launching the macOS app:
 export FIREBASE_PROJECT_ID="your-firebase-project-id"
 export FIREBASE_API_KEY="your-firebase-api-key"
 export FIREBASE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
-cd macos-app && swift run WakeMeUp
+cd macos-app && swift run AmbientDisplay
 ```
 
 ### Step 7: Build, Run & Authenticate
 1. **Launch macOS App:**
    ```bash
    cd macos-app
-   swift run WakeMeUp
+   swift run AmbientDisplay
    ```
    Click the menu bar icon -> **Preferences** -> **Cloud** tab -> **Sign In with Google**.
    Your browser will open to complete OAuth authentication. Once approved, the workstation registers its presence in Firestore under your account.

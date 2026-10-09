@@ -132,7 +132,7 @@ def add_image_card(image_path, title, screen_label, callout_points, max_width=In
 title_p = doc.add_paragraph()
 title_p.paragraph_format.space_before = Pt(10)
 title_p.paragraph_format.space_after = Pt(2)
-run_title = title_p.add_run("WAKE ME UP")
+run_title = title_p.add_run("AMBIENT DISPLAY")
 run_title.font.size = Pt(28)
 run_title.font.bold = True
 run_title.font.color.rgb = COLOR_PRIMARY
@@ -145,7 +145,7 @@ run_sub.font.color.rgb = COLOR_MUTED
 
 add_paragraph(
     "This document is a comprehensive, standalone specification designed for UI/UX product designers. "
-    "It explains the complete product philosophy, features, technical architecture, and user flows of Wake Me Up. "
+    "It explains the complete product philosophy, features, technical architecture, and user flows of Ambient Display. "
     "Every existing screen from both the mobile Android app and macOS desktop companion is documented alongside "
     "explicit callouts detailing what the engineering implementation currently does and how the future UI should be elevated."
 )
@@ -160,7 +160,7 @@ add_paragraph(
     "Furthermore, traditional alarms shock the sleeper awake in a pitch-black room with shrill ringtones, spiking cortisol levels."
 )
 add_paragraph(
-    "Wake Me Up introduces an intelligent, zero-friction sleep detection and sunrise alarm ecosystem spanning Android (bedside phone) "
+    "Ambient Display introduces an intelligent, zero-friction sleep detection and sunrise alarm ecosystem spanning Android (bedside phone) "
     "and macOS (workstation displays and laptop). Instead of demanding manual alarms: ",
     bold_prefix="The Paradigm Shift: "
 )
@@ -174,7 +174,7 @@ for title, desc in p_points:
     add_paragraph(desc, bold_prefix=f"• {title}: ")
 
 add_callout(
-    "Wake Me Up should feel like high-end wellness hardware (similar to Oura Ring, Apple Health, or Loftie Clock). "
+    "Ambient Display should feel like high-end wellness hardware (similar to Oura Ring, Apple Health, or Loftie Clock). "
     "The UI must replace technical developer clutter with calm, organic nighttime aesthetics.",
     title="CORE DESIGN PRINCIPLE"
 )
@@ -206,7 +206,7 @@ add_paragraph(
 
 add_header("2.3 Midnight Glance vs. Insomnia Filter", level=2)
 add_paragraph(
-    "Humans frequently wake up momentarily in the night to check the time or drink water. Wake Me Up categorizes midnight activity: "
+    "Humans frequently wake up momentarily in the night to check the time or drink water. Ambient Display categorizes midnight activity: "
 )
 add_paragraph(
     "Screen unlocked and locked within 60 seconds. The existing sleep session and morning alarm remain completely untouched.",
@@ -232,7 +232,7 @@ add_paragraph(
 
 add_header("2.6 Zero-Cloud Local Wi-Fi Sync & Away Mode", level=2)
 add_paragraph(
-    "No external servers, user accounts, or telemetry exist. The Mac advertises over Bonjour (_wakemeup._tcp) and the Android app auto-discovers it. "
+    "No external servers, user accounts, or telemetry exist. The Mac advertises over Bonjour (_ambientdisplay._tcp) and the Android app auto-discovers it. "
     "All configuration changes sync bidirectionally. If Away Mode is enabled, external monitors stay off while the phone alarm continues to work normally."
 )
 
@@ -368,7 +368,7 @@ add_image_card(
     [
         ("Local Wi-Fi IP", "Displays the current DHCP Wi-Fi address (192.168.1.2) allocated to the MacBook."),
         ("HTTP Port", "Lightweight HTTP server running on dedicated port 8321."),
-        ("Bonjour mDNS", "Broadcasts _wakemeup._tcp service so phone discovers the Mac without manual IP entry.")
+        ("Bonjour mDNS", "Broadcasts _ambientdisplay._tcp service so phone discovers the Mac without manual IP entry.")
     ]
 )
 
@@ -392,7 +392,7 @@ add_image_card(
     "Screen 12: Morning Sunrise Illumination",
     [
         ("Authentic 3-Stage Progression", "Evolves naturally from Midnight Ember (#D95926) -> Dawn Coral (#FA7268) -> Radiant Solar Gold (#FFD000)."),
-        ("Wake-Up Greeting", "Displays warm 'WAKE ME UP' banner with current time, sun iconography, and 7.5 hours completed message."),
+        ("Wake-Up Greeting", "Displays warm 'AMBIENT DISPLAY' banner with current time, sun iconography, and 7.5 hours completed message."),
         ("Audio Harmonization", "Coordinates with the phone's acoustic alarm for a synchronized multi-device awakening.")
     ]
 )
@@ -426,7 +426,7 @@ add_image_card(
 # ----------------- SECTION 4: TECHNICAL ARCHITECTURE -----------------
 add_header("4. Technical Architecture & Communication Protocols", level=1)
 add_paragraph(
-    "Wake Me Up operates as a distributed local-first ecosystem. No external cloud infrastructure or user databases are utilized. "
+    "Ambient Display operates as a distributed local-first ecosystem. No external cloud infrastructure or user databases are utilized. "
     "All telemetry and synchronization take place over local Wi-Fi between the Android mobile device and macOS workstation."
 )
 
@@ -448,11 +448,11 @@ for ep, desc in api_rows:
 
 add_header("4.2 Resilient Network Auto-Discovery", level=2)
 add_paragraph(
-    "To handle dynamic home routers where DHCP addresses change (e.g. from 192.168.1.3 to 192.168.1.2), Wake Me Up implements a multi-tier discovery pipeline: "
+    "To handle dynamic home routers where DHCP addresses change (e.g. from 192.168.1.3 to 192.168.1.2), Ambient Display implements a multi-tier discovery pipeline: "
 )
 add_paragraph(
     "1. Cached IP Quick-Probe (< 400ms): Attempts instant connection to the last verified IP.\n"
-    "2. Bonjour / mDNS Service Discovery: Resolves '_wakemeup._tcp' published by macOS NWListener.\n"
+    "2. Bonjour / mDNS Service Discovery: Resolves '_ambientdisplay._tcp' published by macOS NWListener.\n"
     "3. High-Speed Subnet Scan (< 200ms): Concurrently probes all 254 subnet socket endpoints on port 8321 to locate the Mac even if router mDNS multicast is filtered."
 )
 
@@ -479,6 +479,6 @@ add_callout(
     title="DESIGNER ACTION ITEM"
 )
 
-output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "WakeMeUp_Product_Design_Specification.docx")
+output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "Ambient_Display_Product_Design_Specification.docx")
 doc.save(output_path)
 print(f"Successfully generated designer guide at: {output_path}")

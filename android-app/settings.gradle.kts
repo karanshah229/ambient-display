@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WakeMeUpAndroid"
+rootProject.name = "AmbientDisplayAndroid"
 include(":app")
