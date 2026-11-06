@@ -25,6 +25,7 @@ public partial class App : Application
     private LocalApiServer? _server;
     private TrayIcon? _tray;
     private OverlayPresenter? _presenter;
+    private MdnsAdvertiser? _mdns;
     private AppState? _appState;
     private DisplayCoordinator? _coordinator;
 
@@ -67,7 +68,8 @@ public partial class App : Application
         _presenter = new OverlayPresenter(_appState, _displayProvider, Win32DisplayProvider.GetMonitorBounds);
         _coordinator = new DisplayCoordinator(_appState, _displayProvider, _presenter, _power);
         _presenter.Attach(_coordinator);
-        var cloud = new DisabledCloudService(new DeviceIdentity(store));
+        var identity = new DeviceIdentity(store);
+        var cloud = new DisabledCloudService(identity);
 
         var router = new ApiRouter(new WpfDispatcher(Dispatcher), _appState, _coordinator, _power, cloud, openPreferences: null);
         _server = new LocalApiServer(router, LocalApiServer.DefaultPort);
@@ -92,12 +94,27 @@ public partial class App : Application
             Log.Info("App", $"Display {display.Id}: {display.Name} {display.Width}x{display.Height}{(display.IsPrimary ? " (primary)" : string.Empty)}");
         }
 
-        await _server.StartAsync();
+        if (await _server.StartAsync())
+        {
+            // Let the phone find this PC without typing an IP (macOS: NWListener.Service / Bonjour).
+            _mdns = new MdnsAdvertiser(
+                instanceName: $"AmbientDisplay-{identity.DeviceName}",
+                port: _server.BoundPort ?? LocalApiServer.DefaultPort,
+                txt: new Dictionary<string, string>
+                {
+                    ["platform"] = "windows",
+                    ["device_id"] = identity.DeviceId,
+                    ["name"] = identity.DeviceName,
+                    ["api"] = "1",
+                });
+            _mdns.Start();
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         _tickTimer?.Stop();
+        _mdns?.Dispose();
         _tray?.Dispose();
         _presenter?.Dispose();
         _power?.Dispose();
