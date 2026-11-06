@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Threading;
 using AmbientDisplay.App.Platform;
@@ -26,6 +27,9 @@ public partial class App : Application
     private TrayIcon? _tray;
     private OverlayPresenter? _presenter;
     private MdnsAdvertiser? _mdns;
+    private FirestoreCloudService? _firestore;
+
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
     private AppState? _appState;
     private DisplayCoordinator? _coordinator;
 
@@ -69,13 +73,38 @@ public partial class App : Application
         _coordinator = new DisplayCoordinator(_appState, _displayProvider, _presenter, _power);
         _presenter.Attach(_coordinator);
         var identity = new DeviceIdentity(store);
-        var cloud = new DisabledCloudService(identity);
+        var uiDispatcher = new WpfDispatcher(Dispatcher);
 
-        var router = new ApiRouter(new WpfDispatcher(Dispatcher), _appState, _coordinator, _power, cloud, openPreferences: null);
+        // Cloud sync is optional: without %APPDATA%\AmbientDisplay\firebase.json (or FIREBASE_* env vars)
+        // the PC works over local Wi-Fi only, exactly like the macOS app.
+        var firebase = FirebaseConfig.Load();
+        ICloudService cloud;
+        if (firebase.IsConfigured)
+        {
+            _firestore = new FirestoreCloudService(
+                firebase,
+                identity,
+                _appState,
+                _coordinator,
+                uiDispatcher,
+                new DpapiSecretStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AmbientDisplay", "secrets")),
+                store,
+                Http,
+                openBrowser: uri => Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true }));
+            cloud = _firestore;
+        }
+        else
+        {
+            Log.Info("App", $"Cloud sync disabled: no Firebase config at {FirebaseConfig.DefaultPath}.");
+            cloud = new DisabledCloudService(identity);
+        }
+
+        var router = new ApiRouter(uiDispatcher, _appState, _coordinator, _power, cloud, openPreferences: null);
         _server = new LocalApiServer(router, LocalApiServer.DefaultPort);
 
         _tray = new TrayIcon(
             _appState,
+            cloud,
             LocalApiServer.DefaultPort,
             openLogFolder: () => Process.Start(new ProcessStartInfo(Path.GetDirectoryName(logger.FilePath)!) { UseShellExecute = true }),
             quit: Shutdown);
@@ -109,11 +138,22 @@ public partial class App : Application
                 });
             _mdns.Start();
         }
+
+        if (_firestore is not null)
+        {
+            await _firestore.InitializeAsync(); // resumes a saved Google session, if any
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         _tickTimer?.Stop();
+        if (_firestore is { } firestore)
+        {
+            // Mark the device offline and close listeners; off the UI thread, and never block exit for long.
+            Task.Run(() => firestore.DisposeAsync().AsTask()).Wait(TimeSpan.FromSeconds(4));
+        }
+
         _mdns?.Dispose();
         _tray?.Dispose();
         _presenter?.Dispose();

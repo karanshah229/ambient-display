@@ -211,6 +211,22 @@ public sealed class DisplayCoordinator
 
     public void DismissMessage(string? targetDisplayId = AllTargets) => DismissCanvas(targetDisplayId);
 
+    /// <summary>True while the canvas with this API id (as returned by <see cref="ShowCanvas"/>) is still showing.</summary>
+    public bool IsCanvasActive(string canvasId) =>
+        Guid.TryParse(canvasId, out var id) && _canvases.ContainsKey(id);
+
+    /// <summary>Dismisses one canvas wherever it is showing (used when the cloud withdraws it).</summary>
+    public void DismissCanvasById(string canvasId)
+    {
+        if (!Guid.TryParse(canvasId, out var id) || !_canvases.TryGetValue(id, out var canvas))
+        {
+            return;
+        }
+
+        DismissCanvasById(id);
+        CanvasDismissed?.Invoke(this, canvas.TargetDisplayId);
+    }
+
     /// <summary>Called once per second by the host; expires timed canvases.</summary>
     public void Tick()
     {

@@ -20,6 +20,14 @@ public sealed record CloudStatus(
 /// <summary>Firebase cloud sync (Google sign-in, fleet presence, remote canvases). UI-thread affine.</summary>
 public interface ICloudService
 {
+    /// <summary>Raised on the UI thread whenever sign-in state, connection or the fleet list changes.</summary>
+    event EventHandler? Changed;
+
+    /// <summary>Firebase and the Google OAuth client are configured, so "Sign in with Google" can work.</summary>
+    bool CanSignIn { get; }
+
+    bool IsSigningIn { get; }
+
     CloudStatus GetStatus();
 
     IReadOnlyList<CloudDeviceDto> RegisteredDevices { get; }
@@ -31,7 +39,7 @@ public interface ICloudService
     void SignOut();
 }
 
-/// <summary>Placeholder until Firestore sync lands (milestone M4). Reports a signed-out device.</summary>
+/// <summary>Used when Firebase is not configured on this PC. Reports a signed-out device.</summary>
 public sealed class DisabledCloudService : ICloudService
 {
     private readonly DeviceIdentity _identity;
@@ -42,17 +50,27 @@ public sealed class DisabledCloudService : ICloudService
         _identity = identity;
     }
 
+    public event EventHandler? Changed
+    {
+        add { }
+        remove { }
+    }
+
+    public bool CanSignIn => false;
+
+    public bool IsSigningIn => false;
+
     public IReadOnlyList<CloudDeviceDto> RegisteredDevices => [];
 
     public CloudStatus GetStatus() =>
         new(null, false, _identity.DeviceId, _identity.DeviceName, 0, _syncError, null);
 
     public Task SignInWithGoogleIdTokenAsync(string googleIdToken, CancellationToken cancellationToken) =>
-        throw new InvalidOperationException("Cloud sync is not available in this Windows build yet.");
+        throw new InvalidOperationException("Cloud sync is not configured on this PC (see %APPDATA%\\AmbientDisplay\\firebase.json).");
 
     public void StartGoogleOAuthFlow()
     {
-        _syncError = "Cloud sync is not available in this Windows build yet.";
+        _syncError = "Cloud sync is not configured on this PC (see %APPDATA%\\AmbientDisplay\\firebase.json).";
         Log.Info("Cloud", _syncError);
     }
 
