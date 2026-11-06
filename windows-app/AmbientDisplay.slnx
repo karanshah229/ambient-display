@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AmbientDisplay.App/AmbientDisplay.App.csproj" />
+    <Project Path="src/AmbientDisplay.Core/AmbientDisplay.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AmbientDisplay.Tests/AmbientDisplay.Tests.csproj" />
+  </Folder>
+</Solution>

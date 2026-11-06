@@ -6,6 +6,14 @@ macos-app/build/
 *.xcodeproj
 *.xcworkspace
 
+# Windows & .NET
+windows-app/**/bin/
+windows-app/**/obj/
+windows-app/**/TestResults/
+windows-app/dist/
+.vs/
+*.user
+
 # Android & Gradle
 .gradle/
 build/
