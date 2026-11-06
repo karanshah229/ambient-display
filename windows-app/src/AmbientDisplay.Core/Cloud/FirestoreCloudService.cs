@@ -24,7 +24,7 @@ public sealed class FirestoreCloudService : ICloudService, IAsyncDisposable
     private const string UidKey = "AmbientDisplay_CloudUID";
     private const string EmailKey = "AmbientDisplay_CloudEmail";
     private const string DisplayNameKey = "AmbientDisplay_CloudDisplayName";
-    private const string AppVersion = "windows-1.0.0";
+    private static readonly string AppVersion = "windows-" + (typeof(FirestoreCloudService).Assembly.GetName().Version?.ToString(3) ?? "0.0.0");
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan PreferencePushDelay = TimeSpan.FromSeconds(1);
 

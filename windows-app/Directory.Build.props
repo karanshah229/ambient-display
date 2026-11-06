@@ -1,0 +1,9 @@
+<Project>
+  <!-- Shared by every project in windows-app. build.ps1 can override with -Version. -->
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <Product>Ambient Display</Product>
+    <Company>Ambient Display</Company>
+    <Copyright>MIT License</Copyright>
+  </PropertyGroup>
+</Project>

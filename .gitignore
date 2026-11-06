@@ -10,6 +10,7 @@ macos-app/build/
 windows-app/**/bin/
 windows-app/**/obj/
 windows-app/**/TestResults/
+windows-app/dist/
 .vs/
 *.user
 

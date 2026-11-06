@@ -12,6 +12,8 @@
     <AssemblyName>AmbientDisplay</AssemblyName>
     <RootNamespace>AmbientDisplay.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\AmbientDisplay.ico</ApplicationIcon>
+    <AssemblyTitle>Ambient Display</AssemblyTitle>
     <!-- DPI awareness belongs in app.manifest for a WPF-hosted process; the WinForms analyzer assumes a WinForms app. -->
     <!-- WPF0001: Window.ThemeMode (Windows 11 Fluent styling) is marked experimental in WPF. -->
     <NoWarn>$(NoWarn);WFO0003;WPF0001</NoWarn>
@@ -26,6 +28,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AmbientDisplay.Core\AmbientDisplay.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Window icons (Preferences) load it as a WPF resource. -->
+    <Resource Include="Assets\AmbientDisplay.ico" />
   </ItemGroup>
 
   <ItemGroup>
