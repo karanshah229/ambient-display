@@ -16,4 +16,8 @@
     <InternalsVisibleTo Include="AmbientDisplay.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Google.Cloud.Firestore" Version="4.6.0" />
+  </ItemGroup>
+
 </Project>

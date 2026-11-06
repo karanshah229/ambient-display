@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
+using AmbientDisplay.Core.Cloud;
 using AmbientDisplay.Core.Models;
 using AmbientDisplay.Core.State;
 using WinForms = System.Windows.Forms;
@@ -13,15 +14,17 @@ namespace AmbientDisplay.App.UI;
 internal sealed class TrayIcon : IDisposable
 {
     private readonly AppState _app;
+    private readonly ICloudService _cloud;
     private readonly int _port;
     private readonly Action _openLogFolder;
     private readonly Action _quit;
     private readonly WinForms.NotifyIcon _icon;
     private readonly WinForms.ContextMenuStrip _menu;
 
-    public TrayIcon(AppState app, int port, Action openLogFolder, Action quit)
+    public TrayIcon(AppState app, ICloudService cloud, int port, Action openLogFolder, Action quit)
     {
         _app = app;
+        _cloud = cloud;
         _port = port;
         _openLogFolder = openLogFolder;
         _quit = quit;
@@ -104,6 +107,38 @@ internal sealed class TrayIcon : IDisposable
         var away = new WinForms.ToolStripMenuItem("Away Mode") { Checked = _app.IsAwayMode };
         away.Click += (_, _) => _app.ToggleAwayMode();
         _menu.Items.Add(away);
+
+        // Cloud & Google sign-in (same entries as the macOS menu bar).
+        _menu.Items.Add(new WinForms.ToolStripSeparator());
+        var cloud = _cloud.GetStatus();
+        if (cloud.User is { } user)
+        {
+            _menu.Items.Add(new WinForms.ToolStripMenuItem($"☁ {user.Email ?? "Google User"}") { Enabled = false });
+            var connection = cloud.IsConnected && cloud.SyncError is null ? "Online" : "Reconnecting";
+            _menu.Items.Add(new WinForms.ToolStripMenuItem($"    Machine: {cloud.DeviceId} ({connection})") { Enabled = false });
+            _menu.Items.Add("Sign Out (Google)", null, (_, _) => _cloud.SignOut());
+        }
+        else if (_cloud.IsSigningIn)
+        {
+            _menu.Items.Add(new WinForms.ToolStripMenuItem("☁ Signing in… (finish in your browser)") { Enabled = false });
+        }
+        else
+        {
+            var signIn = new WinForms.ToolStripMenuItem("☁ Sign In with Google…") { Enabled = _cloud.CanSignIn };
+            signIn.Click += (_, _) => _cloud.StartGoogleOAuthFlow();
+            if (!_cloud.CanSignIn)
+            {
+                signIn.ToolTipText = "Add Firebase settings to %APPDATA%\\AmbientDisplay\\firebase.json to enable cloud sync.";
+            }
+
+            _menu.Items.Add(signIn);
+        }
+
+        if (cloud.SyncError is { } error && cloud.User is not null)
+        {
+            var text = error.Length > 80 ? error[..80] + "…" : error;
+            _menu.Items.Add(new WinForms.ToolStripMenuItem($"    ⚠ {text}") { Enabled = false });
+        }
 
         _menu.Items.Add(new WinForms.ToolStripSeparator());
         _menu.Items.Add("Open Log Folder", null, (_, _) => _openLogFolder());

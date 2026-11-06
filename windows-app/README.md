@@ -11,7 +11,7 @@ serves the same LAN API on port 8321 that the Android companion uses, and drives
 | M1 | Network advertising (`_ambientdisplay._tcp`) | Done; verified with the Android app's Auto-Discover |
 | M2 | Full-screen overlays (countdown, billboard, image, video, web), ESC/click/Alt+F4 dismissal | Done |
 | M3 | Full tray menu, preferences window, launch at login | Not started |
-| M4 | Firebase cloud sync and Google sign-in | Not started; cloud routes report a signed-out device |
+| M4 | Firebase cloud sync and Google sign-in | Done; verified against the live project with the Android app |
 | M5 | Packaging, firewall rule, Windows E2E harness | Not started |
 
 ## Requirements
@@ -43,6 +43,40 @@ The PC announces itself on the local network as `AmbientDisplay-<hostname>._ambi
 Bonjour install is needed; the built-in "mDNS (UDP-In)" firewall rule must be enabled (it is by default). The
 announcement follows the Wi-Fi/Ethernet adapter that has a default gateway, skips WSL and Hyper-V virtual switches, and
 updates when the address changes. TXT records carry `platform=windows`, `device_id`, `name` and `api=1`.
+
+## Cloud sync (optional)
+
+Without configuration the PC works over local Wi-Fi only. To sync through your own Firebase project:
+
+1. In Google Cloud → APIs & Services → Credentials for the Firebase project, create an OAuth client of type
+   **Desktop app**. Google's loopback sign-in flow expects this client type; the iOS client the macOS app uses
+   isn't designed for it.
+2. Create `%APPDATA%\AmbientDisplay\firebase.json` (outside the repo, never committed):
+
+   ```json
+   {
+     "projectId": "your-project-id",
+     "apiKey": "your Firebase Browser/Web API key",
+     "oauthClientId": "....apps.googleusercontent.com",
+     "oauthClientSecret": "GOCSPX-..."
+   }
+   ```
+
+   Environment variables `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `FIREBASE_CLIENT_ID` and `FIREBASE_CLIENT_SECRET`
+   override the file.
+3. Choose **☁ Sign In with Google…** in the tray menu and finish in the browser.
+
+What it does, matching the macOS app:
+
+- Signs in with Google in the browser and returns to a random local port, with PKCE and a `state` check, then
+  exchanges the result for a Firebase session. The refresh token is stored encrypted with DPAPI under
+  `%APPDATA%\AmbientDisplay\secrets`; ID tokens refresh automatically.
+- Registers `users/{uid}/devices/machine_<hostname>` with `deviceType: "machine"` and sends a heartbeat every 60 s,
+  so the phone lists the PC as ONLINE. On quit or sign-out the device is marked `offline`.
+- Listens live to the fleet over Firestore. A canvas sent through the cloud appears on the PC, and clearing it from
+  the phone removes it. Dismissing on the PC (ESC, click, timer, or a Wi-Fi dismiss) clears `activeCanvas` in Firestore.
+- Syncs preferences both ways through `users/{uid}.preferences`, without echoing changes back.
+- Reconnects dropped listeners with backoff and a fresh token.
 
 ## Layout
 
