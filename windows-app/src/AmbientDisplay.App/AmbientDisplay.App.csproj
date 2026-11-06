@@ -13,7 +13,8 @@
     <RootNamespace>AmbientDisplay.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- DPI awareness belongs in app.manifest for a WPF-hosted process; the WinForms analyzer assumes a WinForms app. -->
-    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <!-- WPF0001: Window.ThemeMode (Windows 11 Fluent styling) is marked experimental in WPF. -->
+    <NoWarn>$(NoWarn);WFO0003;WPF0001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -10,7 +10,7 @@ serves the same LAN API on port 8321 that the Android companion uses, and drives
 | M1 | Core state machine, display coordinator, LAN API (all 18 routes), tray icon, power requests | Done |
 | M1 | Network advertising (`_ambientdisplay._tcp`) | Done; verified with the Android app's Auto-Discover |
 | M2 | Full-screen overlays (countdown, billboard, image, video, web), ESC/click/Alt+F4 dismissal | Done |
-| M3 | Full tray menu, preferences window, launch at login | Not started |
+| M3 | Full tray menu, preferences window, launch at login | Done |
 | M4 | Firebase cloud sync and Google sign-in | Done; verified against the live project with the Android app |
 | M5 | Packaging, firewall rule, Windows E2E harness | Not started |
 
@@ -33,8 +33,22 @@ dotnet test windows-app/AmbientDisplay.slnx
 dotnet run --project windows-app/src/AmbientDisplay.App
 ```
 
-The app has no window. Use the tray icon to start or stop sleep, run the 10-second test, toggle Away Mode,
-open the log folder, or quit. Open `http://127.0.0.1:8321/` for a small status page.
+The app lives in the notification area. Its icon shows the state: a monitor when idle, a moon while sleeping, a gold
+sun at wake-up time, and a crossed-out monitor in Away Mode. The tooltip shows the target wake time. Right-click for
+the menu (start/stop sleep, 10-second test, Away Mode, Start at Login, Google sign-in, Preferences, log folder, quit);
+double-click to open **Preferences**. Preferences has six tabs, matching the macOS app:
+
+| Tab | Settings |
+|---|---|
+| General | Launch at login (per-user Run registry entry, no admin needed), wake time in tooltip, Away Mode |
+| Sleep | Target duration, eligible sleep window, auto-push window, inactivity compensation |
+| Displays | Which monitors the countdown and canvases may use |
+| Ambient | Night / dawn / wake glow colours (#RRGGBB), reset, 10-second test |
+| Network | LAN address and port, mDNS advertisement status, status page link |
+| Cloud | Google account, this workstation's ID, sync status, devices in your account |
+
+The phone's "open preferences" command (`POST /api/preferences`) opens the same window. For a small status page, open
+`http://127.0.0.1:8321/`.
 
 The first launch may show a Windows Firewall prompt for port 8321. Allow it on **private** networks so the phone can connect.
 

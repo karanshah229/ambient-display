@@ -1,0 +1,236 @@
+<Window x:Class="AmbientDisplay.App.UI.Preferences.PreferencesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ambient Display Preferences"
+        Width="680" Height="600" MinWidth="560" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        ThemeMode="System">
+    <!-- Port of macOS PreferencesView.swift: General, Sleep, Displays, Ambient, Network, Cloud. -->
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="Visible" />
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,18,0,8" />
+        </Style>
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+        </Style>
+        <Style x:Key="Page" TargetType="StackPanel">
+            <Setter Property="Margin" Value="20,4,20,20" />
+        </Style>
+    </Window.Resources>
+
+    <TabControl Margin="8">
+        <!-- ============================================================ General -->
+        <TabItem Header="General">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Style="{StaticResource Page}">
+                    <TextBlock Text="Startup &amp; tray" Style="{StaticResource SectionHeader}" />
+                    <CheckBox Content="Launch Ambient Display at login" IsChecked="{Binding LaunchAtLogin}" />
+                    <TextBlock Style="{StaticResource Hint}" Text="Keeps the local server and display overlays ready at all times." />
+                    <CheckBox Margin="0,12,0,0" Content="Show target wake time in the tray tooltip" IsChecked="{Binding App.ShowCountdownInTray}" />
+
+                    <TextBlock Text="Away Mode" Style="{StaticResource SectionHeader}" />
+                    <CheckBox Content="Enable Away Mode" IsChecked="{Binding App.IsAwayMode}" />
+                    <TextBlock Style="{StaticResource Hint}" Text="While active, sleep events from your phone will not turn on your monitors." />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- ============================================================ Sleep -->
+        <TabItem Header="Sleep">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Style="{StaticResource Page}">
+                    <TextBlock Text="Target sleep duration" Style="{StaticResource SectionHeader}" />
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Width="90" Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding SleepHoursLabel}" />
+                        <Slider Minimum="1" Maximum="16" TickFrequency="0.5" IsSnapToTickEnabled="True" VerticalAlignment="Center"
+                                Value="{Binding App.DefaultSleepHours}" AutomationProperties.Name="Target sleep duration in hours" />
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Hint}" Text="Default is 7.5 hours (5 × 90-minute sleep cycles). Any value from 1 to 16 hours." />
+
+                    <TextBlock Text="Eligible sleep window" Style="{StaticResource SectionHeader}" />
+                    <StackPanel Orientation="Horizontal">
+                        <ComboBox Width="150" ItemsSource="{Binding Hours}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding App.SleepWindowStartHour}" AutomationProperties.Name="Sleep window start" />
+                        <TextBlock Text="to" Margin="12,0" VerticalAlignment="Center" />
+                        <ComboBox Width="150" ItemsSource="{Binding Hours}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding App.SleepWindowEndHour}" AutomationProperties.Name="Sleep window end" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Hint}" Text="Phone inactivity outside this window (e.g. at 3 PM) never triggers sleep." />
+
+                    <TextBlock Text="Auto-push bedtime window" Style="{StaticResource SectionHeader}" />
+                    <StackPanel Orientation="Horizontal">
+                        <ComboBox Width="150" ItemsSource="{Binding Hours}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding App.AutoPushWindowStartHour}" AutomationProperties.Name="Auto-push window start" />
+                        <TextBlock Text="to" Margin="12,0" VerticalAlignment="Center" />
+                        <ComboBox Width="150" ItemsSource="{Binding Hours}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding App.AutoPushWindowEndHour}" AutomationProperties.Name="Auto-push window end" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Hint}" Text="In this early-evening window, using your phone pushes your target bedtime back automatically. Outside it, the phone asks first." />
+
+                    <TextBlock Text="Inactivity compensation" Style="{StaticResource SectionHeader}" />
+                    <CheckBox Content="Auto-detect offset from the phone's screen timeout" IsChecked="{Binding App.AutoDetectInactivityOffset}" />
+                    <DockPanel Margin="0,10,0,0" Visibility="{Binding IsCustomOffset, Converter={StaticResource Visible}}">
+                        <TextBlock DockPanel.Dock="Right" Width="90" Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding OffsetLabel}" />
+                        <Slider Minimum="5" Maximum="120" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center"
+                                Value="{Binding App.InactivityOffsetMinutes}" AutomationProperties.Name="Custom inactivity offset in minutes" />
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Hint}" Text="Compensates for falling asleep mid-movie or while reading, before the phone's screen times out." />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- ============================================================ Displays -->
+        <TabItem Header="Displays">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Style="{StaticResource Page}">
+                    <TextBlock Text="{Binding DisplaysHeader}" Style="{StaticResource SectionHeader}" />
+                    <ItemsControl ItemsSource="{Binding Displays}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,8" Padding="12" CornerRadius="6" BorderThickness="1" BorderBrush="#40808080">
+                                    <DockPanel>
+                                        <CheckBox DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,12,0"
+                                                  IsChecked="{Binding IsEnabled}" AutomationProperties.Name="{Binding Title}" />
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Details}" Opacity="0.7" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Style="{StaticResource Hint}" Text="Unchecked displays are left alone when the night countdown, wake-up screen or a canvas appears." />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- ============================================================ Ambient -->
+        <TabItem Header="Ambient">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Style="{StaticResource Page}">
+                    <TextBlock Text="Ambient glow colours" Style="{StaticResource SectionHeader}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="130" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Ellipse Grid.Row="0" Width="26" Height="26" Fill="{Binding NightBrush}" Margin="0,6" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Deep night glow" VerticalAlignment="Center" />
+                        <TextBox Grid.Row="0" Grid.Column="2" Text="{Binding NightHex, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center"
+                                 FontFamily="{StaticResource MonoFont}" AutomationProperties.Name="Deep night glow colour (hex)" />
+
+                        <Ellipse Grid.Row="1" Width="26" Height="26" Fill="{Binding DawnBrush}" Margin="0,6" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="Dawn warm glow" VerticalAlignment="Center" />
+                        <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding DawnHex, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center"
+                                 FontFamily="{StaticResource MonoFont}" AutomationProperties.Name="Dawn warm glow colour (hex)" />
+
+                        <Ellipse Grid.Row="2" Width="26" Height="26" Fill="{Binding WakeBrush}" Margin="0,6" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Morning wake-up glow" VerticalAlignment="Center" />
+                        <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding WakeHex, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center"
+                                 FontFamily="{StaticResource MonoFont}" AutomationProperties.Name="Morning wake-up glow colour (hex)" />
+                    </Grid>
+                    <TextBlock Style="{StaticResource Hint}" Text="Enter colours as #RRGGBB. Every theme renders over pure black for zero backlight bleed in a dark room." />
+
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <Button Content="Reset to defaults" Command="{Binding ResetColorsCommand}" Padding="14,6" />
+                        <Button Content="Test ambient display (10s)" Command="{Binding TestAmbientCommand}" Padding="14,6" Margin="10,0,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- ============================================================ Network -->
+        <TabItem Header="Network">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Style="{StaticResource Page}">
+                    <TextBlock Text="Companion app connection" Style="{StaticResource SectionHeader}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Address" Opacity="0.7" Margin="0,4" />
+                        <TextBox Grid.Column="1" Text="{Binding LanAddress, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" BorderThickness="0" Background="Transparent" />
+                        <TextBlock Grid.Row="1" Text="Auto-discovery" Opacity="0.7" Margin="0,4" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DiscoveryStatus}" TextWrapping="Wrap" Margin="0,4" />
+                        <TextBlock Grid.Row="2" Text="Status page" Opacity="0.7" Margin="0,4" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Margin="0,4">
+                            <Hyperlink Command="{Binding OpenStatusPageCommand}"><Run Text="{Binding StatusPageUrl, Mode=OneWay}" /></Hyperlink>
+                        </TextBlock>
+                    </Grid>
+                    <TextBlock Style="{StaticResource Hint}" Margin="0,12,0,0"
+                               Text="The Android app finds this PC on your Wi-Fi with Auto-Discover. If it can't, enter the address above in the app's Devices tab. Allow Ambient Display through Windows Firewall on private networks." />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- ============================================================ Cloud -->
+        <TabItem Header="Cloud">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Style="{StaticResource Page}">
+                    <TextBlock Text="Google account" Style="{StaticResource SectionHeader}" />
+                    <TextBlock Text="{Binding CloudHeadline}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Content="Sign in with Google…" Command="{Binding SignInCommand}" Padding="14,6"
+                                IsEnabled="{Binding CanSignIn}" Visibility="{Binding IsSignedOut, Converter={StaticResource Visible}}" />
+                        <Button Content="Sign out" Command="{Binding SignOutCommand}" Padding="14,6"
+                                Visibility="{Binding IsSignedIn, Converter={StaticResource Visible}}" />
+                    </StackPanel>
+
+                    <TextBlock Text="This workstation" Style="{StaticResource SectionHeader}" />
+                    <TextBlock Text="{Binding DeviceIdentity}" FontFamily="{StaticResource MonoFont}" />
+                    <TextBlock Text="{Binding SyncState}" TextWrapping="Wrap" Margin="0,4,0,0" Opacity="0.8" />
+
+                    <StackPanel Visibility="{Binding IsSignedIn, Converter={StaticResource Visible}}">
+                        <TextBlock Text="{Binding FleetHeader}" Style="{StaticResource SectionHeader}" />
+                        <ItemsControl ItemsSource="{Binding Fleet}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,8" Padding="12" CornerRadius="6" BorderThickness="1" BorderBrush="#40808080">
+                                        <DockPanel>
+                                            <Border DockPanel.Dock="Right" CornerRadius="10" Padding="10,2" VerticalAlignment="Center">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#33808080" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsOnline}" Value="True">
+                                                                <Setter Property="Background" Value="#3330D158" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding Presence}" FontSize="11" FontWeight="SemiBold" />
+                                            </Border>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Details}" Opacity="0.7" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+    </TabControl>
+</Window>
