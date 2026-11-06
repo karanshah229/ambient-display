@@ -1,0 +1,58 @@
+<UserControl x:Class="AmbientDisplay.App.UI.Overlay.AmbientView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Black"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Grayscale">
+    <!-- Port of macOS AmbientDisplayView.swift: night countdown, dawn shift, wake-up screen. -->
+    <Grid x:Name="Layout">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Top ambient bar -->
+        <DockPanel Grid.Row="0" Margin="48,36,48,0" LastChildFill="False">
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                <Ellipse x:Name="StatusDot" Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock x:Name="StatusText" FontFamily="{StaticResource MonoFont}" FontSize="18" FontWeight="Medium" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock x:Name="ClockText" DockPanel.Dock="Right" FontFamily="{StaticResource MonoFont}" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+        </DockPanel>
+
+        <!-- Wake-up ready -->
+        <StackPanel x:Name="WakePanel" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+            <TextBlock x:Name="WakeIcon" FontFamily="{StaticResource IconFont}" FontSize="96" HorizontalAlignment="Center" />
+            <TextBlock x:Name="WakeTitle" Text="GOOD MORNING" Margin="0,24,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="88" FontWeight="Black" HorizontalAlignment="Center" />
+            <TextBlock x:Name="WakeSubtitle" Margin="0,24,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="32" FontWeight="Medium" TextAlignment="Center" TextWrapping="Wrap" HorizontalAlignment="Center" />
+            <Button x:Name="DismissAlarmButton" Style="{StaticResource OverlayButton}" Tag="12" Margin="0,40,0,0" Padding="32,14" BorderThickness="1.5" HorizontalAlignment="Center" Click="OnDismissClicked">
+                <TextBlock x:Name="DismissAlarmText" Text="Dismiss Alarm" FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="SemiBold" />
+            </Button>
+        </StackPanel>
+
+        <!-- Sleeping countdown -->
+        <StackPanel x:Name="CountdownPanel" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+            <TextBlock x:Name="TargetLabel" Text="TARGET WAKE UP TIME" FontFamily="{StaticResource MonoFont}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" />
+            <TextBlock x:Name="TargetTime" Margin="0,16,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="130" FontWeight="Heavy" HorizontalAlignment="Center" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,28,0,0">
+                <TextBlock x:Name="TimerIcon" FontFamily="{StaticResource IconFont}" FontSize="32" Margin="0,0,12,0" VerticalAlignment="Center" />
+                <TextBlock x:Name="CountdownText" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock x:Name="DoNotWakeText" Margin="0,24,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="Medium" HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Idle placeholder -->
+        <StackPanel x:Name="IdlePanel" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+            <TextBlock x:Name="IdleIcon" FontFamily="{StaticResource IconFont}" FontSize="64" HorizontalAlignment="Center" />
+            <TextBlock x:Name="IdleTitle" Text="Ambient Display is Idle" Margin="0,16,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center" />
+            <TextBlock x:Name="IdleSubtitle" Text="Waiting for sleep trigger from Android phone..." Margin="0,16,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="20" HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Footer -->
+        <DockPanel Grid.Row="2" Margin="48,0,48,36" LastChildFill="False">
+            <TextBlock x:Name="SessionText" DockPanel.Dock="Left" FontFamily="{StaticResource DisplayFont}" FontSize="18" VerticalAlignment="Center" />
+            <TextBlock x:Name="HintText" DockPanel.Dock="Right" Text="Press ESC or click anywhere to dismiss" FontFamily="{StaticResource DisplayFont}" FontSize="14" FontWeight="Light" VerticalAlignment="Center" />
+        </DockPanel>
+    </Grid>
+</UserControl>
