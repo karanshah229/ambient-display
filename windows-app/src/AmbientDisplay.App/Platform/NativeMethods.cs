@@ -228,4 +228,55 @@ internal static partial class NativeMethods
 
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+
+    // ------------------------------------------------------------ Windows (user32)
+
+    internal static readonly IntPtr HWND_TOPMOST = new(-1);
+    internal static readonly IntPtr HWND_MESSAGE = new(-3);
+    internal const uint SWP_NOACTIVATE = 0x0010;
+    internal const uint SWP_SHOWWINDOW = 0x0040;
+    internal const uint SWP_NOMOVE = 0x0002;
+    internal const uint SWP_NOSIZE = 0x0001;
+    internal const int GWL_EXSTYLE = -20;
+    internal const long WS_EX_TOOLWINDOW = 0x00000080;
+    internal const long WS_EX_APPWINDOW = 0x00040000;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
+    internal static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
+    internal static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetCursorPos(out POINT point);
+
+    // ------------------------------------------------------------ Hotkeys (user32)
+
+    internal const int WM_HOTKEY = 0x0312;
+    internal const uint MOD_NOREPEAT = 0x4000;
+    internal const uint VK_ESCAPE = 0x1B;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 }

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Threading;
 using AmbientDisplay.App.Platform;
 using AmbientDisplay.App.UI;
+using AmbientDisplay.App.UI.Overlay;
 using AmbientDisplay.Core;
 using AmbientDisplay.Core.Cloud;
 using AmbientDisplay.Core.Display;
@@ -23,12 +24,20 @@ public partial class App : Application
     private Win32PowerManager? _power;
     private LocalApiServer? _server;
     private TrayIcon? _tray;
+    private OverlayPresenter? _presenter;
     private AppState? _appState;
     private DisplayCoordinator? _coordinator;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        if (e.Args.Length >= 2 && e.Args[0] == "--render-snapshots")
+        {
+            SnapshotRenderer.RenderAll(Path.GetFullPath(e.Args[1]));
+            Shutdown();
+            return;
+        }
 
         _singleInstance = new Mutex(initiallyOwned: true, SingleInstanceMutexName, out var createdNew);
         if (!createdNew)
@@ -55,7 +64,9 @@ public partial class App : Application
         _appState = new AppState(store);
         _displayProvider = new Win32DisplayProvider(Dispatcher);
         _power = new Win32PowerManager();
-        _coordinator = new DisplayCoordinator(_appState, _displayProvider, new LoggingSurfacePresenter(), _power);
+        _presenter = new OverlayPresenter(_appState, _displayProvider, Win32DisplayProvider.GetMonitorBounds);
+        _coordinator = new DisplayCoordinator(_appState, _displayProvider, _presenter, _power);
+        _presenter.Attach(_coordinator);
         var cloud = new DisabledCloudService(new DeviceIdentity(store));
 
         var router = new ApiRouter(new WpfDispatcher(Dispatcher), _appState, _coordinator, _power, cloud, openPreferences: null);
@@ -88,6 +99,7 @@ public partial class App : Application
     {
         _tickTimer?.Stop();
         _tray?.Dispose();
+        _presenter?.Dispose();
         _power?.Dispose();
         _displayProvider?.Dispose();
         _server?.StopAsync().GetAwaiter().GetResult();
