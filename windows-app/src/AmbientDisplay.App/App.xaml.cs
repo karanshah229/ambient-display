@@ -5,6 +5,7 @@ using System.Windows.Threading;
 using AmbientDisplay.App.Platform;
 using AmbientDisplay.App.UI;
 using AmbientDisplay.App.UI.Overlay;
+using AmbientDisplay.App.UI.Preferences;
 using AmbientDisplay.Core;
 using AmbientDisplay.Core.Cloud;
 using AmbientDisplay.Core.Display;
@@ -99,13 +100,29 @@ public partial class App : Application
             cloud = new DisabledCloudService(identity);
         }
 
-        var router = new ApiRouter(uiDispatcher, _appState, _coordinator, _power, cloud, openPreferences: null);
+        var launchAtLogin = new LaunchAtLoginManager(store);
+        launchAtLogin.Refresh(); // re-register if the exe moved since the user enabled it
+
+        var displayProvider = _displayProvider;
+        var appState = _appState;
+        var preferences = new PreferencesWindowController(() => new PreferencesViewModel(
+            appState,
+            launchAtLogin,
+            displayProvider,
+            cloud,
+            LocalApiServer.DefaultPort,
+            advertisedServiceName: () => _mdns?.AdvertisedAddress is not null ? _mdns.ServiceName : null));
+
+        // POST /api/preferences from the phone opens the window here, as on macOS.
+        var router = new ApiRouter(uiDispatcher, _appState, _coordinator, _power, cloud, openPreferences: preferences.Show);
         _server = new LocalApiServer(router, LocalApiServer.DefaultPort);
 
         _tray = new TrayIcon(
             _appState,
             cloud,
+            launchAtLogin,
             LocalApiServer.DefaultPort,
+            openPreferences: preferences.Show,
             openLogFolder: () => Process.Start(new ProcessStartInfo(Path.GetDirectoryName(logger.FilePath)!) { UseShellExecute = true }),
             quit: Shutdown);
 
