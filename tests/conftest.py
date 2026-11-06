@@ -1,16 +1,41 @@
+import base64
 import os
+import platform
+import shutil
 import subprocess
 import time
 import json
 import pytest
 import requests
 
+# The live suite runs against the workstation app on this machine: the macOS app on a Mac, the
+# Windows app (windows-app/) on Windows. Fixture names keep their historical "mac_" prefix so the
+# tests in test_live_e2e.py run unchanged on both platforms.
+IS_WINDOWS = platform.system() == "Windows"
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
 MAC_PORT = 8321
 MAC_BASE_URL = f"http://127.0.0.1:{MAC_PORT}"
 ARTIFACTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "artifacts"))
-MAC_BINARY = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../macos-app/.build/debug/AmbientDisplay")
-)
+
+if IS_WINDOWS:
+    MAC_BINARY = os.path.join(
+        REPO_ROOT, "windows-app", "src", "AmbientDisplay.App", "bin", "Debug", "net10.0-windows", "AmbientDisplay.exe"
+    )
+    _dotnet = shutil.which("dotnet") or os.path.join(os.environ.get("ProgramFiles", r"C:\Program Files"), "dotnet", "dotnet.exe")
+    BUILD_COMMAND = [_dotnet, "build", os.path.join(REPO_ROOT, "windows-app", "src", "AmbientDisplay.App", "AmbientDisplay.App.csproj"), "--nologo", "-v", "q"]
+    BUILD_CWD = os.path.join(REPO_ROOT, "windows-app")
+else:
+    MAC_BINARY = os.path.join(REPO_ROOT, "macos-app", ".build", "debug", "AmbientDisplay")
+    BUILD_COMMAND = ["swift", "build"]
+    BUILD_CWD = os.path.join(REPO_ROOT, "macos-app")
+
+
+def _server_is_up() -> bool:
+    try:
+        return requests.get(f"{MAC_BASE_URL}/api/status", timeout=1).status_code == 200
+    except Exception:
+        return False
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_artifacts_dir():
@@ -19,26 +44,16 @@ def setup_artifacts_dir():
 
 @pytest.fixture(scope="session")
 def mac_server():
-    """Starts the native macOS app and ensures it stays running throughout the test session."""
-    # Always ensure latest binary is built
-    subprocess.check_call(
-        ["swift", "build"],
-        cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), "../macos-app"))
-    )
-
-    # Check if already running or start fresh
-    already_running = False
-    try:
-        r = requests.get(f"{MAC_BASE_URL}/api/status", timeout=1)
-        if r.status_code == 200:
-            already_running = True
-    except Exception:
-        pass
+    """Starts the workstation app (macOS or Windows) and keeps it running for the test session."""
+    # Reuse a running instance as-is (on Windows a running exe also locks its build output).
+    already_running = _server_is_up()
 
     proc = None
     if not already_running:
+        # Always test the latest code
+        subprocess.check_call(BUILD_COMMAND, cwd=BUILD_CWD)
         proc = subprocess.Popen([MAC_BINARY], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(1.5)
+        time.sleep(3 if IS_WINDOWS else 1.5)
 
     # Ensure healthy
     healthy = False
@@ -54,7 +69,7 @@ def mac_server():
     if not healthy:
         if proc:
             proc.kill()
-        pytest.fail("Failed to boot macOS AmbientDisplay server on port 8321")
+        pytest.fail(f"Failed to boot the {'Windows' if IS_WINDOWS else 'macOS'} AmbientDisplay server on port 8321")
 
     yield MAC_BASE_URL
 
@@ -165,9 +180,11 @@ def adb_device():
 
 @pytest.fixture
 def mac_evidence():
-    """Helper to capture macOS system assertions and network responses."""
+    """Helper to capture workstation power state, network responses and screenshots."""
     class MacDriver:
         def dump_pmset(self, name: str) -> dict:
+            if IS_WINDOWS:
+                return self._dump_windows_power(name)
             target_path = os.path.join(ARTIFACTS_DIR, f"{name}_pmset.txt")
             out = subprocess.check_output(["pmset", "-g", "assertions"], text=True)
             with open(target_path, "w") as f:
@@ -178,6 +195,31 @@ def mac_evidence():
                 "AmbientDisplayActive": "AmbientDisplay" in out
             }
 
+        def _dump_windows_power(self, name: str) -> dict:
+            """Windows equivalent of `pmset -g assertions`: the app's own report plus `powercfg /requests`.
+
+            `powercfg /requests` needs an elevated prompt; without it the app's power_assertion_active
+            flag (which mirrors its PowerCreateRequest DISPLAY + SYSTEM requests) is the evidence.
+            """
+            target_path = os.path.join(ARTIFACTS_DIR, f"{name}_power.txt")
+            active = bool(requests.get(f"{MAC_BASE_URL}/api/status", timeout=2).json().get("power_assertion_active"))
+            out = f"power_assertion_active={active}\n\n"
+            listed = None
+            try:
+                requests_out = subprocess.check_output(["powercfg", "/requests"], text=True, stderr=subprocess.STDOUT)
+                out += requests_out
+                listed = "Ambient Display" in requests_out
+            except Exception as e:
+                out += f"(powercfg /requests unavailable without an elevated prompt: {e})\n"
+            with open(target_path, "w") as f:
+                f.write(out)
+            confirmed = active if listed is None else (active and listed)
+            return {
+                "PreventUserIdleDisplaySleep": confirmed,
+                "PreventUserIdleSystemSleep": confirmed,
+                "AmbientDisplayActive": confirmed,
+            }
+
         def record_network(self, name: str, request_data: dict, response_data: dict):
             target_path = os.path.join(ARTIFACTS_DIR, f"{name}_network.json")
             with open(target_path, "w") as f:
@@ -185,6 +227,25 @@ def mac_evidence():
 
         def capture_display(self, name: str, display_id: int = 3) -> str:
             target_path = os.path.join(ARTIFACTS_DIR, f"{name}.png")
+            if IS_WINDOWS:
+                # display_id refers to macOS display numbers; on Windows capture every monitor.
+                script = "\n".join([
+                    "Add-Type -AssemblyName System.Drawing, System.Windows.Forms",
+                    "Add-Type -Namespace Native -Name Dpi -MemberDefinition '[DllImport(\"user32.dll\")] public static extern bool SetProcessDPIAware();'",
+                    "[Native.Dpi]::SetProcessDPIAware() | Out-Null",  # physical pixels on scaled displays
+                    "$b = [System.Windows.Forms.SystemInformation]::VirtualScreen",
+                    "$bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height",
+                    "$g = [System.Drawing.Graphics]::FromImage($bmp)",
+                    "$g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)",
+                    "$bmp.Save('" + target_path.replace("'", "''") + "', [System.Drawing.Imaging.ImageFormat]::Png)",
+                ])
+                encoded = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
+                try:
+                    subprocess.check_call(["powershell", "-NoProfile", "-EncodedCommand", encoded])
+                    return target_path
+                except Exception as e:
+                    print(f"screen capture failed: {e}")
+                    return ""
             try:
                 subprocess.check_call(["screencapture", "-x", f"-D{display_id}", target_path])
                 return target_path

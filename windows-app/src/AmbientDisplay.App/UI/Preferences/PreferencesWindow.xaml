@@ -4,6 +4,7 @@
         Title="Ambient Display Preferences"
         Width="680" Height="600" MinWidth="560" MinHeight="480"
         WindowStartupLocation="CenterScreen"
+        Icon="/Assets/AmbientDisplay.ico"
         ThemeMode="System">
     <!-- Port of macOS PreferencesView.swift: General, Sleep, Displays, Ambient, Network, Cloud. -->
     <Window.Resources>

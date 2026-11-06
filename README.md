@@ -32,6 +32,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                 Workstation Fleet Machines                  │
 │  • Native macOS Menu Bar Utility (NSStatusItem)             │
+│  • Native Windows Tray App (.NET 10 / WPF, windows-app/)    │
 │  • Unified Multi-Monitor WindowManager                      │
 │  • Zero-OLED-Burn Pure Black Backdrop                       │
 │  • Power Assertions (Prevents Display Sleep during active)  │
@@ -104,6 +105,36 @@ To enable cloud synchronization across networks:
 
 ---
 
+## Windows Workstation App Setup
+
+### Prerequisites
+* Windows 10 (1809+) or Windows 11
+* .NET 10 SDK to build (`winget install Microsoft.DotNet.SDK.10`). The built app is self-contained.
+
+### Build, Install & Run
+```powershell
+# 1. Test and build a self-contained release (windows-app/dist/)
+pwsh windows-app/build.ps1
+
+# 2. Install for your user (Start menu, Installed apps, private-network firewall rule)
+powershell -ExecutionPolicy Bypass -File windows-app/dist/AmbientDisplay-1.0.0-win-x64/install.ps1 -LaunchAtLogin
+
+# Or run straight from source
+dotnet run --project windows-app/src/AmbientDisplay.App
+```
+
+### Notification Area Controls
+* **Icon:** monitor (idle), moon (sleeping), gold sun (wake up), crossed-out monitor (Away Mode). The tooltip shows the target wake time.
+* **Menu:** Start/Stop Sleep, Test Ambient (10s), Away Mode, Start at Login, Google sign-in, Preferences, Quit.
+* **Preferences** (double-click the icon): General, Sleep, Displays, Ambient, Network and Cloud tabs, as on macOS.
+
+### Cloud Configuration (Optional)
+* Create an OAuth client of type **Desktop app** in your Firebase project's Google Cloud console.
+* Put `projectId`, `apiKey`, `oauthClientId` and `oauthClientSecret` in `%APPDATA%\AmbientDisplay\firebase.json`, outside the repo.
+* See [Deployment & Setup Guide](docs/DEPLOYMENT_GUIDE.md#step-6b-configure-windows-app) and [windows-app/README.md](windows-app/README.md) for details.
+
+---
+
 ## Android App Setup
 
 ### Prerequisites
@@ -134,10 +165,14 @@ Built-in setup buttons configure background immunity directly:
 
 ## Live End-to-End (E2E) Test Suite
 
-A complete pytest suite verifies all local and cloud workflows:
+A complete pytest suite verifies all local and cloud workflows. It runs against the workstation app on the machine
+you run it from (macOS or Windows) and a phone connected over `adb`:
 ```bash
 .venv/bin/pytest tests/test_live_e2e.py -v
 ```
+On Windows: `.venv\Scripts\pytest tests\test_live_e2e.py -v`. Power evidence comes from the app's status plus
+`powercfg /requests` when run from an elevated prompt. The Windows app also has its own unit and API contract tests:
+`dotnet test windows-app/AmbientDisplay.slnx`.
 
 Tests include:
 * `test_01`–`test_09`: Circadian sleep cycles, display timeouts, power assertions, and glance filters.

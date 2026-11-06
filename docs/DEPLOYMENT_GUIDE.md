@@ -9,6 +9,7 @@
 1. [Architecture & Modes](#1-architecture--modes)
 2. [Mode A: Local-Only (Zero Setup, No Cloud)](#2-mode-a-local-only-zero-setup-no-cloud)
    - [macOS Workstation App](#macos-workstation-app)
+   - [Windows Workstation App](#windows-workstation-app)
    - [Android Companion App](#android-companion-app)
 3. [Mode B: Cloud Sync (Self-Hosted Firebase)](#3-mode-b-cloud-sync-self-hosted-firebase)
    - [Step 1: Create Firebase Project](#step-1-create-firebase-project)
@@ -17,6 +18,7 @@
    - [Step 4: Deploy Security Rules](#step-4-deploy-security-rules)
    - [Step 5: Configure Android App](#step-5-configure-android-app)
    - [Step 6: Configure macOS App](#step-6-configure-macos-app)
+   - [Step 6b: Configure Windows App](#step-6b-configure-windows-app)
    - [Step 7: Build, Run & Authenticate](#step-7-build-run--authenticate)
 4. [Security & Credentials Hygiene](#4-security--credentials-hygiene)
 5. [Troubleshooting & FAQs](#5-troubleshooting--faqs)
@@ -60,6 +62,32 @@ If your phone and Mac are connected to the same Wi-Fi network, **you do not need
    swift run AmbientDisplay
    ```
 3. A menu bar icon (`🖥️`) will appear. The workstation starts an embedded HTTP server listening on port `8321` and announces itself via Bonjour.
+
+### Windows Workstation App
+Requirements: Windows 10 (1809+) or 11, and the .NET 10 SDK to build (`winget install Microsoft.DotNet.SDK.10`).
+The built app is self-contained, so the PC you install it on doesn't need .NET.
+
+1. Build a release (runs the tests, then publishes a single `AmbientDisplay.exe` and a zip):
+   ```powershell
+   pwsh windows-app/build.ps1
+   ```
+2. Install it for your Windows user:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File windows-app/dist/AmbientDisplay-1.0.0-win-x64/install.ps1 -LaunchAtLogin
+   ```
+   This copies the app to `%LOCALAPPDATA%\Programs\AmbientDisplay`, adds a Start menu shortcut and an
+   **Installed apps** entry, and starts the app. It also asks for administrator approval **once**, to add a
+   firewall rule that allows TCP `8321` on **private** networks only. Add `-SkipFirewall` to skip that step.
+3. A monitor icon appears in the notification area. Like the Mac app, it serves the same HTTP API on port `8321`
+   and announces itself on the network (`_ambientdisplay._tcp`), so the phone's **Auto-Discover** finds it.
+   Double-click the icon for **Preferences**.
+
+> Make sure Windows treats your home Wi-Fi as a **Private** network (Settings → Network & internet → your
+> Wi-Fi → Network profile type). On a Public network the firewall rule doesn't apply and the phone can't connect.
+
+To remove the app, use **Installed apps**, or run `install.ps1 -Uninstall` (add `-Purge` to also delete
+settings, the saved sign-in and `firebase.json`). For a development run without installing:
+`dotnet run --project windows-app/src/AmbientDisplay.App`.
 
 ### Android Companion App
 1. Open Terminal and navigate to `android-app`:
@@ -171,6 +199,32 @@ export FIREBASE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
 cd macos-app && swift run AmbientDisplay
 ```
 
+### Step 6b: Configure Windows App
+The Windows app signs in through your browser and returns to the app on this PC. Google expects a **Desktop**
+OAuth client for that, so create one (the iOS client the Mac uses won't work here):
+
+1. Open [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
+   for your Firebase project.
+2. Click **Create credentials → OAuth client ID**, choose **Desktop app**, name it (e.g. `Ambient Display Windows`)
+   and click **Create**. Copy the **Client ID** and **Client secret** immediately; the secret is shown only once.
+   (Google treats a Desktop client's secret as non-confidential, but don't commit it.)
+3. On the same Credentials page, open **Browser key (auto created by Firebase)** and copy the key. That is your
+   Firebase web API key.
+4. Create `%APPDATA%\AmbientDisplay\firebase.json`. It lives in your Windows profile, outside the repo:
+   ```json
+   {
+     "projectId": "your-firebase-project-id",
+     "apiKey": "your-firebase-browser-api-key",
+     "oauthClientId": "your-desktop-client-id.apps.googleusercontent.com",
+     "oauthClientSecret": "GOCSPX-your-desktop-client-secret"
+   }
+   ```
+   Alternatively, set the same environment variables as the Mac (`FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`,
+   `FIREBASE_CLIENT_ID`) plus `FIREBASE_CLIENT_SECRET`. They override the file.
+5. Restart the app. Then choose **☁ Sign In with Google…** from the tray icon, or **Preferences → Cloud →
+   Sign in with Google**, and finish in your browser. The refresh token is stored encrypted with Windows DPAPI
+   (`%APPDATA%\AmbientDisplay\secrets`), so the PC stays signed in across reboots.
+
 ### Step 7: Build, Run & Authenticate
 1. **Launch macOS App:**
    ```bash
@@ -187,7 +241,7 @@ cd macos-app && swift run AmbientDisplay
    adb install -r app/build/outputs/apk/debug/app-debug.apk
    ```
    Open the app on your phone, scroll to **Cloud Sync**, and tap **Sign In with Google**.
-   Upon signing in with the same Google account, your macOS workstation(s) will automatically appear in the **Workstation Fleet Targets** list with real-time `ONLINE` status pills!
+   Upon signing in with the same Google account, your macOS and Windows workstation(s) will automatically appear in the **Workstation Fleet Targets** list with real-time `ONLINE` status pills!
 
 ---
 
@@ -199,7 +253,8 @@ To protect user security and prevent credential leakage:
    - `android-app/app/google-services.json`
    - `macos-app/GoogleService-Info.plist`
    - `.env` and `.env.*`
-   These are explicitly ignored and must **never** be committed.
+   These are explicitly ignored and must **never** be committed. The Windows app reads its config from
+   `%APPDATA%\AmbientDisplay\firebase.json`, which is outside the repository.
 2. **Template Example Files:**
    Reference templates are provided with dummy placeholders:
    - `android-app/app/google-services.json.example`
@@ -227,6 +282,24 @@ To protect user security and prevent credential leakage:
 firebase deploy --only firestore:rules
 ```
 Also verify that you are signed in with the same Google account on both devices.
+
+### Q: The phone can't find or reach my Windows PC
+**Fix:**
+1. Check that Windows treats your Wi-Fi as **Private** (Settings → Network & internet). The installer's firewall rule
+   applies to private networks only.
+2. Re-create the rule: `install.ps1 -FirewallOnly`.
+3. In the Android app, tap **Auto-Discover**. If it still fails, type the address shown in
+   **Preferences → Network** (for example `192.168.1.11`).
+
+### Q: Windows Google sign-in shows `redirect_uri_mismatch`, `invalid_client` or "Missing OAuth client ID"
+**Fix:** The Windows app needs an OAuth client of type **Desktop app** (see [Step 6b](#step-6b-configure-windows-app)),
+with its ID and secret in `%APPDATA%\AmbientDisplay\firebase.json`. A newly created client can take a few minutes to
+start working.
+
+### Q: The countdown doesn't show when my Windows PC is locked
+Windows doesn't let any app draw over the lock screen; macOS does. On the PC you use as an ambient display,
+turn off automatic locking (or "require sign-in after sleep"). While a session is active the app already keeps
+the display and system awake.
 
 ### Q: Can I use this app without any Google account or Firebase?
 **Yes!** Simply use **Mode A (Local-Only)**. Everything works over your local network without any setup or third-party services.

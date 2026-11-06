@@ -12,12 +12,28 @@ serves the same LAN API on port 8321 that the Android companion uses, and drives
 | M2 | Full-screen overlays (countdown, billboard, image, video, web), ESC/click/Alt+F4 dismissal | Done |
 | M3 | Full tray menu, preferences window, launch at login | Done |
 | M4 | Firebase cloud sync and Google sign-in | Done; verified against the live project with the Android app |
-| M5 | Packaging, firewall rule, Windows E2E harness | Not started |
+| M5 | Packaging (build.ps1, install.ps1), private-network firewall rule, Windows E2E harness, docs | Done (live E2E run pending) |
 
 ## Requirements
 
 - Windows 10 or 11
 - .NET 10 SDK (`winget install Microsoft.DotNet.SDK.10`)
+
+## Release & install
+
+```bash
+pwsh windows-app/build.ps1
+```
+
+```bash
+powershell -ExecutionPolicy Bypass -File windows-app/dist/AmbientDisplay-1.0.0-win-x64/install.ps1 -LaunchAtLogin
+```
+
+`build.ps1` runs the tests and publishes a self-contained, single-file `AmbientDisplay.exe` (about 85 MB, no .NET needed
+on the target PC) plus a zip. `install.ps1` works in Windows PowerShell 5.1 and 7 and installs per user to
+`%LOCALAPPDATA%\Programs\AmbientDisplay`, with a Start menu shortcut and an Installed apps entry. It asks for admin
+approval once, to allow TCP 8321 on private networks only. Options: `-LaunchAtLogin`, `-SkipFirewall`, `-FirewallOnly`,
+`-NoStart`, `-Uninstall` and `-Purge`. Regenerate the app icon with `tools/make-icon.ps1`.
 
 ## Build, test, run
 
