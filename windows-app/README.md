@@ -8,7 +8,7 @@ serves the same LAN API on port 8321 that the Android companion uses, and drives
 | Milestone | Scope | State |
 |---|---|---|
 | M1 | Core state machine, display coordinator, LAN API (all 18 routes), tray icon, power requests | Done |
-| M1 | Network advertising (`_ambientdisplay._tcp`) | Not started; the phone's subnet scan still finds the PC |
+| M1 | Network advertising (`_ambientdisplay._tcp`) | Done; verified with the Android app's Auto-Discover |
 | M2 | Full-screen overlays (countdown, billboard, image, video, web), ESC/click/Alt+F4 dismissal | Done |
 | M3 | Full tray menu, preferences window, launch at login | Not started |
 | M4 | Firebase cloud sync and Google sign-in | Not started; cloud routes report a signed-out device |
@@ -37,6 +37,12 @@ The app has no window. Use the tray icon to start or stop sleep, run the 10-seco
 open the log folder, or quit. Open `http://127.0.0.1:8321/` for a small status page.
 
 The first launch may show a Windows Firewall prompt for port 8321. Allow it on **private** networks so the phone can connect.
+
+The PC announces itself on the local network as `AmbientDisplay-<hostname>._ambientdisplay._tcp`, so the Android app's
+**Auto-Discover** finds it without typing an IP. This uses the DNS-SD service built into Windows 10 (1809+) and 11, so no
+Bonjour install is needed; the built-in "mDNS (UDP-In)" firewall rule must be enabled (it is by default). The
+announcement follows the Wi-Fi/Ethernet adapter that has a default gateway, skips WSL and Hyper-V virtual switches, and
+updates when the address changes. TXT records carry `platform=windows`, `device_id`, `name` and `api=1`.
 
 ## Layout
 
